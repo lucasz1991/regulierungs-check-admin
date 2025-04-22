@@ -11,6 +11,20 @@ class RatingQuestion extends Model
 {
     use HasFactory;
 
+    /**
+     * Mögliche Typen für die Bewertungsfragen:
+     *
+     * - text      → Freitextfeld (einzeilig oder mehrzeilig)
+     * - number    → Zahleneingabe (z. B. Schadenhöhe, Anzahl Tage)
+     * - select    → Auswahl aus einer Liste vordefinierter Optionen
+     * - boolean   → Ja/Nein-Frage (z. B. "Wurde reguliert?")
+     * - rating    → Sternebewertung (z. B. 1 bis 5 Sterne)
+     * - date      → Datumsauswahl (z. B. Beginn oder Ende der Regulierung)
+     *
+     * Diese Typen steuern sowohl die Darstellung im Formular
+     * als auch die Validierung und spätere Auswertung.
+     */
+
     protected $fillable = [
         'title',
         'question_text',

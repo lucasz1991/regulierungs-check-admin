@@ -93,48 +93,25 @@ class AdminConfig extends Component
 
     public function loadSettings()
     {
-        $this->holidays = Setting::where('type', 'holiday')->get();
-        $this->blockedDays = Setting::where('type', 'disabled_day')->get();
-        $this->periods = Setting::where('type', 'period')->get();
-        $this->locations = Location::all();
-        $this->optimizeCalendar = Setting::where('key', 'optimize_calendar')->first()->value ?? false;
-        $this->optimizeShelfSelection = Setting::where('key', 'optimize_shelf_selection')->first()->value ?? false;
-        $this->selectedBlockedDays = $this->blockedDays->pluck('value')->toArray();
-        $this->AdminblockedShelves = AdminShelfBlockedDate::all();
-        $this->categories = Category::with('children.children')->whereNull('parent_id')->get();
-        $this->tags = Tag::all();
 
-        foreach ($this->categories as $category) {
-            $this->categoriesData[$category->id] = [
-                'id' => $category->id, // ID des Parents
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'children' => $this->getCategoryChildrenData($category->children),
-            ];
+        // E-Mail-Einstellungen für Admins
+        $mailSettings = Setting::where('type', 'mails')->get();
+        foreach ($mailSettings as $setting) {
+            if ($setting->key === 'admin_email') {
+                $this->adminEmail = $setting->value;
+            } elseif (array_key_exists($setting->key, $this->adminEmailNotifications)) {
+                $this->adminEmailNotifications[$setting->key] = json_decode($setting->value);
+            } elseif (array_key_exists($setting->key, $this->userEmailNotifications)) {
+                $this->userEmailNotifications[$setting->key] = json_decode($setting->value);
+            }
         }
-         // E-Mail-Einstellungen für Admins
-         $mailSettings = Setting::where('type', 'mails')->get();
-         foreach ($mailSettings as $setting) {
-             if ($setting->key === 'admin_email') {
-                 $this->adminEmail = $setting->value;
-             } elseif (array_key_exists($setting->key, $this->adminEmailNotifications)) {
-                 $this->adminEmailNotifications[$setting->key] = json_decode($setting->value);
-             } elseif (array_key_exists($setting->key, $this->userEmailNotifications)) {
-                 $this->userEmailNotifications[$setting->key] = json_decode($setting->value);
-             }
-         }
         // Lade die PayPal API-Schlüssel aus der Datenbank
         $this->apiSettings['paypal_api_client_id'] = Setting::where('key', 'paypal_api_client_id')->value('value');
         $this->apiSettings['paypal_api'] = Setting::where('key', 'paypal_api')->value('value');
         $this->apiSettings['cash_register_api_url'] = Setting::where('key', 'cash_register_api_url')->value('value');
         $this->apiSettings['cash_register_api_key'] = Setting::where('key', 'cash_register_api_key')->value('value');
 
-        // Lade die Provisionseinstellungen
-        $provisionSetting = Setting::where('key', 'provision')->first();
-        if ($provisionSetting) {
-            $this->provisionSettingId = $provisionSetting->id;
-            $this->provision = json_decode($provisionSetting->value, true)['percentage'] ?? null;
-        }
+
     }
 
     public function saveApiSettings()

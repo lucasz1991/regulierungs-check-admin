@@ -7,8 +7,11 @@
                     class="flex items-center text-lg flex-shrink-0 font-bold dark:text-white leading-[69px]">
                         <x-application-icon />
                     <span
-                        class="hidden font-bold pl-3 text-gray-700 align-middle xl:block dark:text-gray-100 leading-[69px] h-8 w-auto">                
-                        <x-application-logo />
+                        class="hidden font-bold pl-3 text-gray-700 align-middle xl:block dark:text-gray-100 leading-[69px] h-8 w-full">   
+                        <div class="">
+
+                            <x-application-logo />
+                        </div>             
                     </span>
                 </a>
             </div>
@@ -29,64 +32,7 @@
 
             </div>
             <div class="flex items-center ">
-                    <div class="relative hidden dropdown language sm:block">
-                        <button class="btn border-0 py-0 dropdown-toggle px-3 h-[70px]" type="button" aria-expanded="false"
-                            data-dropdown-toggle="navNotifications">
-                            <img src="{{ URL::asset('build/images/flags/us.jpg') }}" alt="" class="h-4"
-                                id="header-lang-img">
-                        </button>
-                        <div class="absolute z-50 hidden w-40 list-none bg-white rounded shadow dropdown-menu -left-24 dark:bg-zinc-800"
-                            id="navNotifications">
-                            <ul class="border border-gray-50 dark:border-gray-700" aria-labelledby="navNotifications">
-                                <li>
-                                    <a href="#"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50/50 dark:text-gray-200 dark:hover:bg-zinc-600/50 dark:hover:text-white"><img
-                                            src="{{ URL::asset('build/images/flags/us.jpg') }}" alt="user-image"
-                                            class="inline-block h-3 mr-1"> <span class="align-middle">English</span></a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50/50 dark:text-gray-200 dark:hover:bg-zinc-600/50 dark:hover:text-white"><img
-                                            src="{{ URL::asset('build/images/flags/spain.jpg') }}" alt="user-image"
-                                            class="inline-block h-3 mr-1"> <span class="align-middle">Spanish</span></a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50/50 dark:text-gray-200 dark:hover:bg-zinc-600/50 dark:hover:text-white"><img
-                                            src="{{ URL::asset('build/images/flags/germany.jpg') }}" alt="user-image"
-                                            class="inline-block h-3 mr-1"> <span class="align-middle">German</span></a>
-                                </li>
-                                <li>
-                                    <a href="#"
-                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50/50 dark:text-gray-200 dark:hover:bg-zinc-600/50 dark:hover:text-white"><img
-                                            src="{{ URL::asset('build/images/flags/italy.jpg') }}" alt="user-image"
-                                            class="inline-block h-3 mr-1"> <span class="align-middle">Italian</span></a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="relative dropdown text-gray-600">
-                            <div class="relative">
-                                <a  href="{{ route('admin.tasks') }}"
-                                    class="btn border-0 h-[70px] dropdown-toggle px-4  dark:text-gray-100 ltr:mr-2 rtl:ml-2 relative"
-                                    aria-expanded="false" data-dropdown-toggle="notification">
-                                    <i data-feather="bell" class="w-5 h-5"></i>
-                                    @php
-                                    $unassignedTasksCount = \App\Models\AdminTask::whereNull('assigned_to')->count();
-                                    @endphp
-                                    @if($unassignedTasksCount > 0)
-                                        <span class="absolute flex justify-center align-middle   rounded-full bg-red-500 px-1.5 py-0 -right-3 top-1 text-white">
-                                            <div class="animate-ping absolute h-full w-full rounded-full bg-red-500 z-9"></div>
-                                            <div class="z-10">
-                                                {{ $unassignedTasksCount }}
-                                            </div>
-                                        </span>
-                                    @endif
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                    
                     @auth
                         <!-- Settings Dropdown -->
                         <div class="ms-3 relative">

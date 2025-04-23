@@ -4,7 +4,7 @@
 <head>
     @include('layouts.metahead')
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title') | Administrator MiniFinds </title>
+    <title>@yield('title') | Administrator Regulierungs-check </title>
     <!-- css files -->
     @include('layouts.head-css')
     @vite(['resources/css/app.css'])

@@ -95,13 +95,13 @@
             </div>
             <div class="mb-3">
                 <button
-                    class="btn border-transparent bg-lime-50 w-full py-2.5 text-lime-200 text-lg w-100 waves-effect waves-light shadow-md shadow-gray-200 dark:shadow-zinc-600"
+                    class="btn border-transparent bg-blue-50 w-full py-2.5 text-blue-200 text-lg w-100 waves-effect waves-light shadow-md shadow-gray-200 dark:shadow-zinc-600"
                     type="submit">Registrieren </button>
             </div>
         </form>
         <div class="mt-12 text-center">
             <p class="text-gray-500 dark:text-zinc-100/60">Du hast schon ein Account ? <a
-                    href="{{ route('login') }}" class="text-lime-200 font-semibold"> Einloggen </a>
+                    href="{{ route('login') }}" class="text-blue-200 font-semibold"> Einloggen </a>
             </p>
         </div>
     </div>

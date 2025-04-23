@@ -6,24 +6,16 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Customer;
-use App\Models\RetailSpace;
-use App\Models\Product;
-use App\Models\Shelve;
-use App\Models\ShelfRental;
-use App\Models\Sale;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboard extends Component
 {
-    public $newBookings;
-    public $totalSales;
+   
     public $totalUsers;
-    public $newProducts;
     public $activeUsers;
     public $activeUsersHistory = []; // Array für die letzten 10 aktiven Benutzer
-    public $bookingsThisMonth;
-    public $bookingsLastMonth;
+  
 
 
 
@@ -63,33 +55,7 @@ class AdminDashboard extends Component
 
     public function updateDataSet()
     {
-        // Holen der neuen Buchungen im aktuellen Monat
-        $this->newBookings = ShelfRental::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->count();
 
-        // Gesamte Verkäufe im aktuellen Monat
-        $this->totalSales = Sale::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->sum('sale_price');  // Summe der Verkäufe
-
-        // Gesamte Benutzer
-        $this->totalUsers = User::count();
-
-        // Neue Produkte diesen Monat
-        $this->newProducts = Product::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->count();
-
-        // Buchungen für den aktuellen Monat
-        $this->bookingsThisMonth = ShelfRental::whereMonth('created_at', Carbon::now()->month)
-            ->whereYear('created_at', Carbon::now()->year)
-            ->count();
-
-        // Buchungen für den letzten Monat
-        $this->bookingsLastMonth = ShelfRental::whereMonth('created_at', Carbon::now()->subMonth()->month)
-            ->whereYear('created_at', Carbon::now()->subMonth()->year)
-            ->count();
     }
 
 

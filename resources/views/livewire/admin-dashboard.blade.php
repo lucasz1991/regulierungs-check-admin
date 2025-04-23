@@ -11,7 +11,7 @@
                                 <h6 class="text-xs font-medium leading-none tracking-wider text-gray-500 uppercase mb-3">
                                     Neue Bewertungen diesen Monat
                                 </h6>
-                                <span class="text-xl font-semibold">{{ $newBookings }}</span>
+                                <span class="text-xl font-semibold"></span>
                             </div>
                             <div>
                                 <span>
@@ -27,7 +27,7 @@
                                 <h6 class="text-xs font-medium leading-none tracking-wider text-gray-500 uppercase  mb-3">
                                     Bewertungen insgesamt diesen Monat
                                 </h6>
-                                <span class="text-xl font-semibold">{{ $totalSales }} €</span>
+                                <span class="text-xl font-semibold"></span>
                             </div>
                             <div>
                                 <span>
@@ -59,7 +59,7 @@
                                 <h6 class="text-xs font-medium leading-none tracking-wider text-gray-500 uppercase  mb-3">
                                     Neue Bewertungen diesen Monat
                                 </h6>
-                                <span class="text-xl font-semibold">{{ $newProducts }}</span>
+                                <span class="text-xl font-semibold"></span>
                             </div>
                             <div>
                                 <span>
@@ -81,19 +81,16 @@
                             <div class="bg-white rounded-md border border-gray-300 shadow-md">
                                 <div class="relative p-4">
                                     <p class="font-semibold text-lg">Bewertungen</p>
-                                    <livewire:admin.charts.shelf-rentals  :height="250"/>
                                 </div>
                             </div>
                             <div class="bg-white rounded-md border border-gray-300 shadow-md">
                                 <div class="relative p-4">
                                     <p class="font-semibold text-lg">Einnahmen (€)</p>
-                                    <livewire:admin.charts.monthly-sales  :height="250"/>
                                 </div>
                             </div>
                             <div class="bg-white rounded-md border border-gray-300 shadow-md">
                                 <div class="relative p-4">
                                     <p class="font-semibold text-lg">Partner Aktivitäten</p>
-                                    <livewire:admin.charts.income-chart  :height="270"/>
                                 </div>
                             </div>
                         </div>

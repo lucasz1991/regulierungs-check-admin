@@ -8,9 +8,12 @@
 @section('content')
     <div class="my-auto">
         <div class="text-center">
-            <h5 class="text-gray-600 dark:text-gray-100">Willkommen zurück !</h5>
-            <p class="text-gray-500 dark:text-gray-100/60 mt-1">Melde dich an, um mit Minifinds fortzufahren.</p>
+            <h5 class="text-gray-600 dark:text-gray-100">Willkommen im Adminbereich von Regulierungscheck</h5>
+            <p class="text-gray-500 dark:text-gray-100/60 mt-1">
+                Melde dich an, um Bewertungen zu prüfen, Nutzeranfragen zu verwalten und die Plattform zu moderieren.
+            </p>
         </div>
+
         @if (session('status'))
             <div class="">
                 {{ session('status') }}
@@ -66,7 +69,7 @@
             </div>
             <div class="mb-3">
                 <x-button
-                    class="btn border-transparent bg-lime-50 w-full py-2.5 text-lime-200 text-lg w-100 waves-effect waves-light shadow-md shadow-gray-200 dark:shadow-zinc-600"
+                    class="btn border-transparent bg-blue-200 w-full py-2.5 text-blue-500 text-lg w-100 waves-effect waves-light shadow-md shadow-gray-200 dark:shadow-zinc-600"
                     type="submit">Einloggen</x-button>
             </div>
         </form>

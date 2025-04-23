@@ -15,11 +15,10 @@
                             <p class="text-gray-500 dark:text-gray-100 relative  select-none">©
                                 <script>
                                     document.write(new Date().getFullYear())
-                                </script> MiniFinds Admin Area. Made with <i class="mdi mdi-heart text-red-400"></i>
-                                by LMZ
+                                </script> Regulierungs-Check Admin-Area<br> Made by LMZ
                             </p>
                             <p class="text-gray-500 dark:text-gray-100 relative mb-5  select-none">
-                                <small>v.2.0</small>
+                                <small>v.0.1</small>
                             </p>
                         </div>
                     </div>

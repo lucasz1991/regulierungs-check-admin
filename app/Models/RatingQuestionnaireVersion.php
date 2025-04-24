@@ -11,7 +11,7 @@ class RatingQuestionnaireVersion extends Model
     use HasFactory;
 
     protected $fillable = [
-        'insurance_type_id',
+        'insurance_subtype_id',
         'version_number',
         'snapshot',
         'is_active',

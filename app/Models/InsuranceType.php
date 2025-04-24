@@ -5,8 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Insurance;
-use App\Models\RatingQuestion;
-use App\Models\RatingQuestionnaireVersion;
+
 
 class InsuranceType extends Model
 {
@@ -16,9 +15,7 @@ class InsuranceType extends Model
         'name',
         'slug',
         'description',
-        'average_rating_speed',
-        'average_rating_fairness',
-        'average_rating_service',
+        'weight',
         'is_active',
         'order_id',
     ];
@@ -29,17 +26,11 @@ class InsuranceType extends Model
                     ->withPivot('order_column')
                     ->orderBy('insurance_insurance_type.order_column');
     }
-
-    public function ratingQuestions()
+    public function subtypes()
     {
-        return $this->belongsToMany(RatingQuestion::class)
-                    ->withPivot('order_column', 'notes')
-                    ->orderBy('insurance_type_rating_question.order_column');
-    }
-
-    public function latestVersion()
-    {
-        return $this->hasOne(RatingQuestionnaireVersion::class)->latestOfMany('version_number');
+        return $this->belongsToMany(InsuranceSubtype::class, 'insurance_type_insurance_subtype')
+                    ->withPivot('order_column')
+                    ->orderBy('insurance_type_insurance_subtype.order_column');
     }
 
 }

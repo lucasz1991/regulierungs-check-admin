@@ -29,9 +29,7 @@
                         </div>
 
                         <div class="col-span-4 text-xs text-gray-700">
-                            @foreach ($insurance->insuranceTypes as $type)
-                                <span class="bg-gray-200 px-2 py-1 rounded text-xs mr-1">{{ $type->slug }}</span>
-                            @endforeach
+                            
                         </div>
 
                         <div class="col-span-2 text-sm">

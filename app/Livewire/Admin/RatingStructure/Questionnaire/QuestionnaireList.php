@@ -3,7 +3,7 @@
 namespace App\Livewire\Admin\RatingStructure\Questionnaire;
 
 use Livewire\Component;
-use App\Models\InsuranceType;
+use App\Models\InsuranceSubtype;
 use App\Models\RatingQuestionnaireVersion;
 
 
@@ -22,20 +22,20 @@ class QuestionnaireList extends Component
 
     public function loadData()
     {
-        $this->types = InsuranceType::with([
+        $this->types = InsuranceSubtype::with([
             'ratingQuestions' => function ($query) {
-                $query->orderBy('insurance_type_rating_question.order_column');
+                $query->orderBy('insurance_subtype_rating_question.order_column');
             },
             'latestVersion'
         ])->get();
     
         foreach ($this->types as $type) {
             // Prüfe auf existierende Version
-            $existing = RatingQuestionnaireVersion::where('insurance_type_id', $type->id)->first();
+            $existing = RatingQuestionnaireVersion::where('insurance_subtype_id', $type->id)->first();
     
             if (!$existing) {
                 RatingQuestionnaireVersion::create([
-                    'insurance_type_id' => $type->id,
+                    'insurance_subtype_id' => $type->id,
                     'version_number' => 1,
                     'snapshot' => $type->ratingQuestions->map(function ($q) {
                         return [
@@ -56,7 +56,7 @@ class QuestionnaireList extends Component
 
     public function toggleActiveVersion($typeId)
 {
-    $latest = RatingQuestionnaireVersion::where('insurance_type_id', $typeId)
+    $latest = RatingQuestionnaireVersion::where('insurance_subtype_id', $typeId)
         ->orderByDesc('version_number')
         ->first();
 

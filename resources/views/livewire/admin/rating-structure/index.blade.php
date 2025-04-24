@@ -24,6 +24,16 @@
                 Versicherungstypen
             </button>
         </li>
+        <!-- VersicherungsunterTypen -->
+        <li class="border-l border-gray-200">
+            <button 
+                @click="selectedTab = 'subtypes'" 
+                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'subtypes' }" 
+                class="w-full px-4 py-2 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
+            >
+                Versicherungszweige
+            </button>
+        </li>
         <!-- Fragen -->
         <li class="border-l border-gray-200">
             <button 
@@ -60,6 +70,9 @@
         </div>
         <div x-show="selectedTab === 'types'" x-cloak>
             <livewire:admin.rating-structure.insurance-types.insurance-types-list lazy />
+        </div>
+        <div x-show="selectedTab === 'subtypes'" x-cloak>
+            <livewire:admin.rating-structure.insurance-subtypes.insurance-subtypes-list lazy />
         </div>
         <div x-show="selectedTab === 'questions'" x-cloak>
             <livewire:admin.rating-structure.rating-question.rating-question-list lazy />

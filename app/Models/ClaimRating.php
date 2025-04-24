@@ -15,6 +15,7 @@ class ClaimRating extends Model
     // - rejected: The claim rating has been rejected.
     protected $fillable = [
         'user_id',
+        'insurance_subtype_id',
         'insurance_type_id',
         'insurance_id',
         'rating_questionnaire_versions_id',
@@ -46,6 +47,11 @@ class ClaimRating extends Model
     public function insuranceType()
     {
         return $this->belongsTo(InsuranceType::class);
+    }
+    
+    public function insuranceSubtype()
+    {
+        return $this->belongsTo(InsuranceSubtype::class);
     }
 
     public function questionnaireVersion()

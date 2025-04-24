@@ -51,13 +51,12 @@ class RatingQuestion extends Model
         'read_only' => 'boolean',
     ];
 
-    public function insuranceTypes()
+    public function insuranceSubtypes()
     {
-        return $this->belongsToMany(InsuranceType::class)
+        return $this->belongsToMany(InsuranceSubtype::class)
                     ->withPivot('order_column', 'notes', 'visibility_conditions')
                     ->orderBy('insurance_type_rating_question.order_column');
     }
-
 
     public function options()
     {

@@ -48,26 +48,26 @@ class QuestionnaireList extends Component
                             ]
                         ];
                     })->toArray(),
-                    'is_active' => false,
+                    'is_active' => true,
                 ]);
             }
         }
     }
 
     public function toggleActiveVersion($typeId)
-{
-    $latest = RatingQuestionnaireVersion::where('insurance_subtype_id', $typeId)
-        ->orderByDesc('version_number')
-        ->first();
+    {
+        $latest = RatingQuestionnaireVersion::where('insurance_subtype_id', $typeId)
+            ->orderByDesc('version_number')
+            ->first();
 
-    if ($latest) {
-        $latest->update([
-            'is_active' => !$latest->is_active
-        ]);
+        if ($latest) {
+            $latest->update([
+                'is_active' => !$latest->is_active
+            ]);
 
-        $this->loadData();
+            $this->loadData();
+        }
     }
-}
 
 
     public function render()

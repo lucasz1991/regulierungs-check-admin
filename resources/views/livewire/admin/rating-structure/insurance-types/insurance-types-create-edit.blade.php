@@ -52,7 +52,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="min-w-max lg:min-w-full" x-sort="$dispatch('reorderInsurance', { item: $item, position: $position })">
+                    <div class="min-w-max lg:min-w-full max-h-48 overflow-y-scroll" x-sort="$dispatch('reorderInsurance', { item: $item, position: $position })">
                         @foreach ($assignedInsurances as $insurance)
                             <div x-sort:item="{ id: {{ $insurance['id'] }}, name: '{{ $insurance['name'] }}' }">
                                 <div class="bg-gray-100 px-3 py-2 rounded flex justify-between items-center border mb-2">

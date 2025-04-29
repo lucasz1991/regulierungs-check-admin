@@ -20,52 +20,9 @@ class WebpagesList extends Component
     public $editingId = null;
     public $modalOpen = false;
 
-    protected $fixedPages = [
-        ['id' => 1, 'title' => 'Startseite', 'slug' => 'start'],
-        ['id' => 2, 'title' => 'Produkte', 'slug' => 'products'],
-        ['id' => 3, 'title' => 'Buchen', 'slug' => 'booking'],
-        ['id' => 4, 'title' => 'Register', 'slug' => 'register'],
-        ['id' => 5, 'title' => 'Kontakt', 'slug' => 'contact'],
-        ['id' => 6, 'title' => 'Über uns', 'slug' => 'aboutus'],
-        ['id' => 7, 'title' => 'FAQs', 'slug' => 'faqs'],
-        ['id' => 8, 'title' => 'So funktionierts', 'slug' => 'howto'],
-        ['id' => 9, 'title' => 'Preise', 'slug' => 'prices'],
-        ['id' => 10, 'title' => 'AGB', 'slug' => 'termsandconditions'],
-        ['id' => 11, 'title' => 'Datenschutzerklärung', 'slug' => 'privacypolicy'],
-        ['id' => 12, 'title' => 'Impressum', 'slug' => 'imprint'],
-        ['id' => 13, 'title' => 'Login', 'slug' => 'login'],
-        ['id' => 14, 'title' => 'Passwort zurücksetzen', 'slug' => 'passwordreset'],
-        ['id' => 15, 'title' => '404 - Seite nicht gefunden', 'slug' => '404'],
-    ];
 
-    public function mount()
-    {
-        $this->initializeFixedPages();
-    }
 
-    public function render()
-    {
-        return view('livewire.admin.cms.webpages.webpages-list', [
-            'fixedPages' => WebPage::where('is_fixed', true)->paginate(10),
-            'customPages' => WebPage::where('is_fixed', false)->paginate(10),
-        ]);
-    }
 
-    public function initializeFixedPages()
-    {
-        foreach ($this->fixedPages as $pageData) {
-            WebPage::firstOrCreate(
-                ['id' => $pageData['id']], // ID als Identifier
-                [
-                    'title' => $pageData['title'],
-                    'slug' => $pageData['slug'],
-                    'meta_title' => $pageData['title'],
-                    'is_fixed' => true,
-                    'is_active' => true,
-                ]
-            );
-        }
-    }
 
     public function create()
     {
@@ -164,5 +121,13 @@ class WebpagesList extends Component
         $this->new_header_image = null;
         $this->is_active = true;
         $this->published_from = $this->published_until = null;
+    }
+
+    public function render()
+    {
+        return view('livewire.admin.cms.webpages.webpages-list', [
+            'fixedPages' => WebPage::where('is_fixed', true)->paginate(10),
+            'customPages' => WebPage::where('is_fixed', false)->paginate(10),
+        ]);
     }
 }

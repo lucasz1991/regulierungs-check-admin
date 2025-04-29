@@ -16,7 +16,9 @@ class CreateEdit extends Component
     public $initials;
     public $color;
     public $is_active = true;
-    public $selectedTypes = [];
+    public $assignedInsuranceTypes = [];
+    public $availableInsuranceTypes = [];
+    public $insuranceTypeToAdd = null;
     public $showModal = false;
 
     protected $listeners = ['open-insurance-form' => 'open'];
@@ -29,14 +31,32 @@ class CreateEdit extends Component
         if ($insuranceId) {
             $this->insuranceId = $insuranceId;
             $this->insurance = Insurance::with('insuranceTypes')->findOrFail($insuranceId);
-
+            $this->availableInsuranceTypes = InsuranceType::whereDoesntHave('insurances', function ($query) use ($insuranceId) {
+                if ($insuranceId) {
+                    $query->where('insurance_id', $insuranceId);
+                }
+            })->orderBy('name')->get();
+            $this->assignedInsuranceTypes = $this->insurance->insuranceTypes
+                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name])
+                ->values()
+                ->toArray();
             $this->name = $this->insurance->name;
             $this->slug = $this->insurance->slug;
             $this->description = $this->insurance->description;
             $this->initials = $this->insurance->initials;
             $this->color = $this->insurance->color;
             $this->is_active = $this->insurance->is_active;
-            $this->selectedTypes = $this->insurance->insuranceTypes->pluck('id')->toArray();
+        }
+    }
+    public function addInsuranceType() 
+    {
+        if ($this->insuranceTypeToAdd) {
+            $insuranceType = InsuranceType::find($this->insuranceTypeToAdd);
+            if ($insuranceType) {
+                $this->assignedInsuranceTypes[] = ['id' => $insuranceType->id, 'name' => $insuranceType->name];
+                $this->availableInsuranceTypes = $this->availableInsuranceTypes->where('id', '!=', $insuranceType->id);
+                $this->insuranceTypeToAdd = null;
+            }
         }
     }
 
@@ -49,7 +69,7 @@ class CreateEdit extends Component
             'initials' => 'nullable|string|max:10',
             'color' => 'nullable|string|max:7',
             'is_active' => 'boolean',
-            'selectedTypes' => 'array',
+            'assignedInsuranceTypes' => 'array',
         ]);
 
         $insurance = Insurance::updateOrCreate(
@@ -64,11 +84,25 @@ class CreateEdit extends Component
             ]
         );
 
-        $insurance->insuranceTypes()->sync($this->selectedTypes);
+        $syncData = collect($this->assignedInsuranceTypes)->mapWithKeys(function($item, $index) {
+            return [$item['id'] => ['order_column' => $index]];
+        })->toArray();
+        $insurance->insuranceTypes()->sync($syncData);
+
 
         $this->showModal = false;
         $this->dispatch('refreshInsurances');
+    } 
+    
+    public function removeInsuranceType($id)
+    {
+        $this->assignedInsuranceTypes = collect($this->assignedInsuranceTypes)
+            ->reject(fn($i) => $i['id'] == $id)
+            ->values()
+            ->toArray();
+        $this->availableInsuranceTypes[] = InsuranceType::find($id);
     }
+
 
     public function render()
     {

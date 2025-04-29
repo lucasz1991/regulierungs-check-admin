@@ -36,7 +36,7 @@
         <!-- script -->
         @include('layouts.vendor-scripts')
         <!-- Scripts -->
-        @vite(['resources/js/app.js', 'resources/js/minifinds.js'])
+        @vite(['resources/js/app.js'])
         @livewireScripts
         @yield('js')
     </body>

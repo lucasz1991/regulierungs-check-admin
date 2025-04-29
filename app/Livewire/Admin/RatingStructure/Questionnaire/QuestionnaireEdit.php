@@ -4,12 +4,13 @@ namespace App\Livewire\Admin\RatingStructure\Questionnaire;
 
 use Livewire\Component;
 use App\Models\InsuranceType;
+use App\Models\InsuranceSubtype;
 use App\Models\RatingQuestion;
 
 class QuestionnaireEdit extends Component
 {
-    public $insuranceTypeId;
-    public $insuranceType;
+    public $insuranceSubTypeId;
+    public $insuranceSubType;
     public $availableQuestions = [];
     public $assignedQuestions = [];
     public $questionToAdd = null;
@@ -19,9 +20,9 @@ class QuestionnaireEdit extends Component
 
     public function open($typeId)
     {
-        $this->reset(['insuranceTypeId', 'availableQuestions', 'assignedQuestions', 'questionToAdd']);
-        $this->insuranceTypeId = $typeId;
-        $this->insuranceType = InsuranceType::findOrFail($typeId);
+        $this->reset(['insuranceSubTypeId', 'availableQuestions', 'assignedQuestions', 'questionToAdd']);
+        $this->insuranceSubTypeId = $typeId;
+        $this->insuranceSubType = InsuranceSubtype::findOrFail($typeId);
 
         $this->loadData();
         $this->showModal = true;
@@ -29,12 +30,12 @@ class QuestionnaireEdit extends Component
 
     public function loadData()
     {
-        $this->insuranceType->load(['ratingQuestions' => function ($q) {
-            $q->orderBy('insurance_type_rating_question.order_column');
+        $this->insuranceSubType->load(['ratingQuestions' => function ($q) {
+            $q->orderBy('insurance_subtype_rating_question.order_column');
         }]);
 
-        $assignedIds = $this->insuranceType->ratingQuestions->pluck('id')->toArray();
-        $this->assignedQuestions = $this->insuranceType->ratingQuestions
+        $assignedIds = $this->insuranceSubType->ratingQuestions->pluck('id')->toArray();
+        $this->assignedQuestions = $this->insuranceSubType->ratingQuestions
             ->map(fn($i) => ['id' => $i->id, 'title' => $i->title, 'type' => $i->type, 'order_column' => $i->pivot->order_column])
             ->values()
             ->toArray();
@@ -59,8 +60,8 @@ class QuestionnaireEdit extends Component
 
         $this->questionToAdd = null;
 
-// Optional: Refresh availableQuestions
-$this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assignedQuestions)->pluck('id'))->get();
+        // Optional: Refresh availableQuestions
+        $this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assignedQuestions)->pluck('id'))->get();
 
     }
 
@@ -86,7 +87,7 @@ $this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assi
             ];
         }
 
-        $this->insuranceType->ratingQuestions()->sync($syncData);
+        $this->insuranceSubType->ratingQuestions()->sync($syncData);
 
         $this->dispatch('refreshQuestionnaires');
         $this->showModal = false;

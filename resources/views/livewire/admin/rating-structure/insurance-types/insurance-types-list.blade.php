@@ -14,7 +14,8 @@
     <div class="w-full">
         <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300 text-left">
             <div class="col-span-4">Name</div>
-            <div class="col-span-4">Versicherungen</div>
+            <div class="col-span-2">Versicherungen</div>
+            <div class="col-span-2">Versicherungenarten</div>
             <div class="col-span-2">Status</div>
             <div class="col-span-2">Erstellung</div>
         </div>
@@ -23,14 +24,16 @@
             @foreach ($types as $type)
                 <div x-sort:item="{ id: {{ $type->id }} }">
                     <div class="grid grid-cols-12 relative border-b py-2 px-2 items-center">
-                        <div class="col-span-4 font-semibold truncate">
+                        <div class="col-span-4 font-semibold truncate pr-4">
                             {{ $type->name }}
                         </div>
 
-                        <div class="col-span-4 text-xs text-gray-700">
-                            {{-- foreach ($type->insurances as $insurance)
-                                <span class="bg-gray-200 px-2 py-1 rounded text-xs mr-1 mb-1 inline-block">{{ $insurance->name }}</span>
-                            endforeach --}}
+                        <div class="col-span-2 text-xs text-gray-700">
+                            <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $type->insurances->count() }}</span>
+                        </div>
+
+                        <div class="col-span-2 text-xs text-gray-700">
+                            <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $type->subtypes->count() }}</span>
                         </div>
 
                         <div class="col-span-2 text-sm">

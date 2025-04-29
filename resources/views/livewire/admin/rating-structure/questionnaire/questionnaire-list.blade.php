@@ -12,8 +12,7 @@
 
     <div class="w-full">
         <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300 text-left">
-            <div class="col-span-4">Versicherungstyp</div>
-            <div class="col-span-4">Beschreibung</div>
+            <div class="col-span-8">Versicherungstyp</div>
             <div class="col-span-2">Fragen</div>
             <div class="col-span-1">Status</div>
             <div class="col-span-1"></div>
@@ -21,12 +20,8 @@
 
         @foreach ($types as $type)
             <div class="grid grid-cols-12 relative border-b py-2 px-2 items-center">
-                <div class="col-span-4 font-semibold truncate">
+                <div class="col-span-8 font-semibold truncate">
                     {{ $type->name }}
-                </div>
-
-                <div class="col-span-4 text-sm text-gray-600">
-                    {{ $type->description ?: '–' }}
                 </div>
 
                 <div class="col-span-2">

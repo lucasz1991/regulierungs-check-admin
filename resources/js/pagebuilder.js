@@ -161,7 +161,7 @@ window.initGrapesJs = async function() {
                         body.append('file', file);
                     }
                     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    var response = await fetch('https://www.shopspaze.com/api/pagebuilder/upload', {
+                    var response = await fetch('https://dev.regulierungs-check.de/api/pagebuilder/upload', {
                         method: 'POST',
                         body,
                         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token'), 'X-CSRF-TOKEN': csrfToken }
@@ -175,7 +175,7 @@ window.initGrapesJs = async function() {
                     return [{ src: result.url }];
                 },
                 onLoad: async () => {
-                    var response = await fetch('https://www.shopspaze.com/api/pagebuilder/assets', {
+                    var response = await fetch('https://dev.regulierungs-check.de/api/pagebuilder/assets', {
                         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
                     });
                     console.log(response);

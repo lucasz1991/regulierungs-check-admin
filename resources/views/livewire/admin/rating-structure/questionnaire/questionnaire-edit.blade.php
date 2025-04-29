@@ -1,7 +1,7 @@
 <div>
     <x-dialog-modal wire:model="showModal">
         <x-slot name="title">
-            Fragebogen für: {{ $insuranceType->name ?? '–' }}
+            Fragebogen für:<br> {{ $insuranceSubType->name ?? '–' }}
         </x-slot>
 
         <x-slot name="content">

@@ -14,8 +14,8 @@
 
     <div class="w-full">
         <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300 text-left">
-            <div class="col-span-4">Name</div>
-            <div class="col-span-4">Typen</div>
+            <div class="col-span-6">Name</div>
+            <div class="col-span-2">Versicherungentypen</div>
             <div class="col-span-2">Status</div>
             <div class="col-span-2">Erstellung</div>
         </div>
@@ -24,12 +24,12 @@
             @foreach ($insurances as $insurance)
                 <div x-sort:item="{{ $insurance }}">
                     <div class="grid grid-cols-12 relative border-b py-2 px-2 items-center">
-                        <div class="col-span-4 font-semibold truncate">
+                        <div class="col-span-6 font-semibold truncate pr-4">
                             {{ $insurance->name }}
                         </div>
 
-                        <div class="col-span-4 text-xs text-gray-700">
-                            
+                        <div class="col-span-2 text-xs text-gray-700">
+                            <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $insurance->insuranceTypes->count() }}</span>
                         </div>
 
                         <div class="col-span-2 text-sm">

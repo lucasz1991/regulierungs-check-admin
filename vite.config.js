@@ -39,7 +39,6 @@ export default defineConfig({
                 'resources/scss/icons.scss',
                 'resources/css/app.css',
                 'resources/js/app.js',
-                'resources/js/minifinds.js',
             ],
             refresh: [
                 ...refreshPaths,

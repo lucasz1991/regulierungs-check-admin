@@ -62,7 +62,7 @@ window.initGrapesJs = async function() {
               }),
               editor => {
                 addCustomBlocks(editor);
-              }
+              } 
             ],
             layout: {
               default: {

@@ -29,15 +29,15 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('admin.employees') }}"   class="block py-2.5 px-6 text-sm font-medium text-gray-600 transition-all duration-150 ease-linear hover:text-blue-500 dark:text-gray-300 dark:active:text-white dark:hover:text-white">
-                        <i data-feather="users" fill="#545a6d33"></i>
-                        <span data-key="t-employees">Mitarbeiter</span>
-                    </a>
-                </li>
-                <li>
                     <a href="{{ route('admin.ratingstructure.index') }}"   class="block py-2.5 px-6 text-sm font-medium text-gray-600 transition-all duration-150 ease-linear hover:text-blue-500 dark:text-gray-300 dark:active:text-white dark:hover:text-white">
                         <i data-feather="help-circle" fill="#545a6d33"></i>
                         <span data-key="t-safety">Bewertungsstruktur</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('admin.employees') }}"   class="block py-2.5 px-6 text-sm font-medium text-gray-600 transition-all duration-150 ease-linear hover:text-blue-500 dark:text-gray-300 dark:active:text-white dark:hover:text-white">
+                        <i data-feather="users" fill="#545a6d33"></i>
+                        <span data-key="t-employees">Mitarbeiter</span>
                     </a>
                 </li>
                 <li>
@@ -52,7 +52,7 @@
                         <span data-key="t-exports">Exporte</span>
                     </a>
                 </li>
-                <li class="px-5 py-3 text-xs font-medium text-gray-500 cursor-default leading-[18px] group-data-[sidebar-size=sm]:hidden block" data-key="t-menu">Shop Management</li>
+                <li class="px-5 py-3 text-xs font-medium text-gray-500 cursor-default leading-[18px] group-data-[sidebar-size=sm]:hidden block" data-key="t-menu">Management</li>
 
                 <li>
                     <a href="{{ route('admin.mails') }}"   class="block py-2.5 px-6 text-sm font-medium text-gray-600 transition-all duration-150 ease-linear hover:text-blue-500 dark:text-gray-300 dark:active:text-white dark:hover:text-white">

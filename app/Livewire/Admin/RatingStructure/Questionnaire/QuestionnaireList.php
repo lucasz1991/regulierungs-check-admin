@@ -44,7 +44,10 @@ class QuestionnaireList extends Component
                             'type' => $q->type,
                             'pivot' => [
                                 'order_column' => $q->pivot->order_column,
-                                'visibility_conditions' => $q->pivot->visibility_conditions ?? null,
+                                'visibility_conditions' => $q->pivot->visibility_conditions ?? [],
+                                'is_required' => $q->pivot->is_required ?? true,
+                                'input_constraints' => $q->pivot->input_constraints ?? [],
+                                'weight' => $q->pivot->weight ?? 1,
                             ]
                         ];
                     })->toArray(),

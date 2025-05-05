@@ -1,5 +1,4 @@
 <div>
-
     <div class="flex justify-between items-center mb-6">
         <!-- Überschrift mit Projektname -->
         <h1 class="text-xl font-bold">
@@ -12,7 +11,6 @@
                 {{ $project->name }}
             </span>
         </h1>
-
         <!-- Button-Gruppe (Zurück & Bearbeiten) -->
         <div class="flex space-x-2">
             <x-back-button />
@@ -26,7 +24,6 @@
             @endif
         </div>
     </div>
-    
     @if(session()->has('message'))
         <div class="my-4 text-green-500">
             {{ session('message') }}
@@ -52,7 +49,5 @@
     @else
         <p class="text-red-600">Hier könnte der Pagebuilder-Inhalt erscheinen. Speichere dein licenseKey von GrapesJS Studio.</p>
     @endif
-
-
     @livewire('admin.cms.project-settings-manager')
 </div>

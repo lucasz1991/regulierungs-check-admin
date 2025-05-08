@@ -11,20 +11,11 @@ wire:loading.class="cursor-wait"
 >
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center">
-
-
-
-
-            
             <div class="shrink-0 flex items-center h-full py-2" >
                 <a href="/" wire:navigate   class="h-full flex items-center max-sm:max-w-[120px]">
                     <x-application-mark />
                 </a>
             </div>
-
-
-           
-
             <div class="flex items-center space-x-4  md:order-2" >
                 @if ($currentUrl !== url('/products') && false)
                     <!-- Search Bar -->

@@ -31,7 +31,7 @@ class InsuranceTypesCreateEdit extends Component
             $this->showModal = true;
             $this->availableInsurances = Insurance::whereDoesntHave('insuranceTypes', function ($query) use ($id) {
                 if ($id) {
-                $query->where('insurance_type_id', $id);
+                    $query->where('insurance_type_id', $id);
                 }
             })->orderBy('name')->get();
             $this->availableInsuranceSubTypes = InsuranceSubtype::whereDoesntHave('insuranceTypes', function ($query) use ($id) {

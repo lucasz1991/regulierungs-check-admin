@@ -130,21 +130,20 @@
                                     </div>
                                 </div>
                                 <div x-show="addInsuranceSubTypeOpen" @click.away="addInsuranceSubTypeOpen = false" class="mt-2 mb-5  bg-white border rounded">
-                                            <div class="p-2 flex items-center space-x-3">
-                                                <select wire:model="insuranceSubTypeToAdd" class="w-full border rounded px-2 py-1">
-                                                    <option value="">Bitte auswählen</option>
-                                                    @foreach ($availableInsuranceSubTypes as $availableInsuranceSubType)
-                                                        <option value="{{ $availableInsuranceSubType->id }}">{{ $availableInsuranceSubType->name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <button  wire:click="addInsuranceSubType" class="flex items-center text-sm px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50">
-                                                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
-                                                    </svg>
-                                                    
-                                                </button>
-                                            </div>
-                                        </div>
+                                    <div class="p-2 flex items-center space-x-3">
+                                        <select wire:model="insuranceSubTypeToAdd" class="w-full border rounded px-2 py-1">
+                                            <option value="">Bitte auswählen</option>
+                                            @foreach ($availableInsuranceSubTypes as $availableInsuranceSubType)
+                                                <option value="{{ $availableInsuranceSubType->id }}">{{ $availableInsuranceSubType->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <button  wire:click="addInsuranceSubType" class="flex items-center text-sm px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50">
+                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                                 <div class="min-w-max lg:min-w-full max-h-[30vh] overflow-y-scroll p-3 bg-white scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 shadow-inner border scroll-container" x-sort="$dispatch('reorderAssignedInsuranceSubTypes', { item: $item, position: $position })">
                                     @foreach ($assignedInsuranceSubTypes as $assignedInsuranceSubType)
                                         <div x-sort:item="{ id: {{ $assignedInsuranceSubType['id'] }}, name: '{{ $assignedInsuranceSubType['name'] }}' }">

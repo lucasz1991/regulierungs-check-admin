@@ -19,7 +19,6 @@
                             <option value="">Alle</option>
                             <option value="DE">Deutsch</option>
                             <option value="EN">Englisch</option>
-                            <option value="ES">Spanisch</option>
                         </select>
                         @error('lang') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
@@ -61,20 +60,11 @@
                                 });
                             "
                             class="mt-1">
+
                             <option value="all">Alle Seiten</option>
-                            <option value="start">Startseite</option>
-                            <option value="products">Produkte</option>
-                            <option value="booking">Buchung</option>
-                            <option value="aboutus">Über uns</option>
-                            <option value="faqs">FAQ's</option>
-                            <option value="howto">howto</option>
-                            <option value="prices">prices</option>
-                            <option value="contact">Kontakt</option>
-                            <option value="login">Login</option>
-                            <option value="register">Register</option>
-                            <option value="privacypolicy">Datenschutz</option>
-                            <option value="imprint">Impressum</option>
-                            <option value="termsandconditions">AGB's</option>
+                            @foreach($webpages as $webpage)
+                                <option value="{{ $webpage->slug }}">{{ $webpage->title }}</option>
+                            @endforeach
                         </select>
                         @error('page') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>

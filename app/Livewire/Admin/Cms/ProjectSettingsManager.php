@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\PagebuilderProject;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Carbon;
+use App\Models\WebPage;
 
 class ProjectSettingsManager extends Component
 {
@@ -20,6 +21,7 @@ class ProjectSettingsManager extends Component
     public $order_id;
     public $lang;
     public $lock;
+    public $webpages = [];
 
     protected $rules = [
         'name' => 'required|string|max:255',
@@ -33,7 +35,10 @@ class ProjectSettingsManager extends Component
         'lock' => 'boolean',
     ];
 
+
     protected $listeners = ['open-project-settings' => 'loadProject'];
+
+
 
     public function loadProject($projectId)
     {
@@ -83,6 +88,10 @@ class ProjectSettingsManager extends Component
 
     public function render()
     {
-        return view('livewire.admin.cms.project-settings-manager');
+        $this->webpages = WebPage::all();
+
+        return view('livewire.admin.cms.project-settings-manager', [
+            'webpages' => $this->webpages,
+        ]);
     }
 }

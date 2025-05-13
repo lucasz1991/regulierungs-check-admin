@@ -56,11 +56,11 @@
         </li>
         <li class="border-l border-gray-200">
             <button 
-                @click="selectedTab = 'tools'" 
-                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'tools' }" 
+                @click="selectedTab = 'settings'" 
+                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'settings' }" 
                 class="w-full px-4 py-2 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
             >
-                Ai Analyse
+                Einstellungen
             </button>
         </li>
     </ul>
@@ -87,8 +87,9 @@
         <div x-show="selectedTab === 'questionnaires'" x-cloak>
             <livewire:admin.rating-structure.questionnaire.questionnaire-list lazy />
         </div>
-        <div x-show="selectedTab === 'tools'" x-cloak>
-            <livewire:admin.cms.tools.ai-assistant-config lazy />
+        <div x-show="selectedTab === 'settings'" x-cloak>
+            <livewire:admin.rating-structure.settings.scoring-config lazy />
+            <livewire:admin.rating-structure.settings.ai-scoring-settings lazy />
         </div>
     </div>
 </div>

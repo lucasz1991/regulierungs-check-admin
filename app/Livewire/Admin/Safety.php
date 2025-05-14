@@ -26,7 +26,6 @@ class Safety extends Component
         $activities = Activity::query()
             ->leftJoin('users', 'users.id', '=', 'activity_log.causer_id')
             ->select('activity_log.*', 'users.name')
-            ->where('activity_log.causer_id', '!=', 1)
             ->when($this->search, function ($query) {
                 $query->where('activity_log.description', 'like', '%' . $this->search . '%')
                 ->orWhere('activity_log.causer_type', 'like', '%' . $this->search . '%')

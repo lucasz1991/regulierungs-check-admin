@@ -1,5 +1,12 @@
 <div class="overflow-auto">
     <h1 class="text-xl font-bold mb-4">Activity Logs</h1>
+    <div class="mb-4">
+        <select wire:model.live="filterMode" class="border rounded px-4 py-2">
+            <option value="all">Alle</option>
+            <option value="user">Benutzer</option>
+            <option value="guest">Gäste</option>
+        </select>
+    </div>
     <div class="flex justify-between mb-4">
         <input 
             type="text" 

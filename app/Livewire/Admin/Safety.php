@@ -12,6 +12,7 @@ class Safety extends Component
     use WithPagination;
 
     public $search = '';
+    public $filterMode = 'all'; 
     public $perPage = 10;
 
     protected $queryString = ['search', 'perPage'];
@@ -26,6 +27,12 @@ class Safety extends Component
         $activities = Activity::query()
             ->leftJoin('users', 'users.id', '=', 'activity_log.causer_id')
             ->select('activity_log.*', 'users.name')
+            ->when($this->filterMode === 'user', function ($query) {
+                $query->where('activity_log.causer_id', '!=', 1);
+            })
+            ->when($this->filterMode === 'guest', function ($query) {
+                $query->where('activity_log.causer_id', '=', 1);
+            })
             ->when($this->search, function ($query) {
                 $query->where('activity_log.description', 'like', '%' . $this->search . '%')
                 ->orWhere('activity_log.causer_type', 'like', '%' . $this->search . '%')

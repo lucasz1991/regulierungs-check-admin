@@ -31,7 +31,7 @@ class Safety extends Component
                 $query->where('activity_log.causer_id', '!=', 1);
             })
             ->when($this->filterMode === 'guest', function ($query) {
-                $query->where('activity_log.causer_id', '=', 1);
+                $query->where('activity_log.causer_id', '=', null);
             })
             ->when($this->search, function ($query) {
                 $query->where('activity_log.description', 'like', '%' . $this->search . '%')

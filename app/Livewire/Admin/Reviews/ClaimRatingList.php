@@ -20,6 +20,9 @@ class ClaimRatingList extends Component
     public $selectAll = false;
     public $hasRatings = false;
 
+    public $hasActiveRating = false;
+
+
     public $showMailModal = false;
     public $mailRatingId = null;
     public $mailSubject = '';
@@ -28,7 +31,7 @@ class ClaimRatingList extends Component
     public $mailLink = '';
 
     public function updatingSearch()
-    {
+    {   
         $this->resetPage();
     }
 
@@ -154,9 +157,12 @@ class ClaimRatingList extends Component
             ->paginate(10);
 
         $this->hasRatings = $ratings->count() > 0;
+        $this->hasActiveRating = ClaimRating::where('status', 'rating')->exists();
+
 
         return view('livewire.admin.reviews.claim-rating-list', [
             'ratings' => $ratings,
+            'hasActiveRating' => $this->hasActiveRating,
         ])->layout('layouts.master');
     }
 }

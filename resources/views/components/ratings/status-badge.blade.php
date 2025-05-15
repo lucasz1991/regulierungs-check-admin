@@ -5,14 +5,14 @@
                         @endphp
 
                     <div class="flex items-center" title="Status: {{ ucfirst($status) }}">
-                        <div class=" w-max rounded-full flex items-center  space-x-2 justify-center px-2 py-1
+                        <div class=" w-max rounded-full flex items-center  space-x-2 justify-center px-2 py-1 pr-3 text-white
                             @switch($status)
-                                @case('pending') bg-yellow-400 @break
-                                @case('rating') bg-blue-100 text-blue-600 @break
-                                @case('rated') bg-green-200 @break
+                                @case('pending') bg-yellow-600 @break
+                                @case('rating') bg-blue-600  @break
+                                @case('rated') bg-green-600 @break
                                 @case('approved') bg-green-600 @break
-                                @case('rejected') bg-red-500 @break
-                                @default bg-gray-300
+                                @case('rejected') bg-red-600 @break
+                                @default bg-gray-600
                             @endswitch
                         ">
                             @switch($status)

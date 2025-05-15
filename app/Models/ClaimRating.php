@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Jobs\ClaimRatingAIEval;
+
+
 class ClaimRating extends Model
 {
     use HasFactory, SoftDeletes;
@@ -33,6 +36,12 @@ class ClaimRating extends Model
         'attachments' => 'array',
         'is_public' => 'boolean',
     ];
+
+    public function reanalyse(){
+        $this->status = 'rating';
+        ClaimRatingAIEval::dispatch($this);
+        $this->saveQuietly();
+    }
 
     public function user()
     {

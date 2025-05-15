@@ -15,6 +15,8 @@ use App\Livewire\Admin\MailManagement;
 use App\Livewire\Admin\UserProfile;
 use App\Livewire\Admin\ManageContacts;
 use App\Livewire\Admin\Cms\EditProject;
+use App\Livewire\Admin\Reviews\ClaimRatingList;
+
 
 use App\Http\Controllers\PagebuilderProjectController;
 
@@ -48,6 +50,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/admin/user/{userId}', UserProfile::class)->name('admin.user-profile');
         Route::get('/admin/contacts', ManageContacts::class)->name('admin.contacts');
         Route::get('/admin/cms/edit-project/{projectId?}', EditProject::class)->name('admin.cms.edit-project');
+
+        Route::get('/admin/reviews/claim-ratings', ClaimRatingList::class)->name('admin.reviews.claim-ratings');
 
 
         Route::post('/admin/pagebuilder/save', [PagebuilderProjectController::class, 'save']);

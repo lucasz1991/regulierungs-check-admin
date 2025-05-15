@@ -51,7 +51,7 @@
             </x-button>
             #
         </div>    
-        <div class="col-span-4  flex items-center">
+        <div class="col-span-3  flex items-center">
             <button wire:click="sortByField('name')" class="text-left flex items-center">
                 Kunde
                 @if ($sortBy === 'user.name')
@@ -66,7 +66,7 @@
         </div>
         <div class="col-span-3">Versicherung</div>
         <div class="col-span-2">Regulierungsart</div>
-        <div class="col-span-1">Score</div>
+        <div class="col-span-2">Score</div>
         <div class="col-span-1">Status</div>
     </div>
 
@@ -85,7 +85,7 @@
 
                 <span>{{ $rating->id ?? '-' }}</span>
             </div>
-            <div class="col-span-4 cursor-pointer hover:text-blue-600" >
+            <div class="col-span-3 cursor-pointer hover:text-blue-600" >
 
                 {{ $rating->user->name ?? '-' }}
             </div>
@@ -95,7 +95,7 @@
             <div class="col-span-2">
                 {{ $rating->answers['regulationType'] ?? '-' }}
             </div>
-            <div class="col-span-1 font-semibold">
+            <div class="col-span-2 font-semibold">
                 <span  class="{{ $rating->status === 'rating' ? 'opacity-50 cursor-wait' : '' }}">            
                     <x-ratings.rating-stars :score="$rating->rating_score" />
                 </span>
@@ -104,52 +104,8 @@
                 <!-- Status-Punkt -->
                 <div class="flex items-center space-x-2 justify-between">
 
-                    <span title="{{ $rating->status ? 'Aktiv' : 'Inaktiv' }}" class="h-4 w-4 rounded-full flex items-center justify-center {{ $rating->status ? 'bg-green-400' : 'bg-red-400' }}" >    
-                        @php
-                            $status = $rating->status; // z. B. 'pending', 'rated', ...
-                        @endphp
+                <x-ratings.status-badge :status="$rating->status" />
 
-                    <div class="flex items-center space-x-2" title="Status: {{ ucfirst($status) }}">
-                        <div class="h-4 w-4 rounded-full flex items-center justify-center
-                            @switch($status)
-                                @case('pending') bg-yellow-400 @break
-                                @case('rating') bg-blue-100 text-blue-600 @break
-                                @case('rated') bg-green-400 @break
-                                @case('approved') bg-green-600 @break
-                                @case('rejected') bg-red-500 @break
-                                @default bg-gray-300
-                            @endswitch
-                        ">
-                            @switch($status)
-                                @case('rating')
-                                    <!-- Spinner / Ladeanimation -->
-                                    <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                                    </svg>
-                                    @break
-                                @case('approved')
-                                    <!-- Haken -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 min-w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    @break
-
-                                @case('rejected')
-                                    <!-- X -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                    @break
-
-                                @default
-                                    <!-- Nur farbiger Punkt ohne Icon -->
-                            @endswitch
-                        </div>
-
-                    </div>
-
-                    </span>
                     <div x-data="{ open: false }" class="relative">
                         <button @click="open = !open" class="text-gray-500 hover:text-gray-800 transition duration-200 scale-100 hover:scale-120 hover:bg-gray-100 focus:bg-gray-100 p-2 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -157,6 +113,8 @@
                                     </svg>
                         </button>
                         <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-40 bg-white border rounded shadow z-50 text-left text-sm">
+                            <a href="{{ route('admin.reviews.show', ['ratingId' => $rating->id]) }}"
+                                    class="block w-full text-left px-4 py-2 hover:bg-blue-100">Öffnen</a>
                             <button wire:click.stop="reanalyse({{ $rating->id }})"
                                     class="block w-full text-left px-4 py-2 hover:bg-blue-100">Neu analysieren</button>
                             <button wire:click="toggleRatingSelection({{ $rating->id }})"

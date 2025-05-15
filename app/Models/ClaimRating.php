@@ -39,8 +39,8 @@ class ClaimRating extends Model
 
     public function reanalyse(){
         $this->status = 'rating';
-        ClaimRatingAIEval::dispatch($this);
         $this->saveQuietly();
+        ClaimRatingAIEval::dispatch($this);
     }
 
     public function user()

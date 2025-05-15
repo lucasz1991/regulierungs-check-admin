@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Reviews;
 
 use Livewire\Component;
 use App\Models\ClaimRating;
+use App\Jobs\ClaimRatingAIEval;
 
 class ShowClaimRating extends Component
 {
@@ -14,6 +15,12 @@ class ShowClaimRating extends Component
     {
         $this->ratingId = $ratingId;
         $this->rating = ClaimRating::with('user', 'insurance', 'insuranceSubtype')->findOrFail($ratingId);
+    }
+
+    public function reanalyse( $ratingId ){
+        $this->rating = ClaimRating::find($ratingId);
+        $this->rating->reanalyse();
+
     }
 
     public function render()

@@ -1,4 +1,4 @@
-<div class="p-6 space-y-6 ">
+<div class="p-6 space-y-6 " @if($rating->status == 'rating') wire:poll.5s @endif x-data="{ rating: @entangle('rating').live }">
     
 <div class="flex items-center justify-between">
     <div>
@@ -19,13 +19,13 @@
              class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
             <ul class="text-sm text-gray-700">
                 <li>
-                    <button wire:click="reanalyze({{ $rating->id }})"
+                    <button wire:click="reanalyse({{ $rating->id }})"
                             class="block w-full px-4 py-2 text-left hover:bg-blue-100">
                         Neu analysieren
                     </button>
                 </li>
                 <li>
-                    <button wire:click="deactivateRating({{ $rating->id }})"
+                    <button wire:click="$rating->reanalyse()"
                             class="block w-full px-4 py-2 text-left hover:bg-yellow-100">
                         Deaktivieren
                     </button>

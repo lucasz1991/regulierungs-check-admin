@@ -1,53 +1,52 @@
 <div class="p-6 space-y-6 " @if($rating->status == 'rating') wire:poll.5s @endif x-data="{ rating: @entangle('rating').live }">
     
-<div class="flex items-center justify-between">
-    <div>
-    {{-- Kundeninformation --}}
-    <h1 class="text-2xl font-bold text-gray-800">Bewertung im Detail</h1>
-    </div>
+    <div class="flex items-center justify-between">
+        <div>
+            {{-- Kundeninformation --}}
+            <h1 class="text-2xl font-bold text-gray-800">Bewertung im Detail</h1>
+        </div>
 
-    {{-- Drei-Punkte-Menü --}}
-    <div x-data="{ open: false }" class="relative">
-        <button @click="open = !open" class="text-gray-500 bg-gray-100 hover:text-gray-800 transition duration-200 p-2 rounded-full hover:bg-gray-200">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
-        </button>
+        {{-- Drei-Punkte-Menü --}}
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open" class="text-gray-500 bg-gray-100 hover:text-gray-800 transition duration-200 p-2 rounded-full hover:bg-gray-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12 17.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                </svg>
+            </button>
 
-        {{-- Dropdown --}}
-        <div x-show="open" @click.away="open = false" x-cloak
-             class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
-            <ul class="text-sm text-gray-700">
-                <li>
-                    <button wire:click="reanalyse({{ $rating->id }})"
-                            class="block w-full px-4 py-2 text-left hover:bg-blue-100">
-                        Neu analysieren
-                    </button>
-                </li>
-                <li>
-                    <button wire:click="$rating->reanalyse()"
-                            class="block w-full px-4 py-2 text-left hover:bg-yellow-100">
-                        Deaktivieren
-                    </button>
-                </li>
-                <li>
-                    <button wire:click="editRating({{ $rating->id }})"
-                            class="block w-full px-4 py-2 text-left hover:bg-gray-100">
-                        Bearbeiten
-                    </button>
-                </li>
-            </ul>
+            {{-- Dropdown --}}
+            <div x-show="open" @click.away="open = false" x-cloak
+                class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg z-50">
+                <ul class="text-sm text-gray-700">
+                    <li>
+                        <button wire:click="reanalyse({{ $rating->id }})"
+                                class="block w-full px-4 py-2 text-left hover:bg-blue-100">
+                            Neu analysieren
+                        </button>
+                    </li>
+                    <li>
+                        <button wire:click="$rating->reanalyse()"
+                                class="block w-full px-4 py-2 text-left hover:bg-yellow-100">
+                            Deaktivieren
+                        </button>
+                    </li>
+                    <li>
+                        <button wire:click="editRating({{ $rating->id }})"
+                                class="block w-full px-4 py-2 text-left hover:bg-gray-100">
+                            Bearbeiten
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
-</div>
 
     {{-- Kundeninformation --}}
     <x-ratings.section title="Kundendaten">
         <x-ratings.row label="Kunde">{{ $rating->user->name ?? '–' }}</x-ratings.row>
         <x-ratings.row label="Bewertung erstellt am">{{ $rating->created_at->format('d.m.Y H:i') }}</x-ratings.row>
         <x-ratings.row label="Status">
-        <x-ratings.status-badge :status="$rating->status" />
-
+            <x-ratings.status-badge :status="$rating->status" />
         </x-ratings.row>
     </x-ratings.section>
 

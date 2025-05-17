@@ -54,9 +54,9 @@
     {{-- Regulierungsstatus --}}
     <x-ratings.section title="Regulierungsstatus">
         <x-ratings.row label="Regulierungsart">{{ $rating->answers['regulationType'] ?? '–' }}</x-ratings.row>
-        <x-ratings.row label="Abgeschlossen">{{ $rating->is_closed ? 'Ja' : 'Nein' }}</x-ratings.row>
+        <x-ratings.row label="Abgeschlossen">{{ $rating->answers['is_closed'] ? 'Ja' : 'Nein' }}</x-ratings.row>
         <x-ratings.row label="Beginn">{{ $rating->answers['selectedDates']['started_at'] ?? '–' }}</x-ratings.row>
-        @if($rating->is_closed)
+        @if($rating->answers['is_closed'])
             <x-ratings.row label="Beendet">{{ $rating->answers['selectedDates']['ended_at'] ?? '–' }}</x-ratings.row>
         @endif
         <x-ratings.row label="Details">{{ $rating->answers['regulationDetail']['selected_value'] ?? '–' }}</x-ratings.row>

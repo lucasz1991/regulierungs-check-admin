@@ -5,11 +5,10 @@ namespace App\Livewire\Admin\RatingStructure;
 use Livewire\Component;
 use App\Models\Insurance;
 use Livewire\WithPagination;
-use Livewire\WithoutUrlPagination;
 
 class InsuranceList extends Component
 {
-    use WithPagination, WithoutUrlPagination; 
+    use WithPagination; 
     
     public $insurancesAll = [];
 
@@ -18,25 +17,12 @@ class InsuranceList extends Component
         'orderInsurance' => 'handleOrderInsurance'
     ];
 
-    public function mount()
-    {
-        $this->loadInsurances();
-    }
 
-    public function loadInsurances()
-    {
-        $this->insurancesAll = Insurance::orderBy('order_column')->get();
-    }
 
-    public function updatingPage()
-    {
-        $this->resetPage();
-    }
+
 
     public function analyzeAllInsuranceOnlineViaGpt(){
-        if ($this->insurancesAll->isEmpty()) {
-            return;
-        }
+        $this->insurancesAll = Insurance::orderBy('order_column')->get();
         foreach ($this->insurancesAll as $insurance) {
             $insurance->analyzeInsuranceOnlineViaGpt();
         }
@@ -80,7 +66,6 @@ class InsuranceList extends Component
     public function deleteInsurance($id)
     {
         Insurance::findOrFail($id)->delete();
-        $this->loadInsurances();
         $this->resetPage();
     }
 
@@ -90,11 +75,11 @@ class InsuranceList extends Component
     {
         $insurance = Insurance::findOrFail($id);
         $insurance->update(['is_active' => !$insurance->is_active]);
-        $this->loadInsurances();
     }
 
     public function render()
     {
+        
         return view('livewire.admin.rating-structure.insurance-list', [
             'insurances' => Insurance::orderBy('order_column')->paginate(10),
         ]);

@@ -64,6 +64,10 @@ class CreateEdit extends Component
         }
     }
 
+    public function analyzeInsuranceOnlineViaGpt(){
+        $this->insurance->analyzeInsuranceOnlineViaGpt();
+    }
+
     public function save()
     {
         $validated = $this->validate([

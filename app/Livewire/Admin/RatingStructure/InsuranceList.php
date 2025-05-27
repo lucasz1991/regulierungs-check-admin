@@ -32,7 +32,8 @@ class InsuranceList extends Component
     {
         $this->resetPage();
     }
-    
+
+
 
     public function handleOrderInsurance($item, $position)
     {

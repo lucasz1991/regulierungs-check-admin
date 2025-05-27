@@ -25,6 +25,10 @@
                         </label>
                     </div>
             </div>
+            <div>
+            <button wire:click.stop="analyzeInsuranceOnlineViaGpt()"
+            class="block w-full text-left px-4 py-2 hover:bg-blue-100">AnalyzeInsuranceOnlineViaGpt</button>
+            </div>
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Beschreibung</label>

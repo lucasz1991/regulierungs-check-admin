@@ -4,10 +4,14 @@ namespace App\Livewire\Admin\RatingStructure;
 
 use Livewire\Component;
 use App\Models\Insurance;
+use Livewire\WithPagination;
+use Livewire\WithoutUrlPagination;
 
 class InsuranceList extends Component
 {
-    public $insurances = [];
+    use WithPagination, WithoutUrlPagination; 
+    
+    public $insurancesAll = [];
 
     protected $listeners = [
         'refreshInsurances' => 'loadInsurances',
@@ -21,7 +25,12 @@ class InsuranceList extends Component
 
     public function loadInsurances()
     {
-        $this->insurances = Insurance::orderBy('order_column')->get();
+        $this->insurancesAll = Insurance::orderBy('order_column')->get();
+    }
+
+    public function updatingPage()
+    {
+        $this->resetPage();
     }
     
 
@@ -57,13 +66,14 @@ class InsuranceList extends Component
             Insurance::where('id', $insurance->id)->update(['order_column' => $index]);
         }
 
-        $this->loadInsurances();
+        $this->resetPage();
     }
 
     public function deleteInsurance($id)
     {
         Insurance::findOrFail($id)->delete();
         $this->loadInsurances();
+        $this->resetPage();
     }
 
 
@@ -77,6 +87,8 @@ class InsuranceList extends Component
 
     public function render()
     {
-        return view('livewire.admin.rating-structure.insurance-list');
+        return view('livewire.admin.rating-structure.insurance-list', [
+            'insurances' => Insurance::orderBy('order_column')->paginate(10),
+        ]);
     }
 }

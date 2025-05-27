@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 class RatingQuestionList extends Component
 {
     public $questions = [];
+    
 
     protected $listeners = [
         'refreshRatingQuestions' => 'loadQuestions'

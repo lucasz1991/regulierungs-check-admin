@@ -108,16 +108,26 @@
 
                 <div x-show="openTab === 'incuranceDisplaySettings'" class="">
                     <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300  z-10">
-                        <div class="mb-4 grid grid-cols-3 gap-4">
-                            <div>
+                        <div class="mb-4 grid grid-cols-5 gap-4">
+                            <div class="col-span-2">
                                 <label class="block text-sm font-medium text-gray-700">Initialen</label>
                                 <input type="text" wire:model.defer="initials" class="mt-1 block w-full border rounded px-4 py-2">
                                 @error('initials') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700">Farbe (HEX)</label>
-                                <input type="text" wire:model.defer="color" class="mt-1 block w-full border rounded px-4 py-2">
-                                @error('color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                                <label class="block text-sm font-medium text-gray-700">Schrift</label>
+                                <input type="text" wire:model.defer="style.font_color" class="mt-1 block w-full border rounded px-4 py-2">
+                                @error('style.font_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Hintergrund</label>
+                                <input type="text" wire:model.defer="style.bg_color" class="mt-1 block w-full border rounded px-4 py-2">
+                                @error('style.bg_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Umrandung </label>
+                                <input type="text" wire:model.defer="style.border_color" class="mt-1 block w-full border rounded px-4 py-2">
+                                @error('style.border_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                         </div>
                     </div>

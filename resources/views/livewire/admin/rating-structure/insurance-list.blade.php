@@ -3,7 +3,7 @@
         <h1 class="flex items-center justify-center text-lg px-2 py-1 w-max">
             <span class="w-max">Versicherungen</span>
             <span class="ml-2 bg-white text-sky-600 text-xs shadow border border-sky-200 font-bold aspect-square px-2 py-1 flex items-center justify-center rounded-full  h-7  leading-none">
-                {{ $insurances->count() }}
+                {{ $insurancesAll->count() }}
             </span>
         </h1>
         <x-link-button href="#" @click.prevent="$dispatch('open-insurance-form')" class="btn-xs py-0 leading-[0]">
@@ -76,6 +76,9 @@
                     </div>
                 </div>
             @endforeach
+        </div>
+        <div class="mt-4">
+            {{ $insurances->links() }}
         </div>
     </div>
 </div>

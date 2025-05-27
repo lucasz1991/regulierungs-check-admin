@@ -1,7 +1,15 @@
 <div class="px-2">
     <div class="flex justify-between mb-4">
         <h1 class="flex items-center justify-center text-lg px-2 py-1 w-max">
-            <span class="w-max">Fragen</span>
+            <span class="w-max">Standart Fragen</span>
+            <span class="ml-2 bg-white text-sky-600 text-xs shadow border border-sky-200 font-bold aspect-square px-2 py-1 flex items-center justify-center rounded-full h-7 leading-none">
+                7
+            </span>
+        </h1>
+    </div>
+    <div class="flex justify-between mb-4">
+        <h1 class="flex items-center justify-center text-lg px-2 py-1 w-max">
+            <span class="w-max">Variable Fragen</span>
             <span class="ml-2 bg-white text-sky-600 text-xs shadow border border-sky-200 font-bold aspect-square px-2 py-1 flex items-center justify-center rounded-full h-7 leading-none">
                 {{ $questions->count() }}
             </span>

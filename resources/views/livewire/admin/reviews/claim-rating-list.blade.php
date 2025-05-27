@@ -10,7 +10,6 @@
             </div>
         </div>
     </div>
-
     <div class="flex justify-between items-center mb-4">
         <div>
             <h2 class="text-2xl font-bold text-gray-700">Bewertungen</h2>
@@ -38,7 +37,6 @@
                 </div>
             </div>
         </div>
-
     <div class="grid grid-cols-12 bg-gray-100 text-sm font-semibold p-2 border-b">
         <div class="col-span-1  flex items-center">
             <x-button 
@@ -74,7 +72,6 @@
         <div class="grid grid-cols-12 items-center text-sm border-b  px-2 py-1">
             <div class="col-span-1 flex items-center space-x-4 px-2 cursor-pointer hover:text-blue-600"
                 wire:click="toggleRatingSelection({{ $rating->id }})">
-
                 <input 
                     type="checkbox" 
                     class="form-checkbox h-4 w-4 appearance-auto  rounded-full text-blue-600" 
@@ -82,7 +79,6 @@
                     value="{{ $rating->id }}"
                     onclick="event.stopPropagation();"
                 />
-
                 <span>{{ $rating->id ?? '-' }}</span>
             </div>
             <div class="col-span-3 cursor-pointer hover:text-blue-600" >

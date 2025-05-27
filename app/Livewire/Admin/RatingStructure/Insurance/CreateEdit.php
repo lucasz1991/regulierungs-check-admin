@@ -14,7 +14,11 @@ class CreateEdit extends Component
     public $slug;
     public $description;
     public $initials;
-    public $color;
+    public $style = [
+        'font_color' => null,
+        'border_color' => null,
+        'bg_color' => null
+    ];
     public $is_active = true;
     public $assignedInsuranceTypes = [];
     public $availableInsuranceTypes = [];
@@ -44,7 +48,7 @@ class CreateEdit extends Component
             $this->slug = $this->insurance->slug;
             $this->description = $this->insurance->description;
             $this->initials = $this->insurance->initials;
-            $this->color = $this->insurance->color;
+            $this->style = $this->insurance->style;
             $this->is_active = $this->insurance->is_active;
         }
     }
@@ -67,7 +71,8 @@ class CreateEdit extends Component
             'slug' => 'required|string|max:255',
             'description' => 'nullable|string',
             'initials' => 'nullable|string|max:10',
-            'color' => 'nullable|string|max:7',
+            'style' => 'nullable|array',
+            'style.*' => 'string|max:255',
             'is_active' => 'boolean',
             'assignedInsuranceTypes' => 'array',
         ]);
@@ -79,7 +84,7 @@ class CreateEdit extends Component
                 'slug' => $this->slug,
                 'description' => $this->description,
                 'initials' => $this->initials,
-                'color' => $this->color,
+                'style' => $this->style,
                 'is_active' => $this->is_active,
             ]
         );

@@ -33,7 +33,14 @@ class InsuranceList extends Component
         $this->resetPage();
     }
 
-
+    public function analyzeAllInsuranceOnlineViaGpt(){
+        if ($this->insurancesAll->isEmpty()) {
+            return;
+        }
+        foreach ($this->insurancesAll as $insurance) {
+            $insurance->analyzeInsuranceOnlineViaGpt();
+        }
+    }
 
     public function handleOrderInsurance($item, $position)
     {

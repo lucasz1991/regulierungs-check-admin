@@ -10,6 +10,10 @@
             +
         </x-link-button>
     </div>
+    <div>
+            <button wire:click.stop="analyzeAllInsuranceOnlineViaGpt()"
+            class="block w-full text-left px-4 py-2 hover:bg-blue-100">Analyze All Insurance Online</button>
+            </div>
     @livewire('admin.rating-structure.insurance.create-edit')
 
     <div class="w-full">

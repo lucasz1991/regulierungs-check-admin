@@ -21,9 +21,6 @@ class InsuranceList extends Component
     public function analyzeAllInsuranceOnlineViaGpt(){
         $this->insurancesAll = Insurance::orderBy('order_column')->get();
         foreach ($this->insurancesAll as $insurance) {
-            if ($insurance->style['bg_color'] != $insurance->color) {
-                continue;
-            }
             $insurance->analyzeInsuranceOnlineViaGpt();
         }
     }

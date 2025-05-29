@@ -90,6 +90,8 @@
                             <option value="content">Main Content</option>
                             <option value="footer">Footer</option>
                             <option value="modal">Modal Popup</option>
+                            <option value="content_between_1">PageContent 1</option>
+                            <option value="content_between_2">PageContent 2</option>
                         </select>
                         @error('position') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>

@@ -9,6 +9,9 @@ class BlogList extends Component
 {
     public $posts;
 
+    protected $listeners = [
+        'refresh' => 'loadPosts',
+    ];
     public function mount()
     {
         $this->loadPosts();

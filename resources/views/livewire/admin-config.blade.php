@@ -194,37 +194,35 @@
                     <!-- Kassen-API -->
                     <x-settings-collapse>
                         <x-slot name="trigger">
-                            Kassen-API
+                            Base Api
                         </x-slot>
                         <x-slot name="content">
-                            <div class="bg-blue-100 text-blue-700 p-4 rounded-md border border-blue-200 mb-4">
-                                <strong>Hinweis:</strong> Hier kannst du die API-Verbindung zur Kasse eintragen. Diese API ermöglicht die Kommunikation mit deinem Kassensystem.
-                            </div>
+                            
                             <!-- API URL Eingabe für Kassen-API -->
                             <div class="mb-4">
-                                <label for="cash_register_api_url" class="block text-sm font-medium text-gray-700">Kassen-API URL</label>
+                                <label for="base_api_url" class="block text-sm font-medium text-gray-700">Base-API URL</label>
                                 <input 
                                     type="url" 
-                                    id="cash_register_api_url" 
-                                    wire:model="apiSettings.cash_register_api_url" 
+                                    id="base_api_url" 
+                                    wire:model="apiSettings.base_api_url" 
                                     class="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
                                     required
                                 >
-                                @error('apiSettings.cash_register_api_url')
+                                @error('apiSettings.base_api_url')
                                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
                             <!-- API Key Eingabe für Kassen-API -->
                             <div class="mb-4">
-                                <label for="cash_register_api_key" class="block text-sm font-medium text-gray-700">Kassen-API Schlüssel</label>
+                                <label for="base_api_key" class="block text-sm font-medium text-gray-700">Base-API Schlüssel</label>
                                 <input 
                                     type="text" 
-                                    id="cash_register_api_key" 
-                                    wire:model="apiSettings.cash_register_api_key" 
+                                    id="base_api_key" 
+                                    wire:model="apiSettings.base_api_key" 
                                     class="mt-1 p-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
                                     required
                                 >
-                                @error('apiSettings.cash_register_api_key')
+                                @error('apiSettings.base_api_key')
                                     <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>

@@ -78,7 +78,7 @@ class InsuranceList extends Component
     {
         
         return view('livewire.admin.rating-structure.insurance-list', [
-            'insurances' => Insurance::orderBy('order_column')->paginate(10),
+            'insurances' => Insurance::orderBy('order_column')->paginate(15),
         ]);
     }
 }

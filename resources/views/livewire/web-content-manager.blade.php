@@ -31,6 +31,16 @@
                 FAQ's
             </button>
         </li>
+        <!-- FAQ Tab -->
+        <li class="border-l border-gray-200">
+            <button 
+                @click="selectedTab = 'blog'" 
+                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'blog' }" 
+                class="w-full px-4 py-2 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
+            >
+                Blog
+            </button>
+        </li>
         <!-- Ai Assist -->
         <li class="border-l border-gray-200">
             <button 
@@ -60,6 +70,10 @@
         <!-- FAQ Inhalt -->
         <div x-show="selectedTab === 'faq'" x-cloak>
             <livewire:admin.cms.web-content.faq-list lazy />
+        </div>
+        <!-- Blog Inhalt -->
+        <div x-show="selectedTab === 'blog'" x-cloak>
+            <livewire:admin.cms.web-content.blog.blog-list lazy />
         </div>
         <!-- tools Inhalt -->
         <div x-show="selectedTab === 'tools'" x-cloak>

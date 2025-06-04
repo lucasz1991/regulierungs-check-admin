@@ -108,35 +108,23 @@ class AdminConfig extends Component
         // Lade die PayPal API-Schlüssel aus der Datenbank
         $this->apiSettings['paypal_api_client_id'] = Setting::where('key', 'paypal_api_client_id')->value('value');
         $this->apiSettings['paypal_api'] = Setting::where('key', 'paypal_api')->value('value');
-        $this->apiSettings['cash_register_api_url'] = Setting::where('key', 'cash_register_api_url')->value('value');
-        $this->apiSettings['cash_register_api_key'] = Setting::where('key', 'cash_register_api_key')->value('value');
-
-
+        $this->apiSettings['base_api_url'] = Setting::where('key', 'base_api_url')->value('value');
+        $this->apiSettings['base_api_key'] = Setting::where('key', 'base_api_key')->value('value');
     }
 
     public function saveApiSettings()
     {
         // Speichern der PayPal API-Schlüssel
         Setting::updateOrCreate(
-            ['key' => 'paypal_api_client_id', 'type' => 'api'],
-            ['value' => $this->apiSettings['paypal_api_client_id']]
+            ['key' => 'base_api_url', 'type' => 'api'],
+            ['value' => $this->apiSettings['base_api_url']]
         );
-    
+        // Speichern der PayPal API-Schlüssel
         Setting::updateOrCreate(
-            ['key' => 'paypal_api', 'type' => 'api'],
-            ['value' => $this->apiSettings['paypal_api']]
+            ['key' => 'base_api_key', 'type' => 'api'],
+            ['value' => $this->apiSettings['base_api_key']]
         );
 
-        // Speichern der Fluore-Kassen API-Einstellungen
-        Setting::updateOrCreate(
-            ['key' => 'cash_register_api_url', 'type' => 'api'],
-            ['value' => $this->apiSettings['cash_register_api_url']]
-        );
-        
-        Setting::updateOrCreate(
-            ['key' => 'cash_register_api_key', 'type' => 'api'],
-            ['value' => $this->apiSettings['cash_register_api_key']]
-        );
     
         // Erfolgsmeldung
         $this->dispatch('showAlert', 'API-Einstellungen wurden erfolgreich gespeichert.', 'success');

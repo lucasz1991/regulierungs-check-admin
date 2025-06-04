@@ -30,7 +30,7 @@ class MediaController extends Controller
             'file', file_get_contents($file->getRealPath()), $file->getClientOriginalName()
         )->withHeaders([
             'X-API-KEY' => $this->apiSettings['base_api_key'],
-        ])->withoutVerifying()->post($this->apiSettings['base_api_url'] . '/api/admin/upload');
+        ])->post($this->apiSettings['base_api_url'] . '/api/admin/upload');
 
         if ($response->successful()) {
             return response()->json($response->json());
@@ -47,7 +47,7 @@ class MediaController extends Controller
 
         $response = Http::withHeaders([
             'X-API-KEY' => $this->apiSettings['base_api_key'],
-        ])->withoutVerifying()->delete($this->apiSettings['base_api_url'] . '/api/admin/delete', [
+        ])->delete($this->apiSettings['base_api_url'] . '/api/admin/delete', [
             'path' => $request->path,
         ]);
 

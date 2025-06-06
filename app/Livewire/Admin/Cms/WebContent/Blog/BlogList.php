@@ -26,7 +26,6 @@ class BlogList extends Component
     {
         Post::findOrFail($id)->delete();
         $this->loadPosts();
-        $this->dispatch('notify', 'Beitrag gelöscht.');
     }
 
     public function render()

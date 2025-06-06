@@ -1,6 +1,6 @@
 <div>
     <h1 class="text-xl font-bold mb-4">Blogbeiträge verwalten</h1>
-    <button onclick="Livewire.dispatch('open-blog-modal')">
+    <button onclick="Livewire.dispatch('open-blog-modal', { postId: null })">
                             Erstellen
                         </button>
     <table class="w-full table-auto text-left border border-gray-300">

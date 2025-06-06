@@ -7,6 +7,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\MediaController;
+use App\Models\BlogCategory;
 
 class BlogEditCreate extends Component
 {
@@ -26,8 +27,16 @@ class BlogEditCreate extends Component
     public $cover_image;
     public $cover_image_file;
 
+    public $categories = [];
+    public $newCategoryName;
+    public $newCategorySlug;
+
     protected $listeners = ['open-blog-modal' => 'loadPost'];
 
+    public function mount()
+    {
+        $this->categories = BlogCategory::all();
+    }
     public function loadPost($postId = null)
     {
         $this->resetForm();
@@ -39,7 +48,6 @@ class BlogEditCreate extends Component
         } else {
             $this->published_at = now()->toDateTimeString();
         }
-
         $this->show = true;
     }
 
@@ -59,7 +67,7 @@ class BlogEditCreate extends Component
             'type' => 'required|in:blog,news,info',
             'body' => 'required',
             'excerpt' => 'nullable|string',
-            'category_id' => 'nullable|exists:categories,id',
+            'category_id' => 'nullable|exists:blog_categories,id',
             'published' => 'boolean',
             'published_at' => 'nullable|date',
             'cover_image_file' => 'nullable|image|max:4096',
@@ -87,7 +95,7 @@ class BlogEditCreate extends Component
         } else {
             Post::create($data);
         }
-
+        $this->resetForm();
         $this->dispatch('refresh')->to('admin.cms.web-content.blog.blog-list');
         $this->show = false;
     }
@@ -107,6 +115,29 @@ class BlogEditCreate extends Component
 
         throw new \Exception('Upload fehlgeschlagen.');
     }
+
+
+
+    public function createNewCategory()
+    {
+        $this->validate([
+            'newCategoryName' => 'required|min:2',
+        ]);
+
+        $category = BlogCategory::create([
+            'name' => $this->newCategoryName,
+            'slug' => $this->newCategorySlug ?: \Str::slug($this->newCategoryName),
+        ]);
+
+        $this->category_id = $category->id;
+        $this->reset(['newCategoryName', 'newCategorySlug']);
+
+        // Kategorie-Liste neu laden (falls du sie im Mount geladen hast)
+        $this->categories = BlogCategory::all();
+
+        $this->dispatch('close-new-category');
+    }
+
 
     public function render()
     {

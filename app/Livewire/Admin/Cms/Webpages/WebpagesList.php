@@ -5,6 +5,8 @@ namespace App\Livewire\Admin\Cms\Webpages;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\MediaController;
 use App\Models\WebPage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -19,6 +21,7 @@ class WebpagesList extends Component
     public $icon, $header_image, $new_header_image, $is_active, $published_from, $published_until, $language, $showHeader;
     public $editingId = null;
     public $modalOpen = false;
+    public $page = null;
 
 
 
@@ -32,11 +35,11 @@ class WebpagesList extends Component
 
     public function edit($id)
     {
-        $page = WebPage::findOrFail($id);
-        $this->editingId = $page->id;
-        $this->fill($page->toArray());
-        $this->header_image_temp = $page->header_image; 
-        $this->showHeader = $page->settings['showHeader'] ?? false;
+        $this->page = WebPage::findOrFail($id);
+        $this->editingId = $this->page->id;
+        $this->fill($this->page->toArray());
+        $this->header_image = $this->page->header_image; 
+        $this->showHeader = $this->page->settings['showHeader'] ?? false;
 
         $this->modalOpen = true;
     }
@@ -59,9 +62,9 @@ class WebpagesList extends Component
         // Falls ein neues Bild hochgeladen wurde, speichere es
         if ($this->new_header_image) {
             if ($this->header_image) {
-                Storage::disk('public')->delete($this->header_image); // Altes Bild löschen
+                $this->deleteImageViaMediaController($this->header_image); // Altes Bild löschen
             }
-            $this->header_image = $this->new_header_image->store('header_images', 'public');
+            $this->header_image = $this->uploadImageViaMediaController($this->new_header_image);
         }
 
         $data = [
@@ -103,7 +106,7 @@ class WebpagesList extends Component
         if (!$page->is_fixed) {
             // Falls ein Header-Bild existiert, löschen
             if ($page->header_image) {
-                Storage::disk('public')->delete($page->header_image);
+                $this->deleteImageViaMediaController($page->header_image);
             }
             $page->delete();
         }
@@ -121,6 +124,50 @@ class WebpagesList extends Component
         $this->new_header_image = null;
         $this->is_active = true;
         $this->published_from = $this->published_until = null;
+        $this->page = null;
+    }
+
+
+    
+    protected function uploadImageViaMediaController($file)
+    {
+                // Temporäres Request-Objekt mit dem File als 'file'
+        $request = Request::create('/admin/media/upload', 'POST', [], [], ['file' => $file]);
+
+        // MediaController manuell instanziieren und aufrufen
+        $controller = new MediaController();
+        $response = $controller->store($request);
+
+        if (method_exists($response, 'getData')) {
+            return $response->getData(true)['path'] ?? '';
+        }
+
+        throw new \Exception('Upload fehlgeschlagen.');
+    }
+
+    protected static function deleteImageViaMediaController($path)
+    {
+        if (!$path) {
+            return;
+        }
+
+        try {
+            // Temporären Request mit POST-Daten (obwohl eigentlich DELETE, das ist okay für internen Aufruf)
+            $request = Request::create('/admin/media/delete', 'POST', ['path' => $path]);
+
+            // MediaController aufrufen
+            $controller = new MediaController();
+            $response = $controller->destroy($request);
+
+            if (method_exists($response, 'getData')) {
+                $result = $response->getData(true);
+                if (!($result['success'] ?? false)) {
+                    \Log::warning('Löschen nicht erfolgreich: ' . ($result['message'] ?? 'unbekannt'));
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Bild konnte nicht über MediaController gelöscht werden: ' . $e->getMessage());
+        }
     }
 
     public function render()

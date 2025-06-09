@@ -32,9 +32,15 @@
                             <div>
                                 <div class="flex gap-4 justify-start items-center">
                                     <div class="shrink-0 flex-none ">
-                                        <div class=" w-min rounded flex items-center justify-center border text-base  px-2" style="background-color: {{ $insurance->style['bg_color'] ?? '#ccc' }}; color: {{ $insurance->style['font_color'] ?? '#000' }}; border-color: {{ $insurance->style['border_color'] ?? '#ccc' }};">
-                                            {{ strtoupper(substr( $insurance->initials, 0 ,8)) }}
-                                        </div>
+                                        @if ($insurance->logo)
+                                                <img src="{{ $insurance->getLogoImageUrlAttribute() }}"
+                                                    alt=""
+                                                    class=" h-6 mx-auto object-contain rounded">
+                                            @else
+                                                <div class=" w-min rounded flex items-center justify-center text-sm border px-1 font-medium shadow-sm" style="background-color: {{ $insurance->style['bg_color'] ?? '#eee' }}; color: {{ $insurance->style['font_color'] ?? '#333' }}; border-color: {{ $insurance->style['border_color'] ?? '#ccc' }};">
+                                                    {{ strtoupper(substr( $insurance->initials, 0 ,8)) }}
+                                                </div>
+                                            @endif
                                     </div>
                                     <div class="grow max-w-full">
                                         <h2 class=" break-words w-full truncate ">

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\InsuranceType;
 use App\Jobs\AnalyzeInsuranceOnlineViaGpt;
+use App\Models\Setting;
+
 
 class Insurance extends Model
 {
@@ -18,6 +20,7 @@ class Insurance extends Model
         'style',
         'initials',
         'color',
+        'logo',
         'is_active',
         'order_id',
     ];
@@ -42,8 +45,17 @@ class Insurance extends Model
         'updated_at',
     ];
 
-    public function analyzeInsuranceOnlineViaGpt(){
+    public function analyzeInsuranceOnlineViaGpt()
+    {
         AnalyzeInsuranceOnlineViaGpt::dispatch($this);
+    }
+
+    //  URL zum Bild (oder Fallback)
+    public function getLogoImageUrlAttribute()
+    {
+        $apiUrl = Setting::where('key', 'base_api_url')->value('value');
+        return $this->logo
+            ? $apiUrl . '/storage/' . $this->logo : null;
     }
    
     public function insuranceTypes()

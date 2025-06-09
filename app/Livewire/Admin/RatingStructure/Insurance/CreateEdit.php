@@ -5,9 +5,15 @@ namespace App\Livewire\Admin\RatingStructure\Insurance;
 use Livewire\Component;
 use App\Models\Insurance;
 use App\Models\InsuranceType;
+use Livewire\WithFileUploads;
+use Illuminate\Http\Request;
+use App\Http\Controllers\Admin\MediaController;
 
 class CreateEdit extends Component
 {
+
+     use WithFileUploads;
+
     public $insurance;
     public $insuranceId;
     public $name;
@@ -19,6 +25,7 @@ class CreateEdit extends Component
         'border_color' => null,
         'bg_color' => null
     ];
+    public $logo_image_file = null;
     public $is_active = true;
     public $assignedInsuranceTypes = [];
     public $availableInsuranceTypes = [];
@@ -49,6 +56,7 @@ class CreateEdit extends Component
             $this->description = $this->insurance->description;
             $this->initials = $this->insurance->initials;
             $this->style = $this->insurance->style;
+            $this->logo_image_file = $this->insurance->logo;
             $this->is_active = $this->insurance->is_active;
         }
     }
@@ -81,6 +89,11 @@ class CreateEdit extends Component
             'assignedInsuranceTypes' => 'array',
         ]);
 
+
+        if ($this->logo_image_file) {
+            $this->logo_image_file = $this->uploadImageViaMediaController($this->logo_image_file);
+        }
+
         $insurance = Insurance::updateOrCreate(
             ['id' => $this->insuranceId],
             [
@@ -89,6 +102,7 @@ class CreateEdit extends Component
                 'description' => $this->description,
                 'initials' => $this->initials,
                 'style' => $this->style,
+                'logo' => $this->logo_image_file,
                 'is_active' => $this->is_active,
             ]
         );
@@ -103,6 +117,22 @@ class CreateEdit extends Component
         $this->dispatch('refreshInsurances');
     } 
     
+
+    protected function uploadImageViaMediaController($file)
+    {
+        // Temporäres Request-Objekt mit dem File als 'file'
+        $request = Request::create('/admin/media/upload', 'POST', [], [], ['file' => $file]);
+
+        // MediaController manuell instanziieren und aufrufen
+        $controller = new MediaController();
+        $response = $controller->store($request);
+
+        if (method_exists($response, 'getData')) {
+            return $response->getData(true)['path'] ?? '';
+        }
+        throw new \Exception('Upload fehlgeschlagen.');
+    }
+
     public function removeInsuranceType($id)
     {
         $this->assignedInsuranceTypes = collect($this->assignedInsuranceTypes)

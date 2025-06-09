@@ -22,6 +22,7 @@ class WebpagesList extends Component
     public $editingId = null;
     public $modalOpen = false;
     public $page = null;
+    
 
 
 

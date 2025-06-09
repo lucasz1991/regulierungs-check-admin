@@ -134,6 +134,15 @@
                                 @error('style.border_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                         </div>
+                        <div>
+                            <div>
+                                <label class="font-semibold">Logo </label>
+                                <input type="file" wire:model="logo_image_file">
+                                @if($logo_image_file)
+                                    <img src="{{ $insurance->getLogoImageUrlAttribute() }}" class="h-24 mt-2 rounded">
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

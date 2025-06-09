@@ -85,7 +85,12 @@ class WebPage extends Model
         //  URL zum Bild (oder Fallback)
     public function getHeaderImageUrlAttribute()
     {
-        $apiUrl = Setting::where('key', 'base_api_url')->value('value');
+        if($this->header_image){
+            $apiUrl = Setting::where('key', 'base_api_url')->value('value');
+        }else{
+            $apiUrl = '';
+        }
+
         return $this->header_image
             ? $apiUrl . '/storage/' . $this->header_image : null;
     }

@@ -102,7 +102,7 @@ class BlogEditCreate extends Component
 
     protected function uploadImageViaMediaController($file)
     {
-                // Temporäres Request-Objekt mit dem File als 'file'
+        // Temporäres Request-Objekt mit dem File als 'file'
         $request = Request::create('/admin/media/upload', 'POST', [], [], ['file' => $file]);
 
         // MediaController manuell instanziieren und aufrufen
@@ -112,7 +112,6 @@ class BlogEditCreate extends Component
         if (method_exists($response, 'getData')) {
             return $response->getData(true)['path'] ?? '';
         }
-
         throw new \Exception('Upload fehlgeschlagen.');
     }
 

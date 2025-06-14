@@ -40,6 +40,7 @@ class Post extends Model
             if ($post->isDirty('cover_image') && $post->getOriginal('cover_image')) {
                 self::deleteImageViaMediaController($post->getOriginal('cover_image'));
             }
+            $post->slug = Str::slug($post->title);
         });
 
         static::deleting(function ($post) {

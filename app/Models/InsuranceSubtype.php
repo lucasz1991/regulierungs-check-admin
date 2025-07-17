@@ -25,6 +25,11 @@ class InsuranceSubtype extends Model
         'order_id',
     ];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+        'allow_third_party' => 'boolean',
+    ];
+
     public function insuranceTypes()
     {
         return $this->belongsToMany(InsuranceType::class, 'insurance_type_insurance_subtype')

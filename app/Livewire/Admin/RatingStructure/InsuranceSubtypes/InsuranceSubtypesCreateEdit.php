@@ -18,18 +18,20 @@ class InsuranceSubtypesCreateEdit extends Component
     public $name;
     public $description;
     public $is_active = true;
+    public $allow_third_party = false;
 
     protected $rules = [
         'name' => 'required|string|max:255',
         'description' => 'nullable|string|max:500',
         'is_active' => 'boolean',
+        'allow_third_party' => 'boolean',
     ];
 
     protected $listeners = ['open-insurance-subtype-form' => 'open','reorderAssignedInsuranceTypes'];
 
     public function open($id = null)
     {
-        $this->reset(['insuranceSubtypeId', 'name', 'description', 'is_active']);
+        $this->reset(['insuranceSubtypeId', 'name', 'description', 'is_active', 'allow_third_party']);
 
         if ($id) {
             $subtype = InsuranceSubtype::findOrFail($id);
@@ -46,6 +48,7 @@ class InsuranceSubtypesCreateEdit extends Component
             $this->name = $subtype->name;
             $this->description = $subtype->description;
             $this->is_active = $subtype->is_active;
+            $this->allow_third_party = $subtype->allow_third_party;
         }
 
         $this->showModal = true;

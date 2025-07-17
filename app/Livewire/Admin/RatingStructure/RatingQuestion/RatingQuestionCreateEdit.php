@@ -16,6 +16,7 @@ class RatingQuestionCreateEdit extends Component
     public $frontend_title;
     public $frontend_description;
     public $input_constraints;
+    public $visibility_condition;
     public $tags;
     public $is_active = true;
     public $read_only = false;
@@ -29,7 +30,7 @@ class RatingQuestionCreateEdit extends Component
         $this->reset([
             'title', 'questionId', 'question_text', 'type', 'is_required',
             'help_text', 'frontend_title', 'frontend_description',
-            'input_constraints', 'tags', 'is_active', 'read_only',
+            'input_constraints', 'visibility_condition', 'tags', 'is_active', 'read_only',
         ]);
 
         $this->showModal = true;
@@ -44,7 +45,8 @@ class RatingQuestionCreateEdit extends Component
             $this->help_text = $q->help_text;
             $this->frontend_title = $q->frontend_title;
             $this->frontend_description = $q->frontend_description;
-            $this->input_constraints = json_encode($q->input_constraints ?? []);
+            $this->input_constraints = json_encode($q->input_constraints ?? '"{}"');
+            $this->visibility_condition = json_encode($q->visibility_condition ?? '"{}"');
             $this->tags = is_array($q->tags) ? implode(', ', $q->tags) : $q->tags;
             $this->is_active = $q->is_active;
             $this->read_only = $q->read_only;
@@ -62,12 +64,14 @@ class RatingQuestionCreateEdit extends Component
             'frontend_title' => 'nullable|string|max:255',
             'frontend_description' => 'nullable|string|max:1000',
             'input_constraints' => 'nullable|string',
+            'visibility_condition' => 'nullable|string|json',
             'tags' => 'nullable|string',
             'is_active' => 'boolean',
             'read_only' => 'boolean',
         ]);
 
         $validated['input_constraints'] = json_decode($validated['input_constraints'], true);
+        $validated['visibility_condition'] = json_decode($validated['visibility_condition'], true);
         $validated['tags'] = array_map('trim', explode(',', $validated['tags'] ?? ''));
 
         RatingQuestion::updateOrCreate(

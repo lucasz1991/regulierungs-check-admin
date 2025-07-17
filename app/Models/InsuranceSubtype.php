@@ -21,6 +21,7 @@ class InsuranceSubtype extends Model
         'average_rating_fairness',
         'average_rating_service',
         'is_active',
+        'allow_third_party',
         'order_id',
     ];
 

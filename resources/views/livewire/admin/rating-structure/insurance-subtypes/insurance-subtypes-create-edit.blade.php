@@ -37,7 +37,20 @@
                     @error('description') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
 
-
+                <div class="mb-6">
+                    <label class="flex items-center cursor-pointer">
+                        <input 
+                            id="allow_third_party" 
+                            name="allow_third_party" 
+                            type="checkbox" 
+                            wire:model.live="allow_third_party" 
+                            class="sr-only peer" 
+                        />
+                        <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                        <span class="ms-3 text-sm font-medium ">Fremd-Versicherungs Bewertung erlaubt</span>
+                    </label>
+                    @error('allow_third_party') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
 
                 <!-- Accordion -->
                 <div x-data="{ openTab: 'incuranceType' }" class="">

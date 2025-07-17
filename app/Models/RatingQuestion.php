@@ -40,6 +40,7 @@ class RatingQuestion extends Model
         'input_constraints',
         'read_only',
         'tags',
+        'visibility_condition',
     ];
 
     protected $casts = [

@@ -66,6 +66,12 @@
                     @error('input_constraints') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Sichtbarkeitsbedingungen (JSON)</label>
+                    <textarea wire:model.defer="visibility_condition" rows="3" class="mt-1 block w-full border rounded px-4 py-2 font-mono text-xs"></textarea>
+                    @error('visibility_condition') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                </div>
+
                 <!-- Checkboxen -->
                 <div class="flex items-center space-x-6 mt-6">
                     <label class="inline-flex items-center text-sm text-gray-700">

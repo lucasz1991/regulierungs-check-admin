@@ -53,7 +53,16 @@
                     <div class="col-span-1">{{ $task->id }}</div>
                     <div class="col-span-3">{{ $task->type }}</div>
                     <div class="col-span-3">
-                        {{ $task->related_model_type ? $task->related_model_type  : 'Nicht zugeordnet' }}
+                        @switch($task->related_model_type)
+                            @case('App\\Models\\User')
+                                User
+                                @break
+                            @case('App\\Models\\ClaimRating')
+                                Bewertung
+                                @break
+                            @default
+                                Nicht zugeordnet
+                        @endswitch
                     </div>
                     <div class="col-span-3">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</div>
                     <div class="col-span-2 text-right">

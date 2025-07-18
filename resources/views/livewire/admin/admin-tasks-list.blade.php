@@ -51,7 +51,7 @@
                 <!-- Tabellenzeile -->
                 <div @click="open = !open" class="cursor-pointer hover:bg-gray-50 grid grid-cols-12 items-center p-2 text-left" x-bind:class="{ 'bg-blue-50': open }">
                     <div class="col-span-1">{{ $task->id }}</div>
-                    <div class="col-span-3">{{ $task->task_type }}</div>
+                    <div class="col-span-3">{{ $task->type }}</div>
                     <div class="col-span-3">
                         
                     </div>

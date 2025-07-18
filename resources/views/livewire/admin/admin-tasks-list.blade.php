@@ -40,7 +40,7 @@
     <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300">
         <div class="col-span-1">ID</div>
         <div class="col-span-3">Aufgabentyp</div>
-        <div class="col-span-3">Regalmiete</div>
+        <div class="col-span-3">Zugehörigkeit</div>
         <div class="col-span-3">Zugewiesen an</div>
         <div class="col-span-2 text-right">Status</div>
     </div>
@@ -53,11 +53,9 @@
                     <div class="col-span-1">{{ $task->id }}</div>
                     <div class="col-span-3">{{ $task->task_type }}</div>
                     <div class="col-span-3">
-                        @if ($task->shelfRental)
-                            <a href="{{ route('admin.shelf-rental', $task->shelf_rental_id) }}" class="text-blue-500 underline">#{{ $task->shelf_rental_id }}</a>
-                        @endif
+                        
                     </div>
-                    <div class="col-span-3">{{ $task->assignedAdmin ? $task->assignedAdmin->name : 'Nicht zugewiesen' }}</div>
+                    <div class="col-span-3">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</div>
                     <div class="col-span-2 text-right">
                         <span class="">
                             {{ $task->getStatusTextAttribute() }}
@@ -69,76 +67,8 @@
                     <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
                     <p><strong>Beschreibung:</strong> {{ $task->description }}</p>
                     <p><strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}</p>
-                    @if ($task->shelfRental)
-                        <p><strong>Regalbuchung:</strong> <a href="{{ route('admin.shelf-rental', $task->shelf_rental_id) }}" class="text-blue-500">#{{ $task->shelf_rental_id }}</a></p>
-                    @endif
-                    @if ($task->task_type === 'Auszahlung' && $task->shelfRental && $task->shelfRental->payouts->isNotEmpty())
-                        @php
-                            $latestPayout = $task->shelfRental->payouts->sortByDesc('created_at')->first();
-                        @endphp
-                        <div class="mt-4 p-4 bg-white rounded-lg border">
-                            <h4 class="font-semibold">💰 Payout-Details</h4>
-                            
-                            <p class="group/payoutdetail"><strong>Betrag:</strong> 
-                                <span x-data="{ text: '{{ number_format($latestPayout->amount, 2, ',', '.') }}' }" class="relative group">
-                                    {{ number_format($latestPayout->amount, 2, ',', '.') }} €
-                                    <button @click="navigator.clipboard.writeText(text)" 
-                                            class="ml-2 hidden group-hover/payoutdetail:inline-block text-gray-500 hover:text-gray-800"
-                                            title="Kopieren">
-                                            <svg class="h-4 w-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z"/></svg>
-                                    </button>
-                                </span>
-                            </p>
+                    
 
-                            @if (!empty($latestPayout->payout_details['account_holder']))
-                                <p class="group/payoutdetail"><strong>Kontoinhaber:</strong> 
-                                    <span x-data="{ text: '{{ $latestPayout->payout_details['account_holder'] }}' }" class="relative group">
-                                        {{ $latestPayout->payout_details['account_holder'] }}
-                                        <button @click="navigator.clipboard.writeText(text)" 
-                                                class="ml-2 hidden group-hover/payoutdetail:inline-block text-gray-500 hover:text-gray-800"
-                                                title="Kopieren">
-                                                <svg class="h-4 w-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z"/></svg>
-                                        </button>
-                                    </span>
-                                </p>
-                            @endif
-
-                            @if (!empty($latestPayout->payout_details['iban']) && !empty($latestPayout->payout_details['bic']))
-                                <p class="group/payoutdetail"><strong>IBAN:</strong>  
-                                    <span x-data="{ text: '{{ $latestPayout->payout_details['iban'] }}' }" class="relative group">
-                                        {{ wordwrap($latestPayout->payout_details['iban'], 4, ' ', true) }}
-                                        <button @click="navigator.clipboard.writeText(text)" 
-                                                class="ml-2 hidden group-hover/payoutdetail:inline-block text-gray-500 hover:text-gray-800"
-                                                title="Kopieren">
-                                                <svg class="h-4 w-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z"/></svg>
-                                        </button>
-                                    </span>
-                                </p>
-                                <p class="group/payoutdetail"><strong>BIC:</strong>  
-                                    <span x-data="{ text: '{{ $latestPayout->payout_details['bic'] }}' }" class="relative group">
-                                        {{ wordwrap($latestPayout->payout_details['bic'], 4, ' ', true) }}
-                                        <button @click="navigator.clipboard.writeText(text)" 
-                                                class="ml-2 hidden group-hover/payoutdetail:inline-block text-gray-500 hover:text-gray-800"
-                                                title="Kopieren">
-                                                <svg class="h-4 w-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z"/></svg>
-                                        </button>
-                                    </span>
-                                </p>
-                            @elseif (!empty($latestPayout->payout_details['paypal_email']))
-                                <p class="group/payoutdetail"><strong>PayPal:</strong> 
-                                    <span x-data="{ text: '{{ $latestPayout->payout_details['paypal_email'] }}' }" class="relative group">
-                                        {{ $latestPayout->payout_details['paypal_email'] }}
-                                        <button @click="navigator.clipboard.writeText(text)" 
-                                                class="ml-2 hidden group-hover/payoutdetail:inline-block text-gray-500 hover:text-gray-800"
-                                                title="Kopieren">
-                                                <svg class="h-4 w-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M208 0L332.1 0c12.7 0 24.9 5.1 33.9 14.1l67.9 67.9c9 9 14.1 21.2 14.1 33.9L448 336c0 26.5-21.5 48-48 48l-192 0c-26.5 0-48-21.5-48-48l0-288c0-26.5 21.5-48 48-48zM48 128l80 0 0 64-64 0 0 256 192 0 0-32 64 0 0 48c0 26.5-21.5 48-48 48L48 512c-26.5 0-48-21.5-48-48L0 176c0-26.5 21.5-48 48-48z"/></svg>
-                                        </button>
-                                    </span>
-                                </p>
-                            @endif
-                        </div>
-
-                    @endif
                     <!-- Footer mit Buttons -->
                     <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
                         @if(!$task->assigned_to)

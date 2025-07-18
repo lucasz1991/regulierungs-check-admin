@@ -5,9 +5,6 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\AdminTask;
-use App\Models\ShelfRental;
-use App\Models\Payout;
-use App\Models\Sale;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -19,8 +16,8 @@ class AdminTasksList extends Component
     public function assignToMe($taskId)
     {
         $task = AdminTask::findOrFail($taskId);
-        if (!$task->assigned_to) {
-            $task->assigned_to = Auth::id();
+        if (!$task->assigned_to_user_id) {
+            $task->assigned_to_user_id = Auth::id();
             $task->status = 1;
             $task->save();
             $this->resetPage();
@@ -36,33 +33,13 @@ class AdminTasksList extends Component
             $task->status = 2; 
             $task->save();
             
-            if ($task->task_type === 'Auszahlung' && $task->shelf_rental_id) {
-                $this->processPayoutCompletion($task->shelf_rental_id);
-            }
             
             $this->resetPage();
             $this->dispatch('showAlert', 'Aufgabe erfolgreich abgeschlossen.', 'success');
         }
     }
 
-    private function processPayoutCompletion($shelfRentalId)
-    {
-        $shelfRental = ShelfRental::find($shelfRentalId);
-        if ($shelfRental) {
-            $shelfRental->status = 4;
-            $shelfRental->save();
-        }
 
-        $payout = Payout::where('shelf_rental_id', $shelfRentalId)->latest()->first();
-        if ($payout) {
-            $payout->status = true;
-            $payout->save();
-        }
-
-        Sale::where('rental_id', $shelfRentalId)
-            ->where('status', 2)
-            ->update(['status' => 3]);
-    }
 
     public function render()
     {

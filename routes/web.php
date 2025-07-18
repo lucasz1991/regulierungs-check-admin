@@ -6,6 +6,7 @@ use App\Livewire\AdminDashboard;
 use App\Livewire\AdminMessageBox;
 use App\Livewire\AdminConfig;
 use App\Livewire\WebContentManager;
+use App\Livewire\Admin\AdminTasksList;
 use App\Livewire\Admin\RatingStructure\Index;
 use App\Livewire\Admin\Exports;
 use App\Livewire\Admin\Users;
@@ -42,7 +43,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/web-content-manager', WebContentManager::class)->name('admin.webcontentmanager');
         Route::get('/rating-structure', Index::class)->name('admin.ratingstructure.index');
         Route::get('/adminmessages', AdminMessageBox::class)->name('admin.messages');
-         
+        Route::get('/admin/tasks', AdminTasksList::class)->name('admin.tasks');
         Route::get('/exports', Exports::class)->name('admin.exports'); 
         Route::get('/users', Users::class)->name('admin.users'); 
         Route::get('/admin/safety', Safety::class)->name('admin.safety');

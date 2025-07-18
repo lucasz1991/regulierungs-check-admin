@@ -90,7 +90,7 @@ class AdminTask extends Model
         return match ($this->status) {
             self::STATUS_OPEN => 'Offen',
             self::STATUS_IN_PROGRESS => 'In Bearbeitung',
-            self::STATUS_COMPLETED => 'Abgeschlossen',
+            self::STATUS_DONE => 'Abgeschlossen',
             default => 'Unbekannt',
         };
     }

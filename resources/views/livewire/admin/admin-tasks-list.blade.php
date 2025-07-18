@@ -53,7 +53,7 @@
                     <div class="col-span-1">{{ $task->id }}</div>
                     <div class="col-span-3">{{ $task->type }}</div>
                     <div class="col-span-3">
-                        {{ $task->related ? $task->related->name : 'Nicht zugeordnet' }}
+                        {{ $task->related ? $task->related_model_type  : 'Nicht zugeordnet' }}
                     </div>
                     <div class="col-span-3">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</div>
                     <div class="col-span-2 text-right">

@@ -81,4 +81,17 @@ class AdminTask extends Model
         $this->status = self::STATUS_DONE;
         $this->save();
     }
+
+    /**
+     * Gibt den Status als lesbaren Text zurück.
+     */
+    public function getStatusTextAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_OPEN => 'Offen',
+            self::STATUS_IN_PROGRESS => 'In Bearbeitung',
+            self::STATUS_COMPLETED => 'Abgeschlossen',
+            default => 'Unbekannt',
+        };
+    }
 }

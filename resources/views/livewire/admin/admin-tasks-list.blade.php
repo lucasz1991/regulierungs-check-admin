@@ -71,7 +71,7 @@
 
                     <!-- Footer mit Buttons -->
                     <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
-                        @if(!$task->assigned_to)
+                        @if(!$task->assignedTo)
                             <x-button wire:click="assignToMe({{ $task->id }})" class="btn-xs text-sm">
                                 ➕ Übernehmen
                             </x-button>

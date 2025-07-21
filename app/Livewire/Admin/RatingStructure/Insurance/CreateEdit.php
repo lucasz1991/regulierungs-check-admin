@@ -86,7 +86,7 @@ class CreateEdit extends Component
             'style' => 'nullable|array',
             'style.*' => 'nullable|max:255',
             'is_active' => 'boolean',
-            'assignedInsuranceTypes' => 'array',
+            'assignedInsuranceTypes' => 'nullable|array',
         ]);
 
 

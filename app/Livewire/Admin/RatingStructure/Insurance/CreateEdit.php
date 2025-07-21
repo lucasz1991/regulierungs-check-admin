@@ -80,7 +80,6 @@ class CreateEdit extends Component
     {
         $validated = $this->validate([
             'name' => 'required|string|max:255|unique:insurances,name,' . $this->insuranceId,
-            'slug' => 'required|string|max:255',
             'description' => 'nullable|string',
             'initials' => 'nullable|string|max:10',
             'style' => 'nullable|array',
@@ -88,7 +87,6 @@ class CreateEdit extends Component
             'is_active' => 'boolean',
             'assignedInsuranceTypes' => 'nullable|array',
         ]);
-
 
         if ($this->logo_image_file) {
             $this->logo_image_file = $this->uploadImageViaMediaController($this->logo_image_file);
@@ -98,7 +96,7 @@ class CreateEdit extends Component
             ['id' => $this->insuranceId],
             [
                 'name' => $this->name,
-                'slug' => $this->slug,
+                'slug' => $this->name ? str_slug($this->name) : null,
                 'description' => $this->description,
                 'initials' => $this->initials,
                 'style' => $this->style,

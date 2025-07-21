@@ -66,9 +66,19 @@
                     </div>
                     <div class="col-span-3">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</div>
                     <div class="col-span-2 text-right">
-                        <span class="">
-                            {{ $task->getStatusTextAttribute() }}
-                        </span>
+                        @switch($task->status)
+                            @case(0)
+                                <span class="text-red-500">Offen</span>
+                                @break
+                            @case(1)
+                                <span class="text-yellow-500">In Bearbeitung</span>
+                                @break
+                            @case(2)
+                                <span class="text-green-500">Abgeschlossen</span>
+                                @break
+                            @default
+                                <span class="text-gray-500">Unbekannt</span>
+                        @endswitch
                     </div>
                 </div>
                 <!-- Karte mit Footer für Optionen -->
@@ -76,6 +86,7 @@
                     <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
                     <p><strong>Beschreibung:</strong> {{ $task->description }}</p>
                     <p><strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}</p>
+                    
                     
 
                     <!-- Footer mit Buttons -->

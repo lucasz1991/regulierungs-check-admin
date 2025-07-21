@@ -79,12 +79,12 @@ class CreateEdit extends Component
     public function save()
     {
         $validated = $this->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:insurances,name,' . $this->insuranceId,
             'slug' => 'required|string|max:255',
             'description' => 'nullable|string',
             'initials' => 'nullable|string|max:10',
             'style' => 'nullable|array',
-            'style.*' => 'string|max:255',
+            'style.*' => 'nullable|max:255',
             'is_active' => 'boolean',
             'assignedInsuranceTypes' => 'array',
         ]);

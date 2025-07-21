@@ -8,6 +8,8 @@ use App\Models\InsuranceType;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\MediaController;
+use Illuminate\Support\Str;
+
 
 class CreateEdit extends Component
 {
@@ -96,7 +98,7 @@ class CreateEdit extends Component
             ['id' => $this->insuranceId],
             [
                 'name' => $this->name,
-                'slug' => $this->name ? str_slug($this->name) : null,
+                'slug' => $this->name ? Str::slug($this->name) : null,
                 'description' => $this->description,
                 'initials' => $this->initials,
                 'style' => $this->style,

@@ -28,6 +28,7 @@ class CreateEdit extends Component
         'bg_color' => null
     ];
     public $logo_image_file = null;
+    public $current_logo = null;
     public $is_active = true;
     public $assignedInsuranceTypes = [];
     public $availableInsuranceTypes = [];
@@ -58,10 +59,12 @@ class CreateEdit extends Component
             $this->description = $this->insurance->description;
             $this->initials = $this->insurance->initials;
             $this->style = $this->insurance->style;
-            $this->logo_image_file = $this->insurance->logo;
+            $this->current_logo = $this->insurance->logo;
+            $this->logo_image_file = $this->insurance->logo; 
             $this->is_active = $this->insurance->is_active;
         }
     }
+
     public function addInsuranceType() 
     {
         if ($this->insuranceTypeToAdd) {
@@ -90,8 +93,12 @@ class CreateEdit extends Component
             'assignedInsuranceTypes' => 'nullable|array',
         ]);
 
-        if ($this->logo_image_file) {
+
+        if ($this->logo_image_file && $this->logo_image_file !== $this->current_logo) {
             $this->logo_image_file = $this->uploadImageViaMediaController($this->logo_image_file);
+        } else {
+            // Wenn sich das Bild nicht geändert hat, nimm das alte
+            $this->logo_image_file = $this->current_logo;
         }
 
         $insurance = Insurance::updateOrCreate(

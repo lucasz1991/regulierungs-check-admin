@@ -11,6 +11,12 @@ class InsuranceList extends Component
     use WithPagination; 
     
     public $insurancesAll = [];
+    public $search = '';
+    public $sortField = 'name';
+        public $sortDirection = 'asc';
+    public $perPage = 15;
+    public $insurancesAllCount = 0;
+
 
     protected $listeners = [
         'refreshInsurances' => 'loadInsurances',
@@ -23,6 +29,11 @@ class InsuranceList extends Component
         foreach ($this->insurancesAll as $insurance) {
             $insurance->analyzeInsuranceOnlineViaGpt();
         }
+    }
+
+    public function mount()
+    {
+        $this->insurancesAllCount = Insurance::count();
     }
 
     public function handleOrderInsurance($item, $position)
@@ -78,7 +89,9 @@ class InsuranceList extends Component
     {
         
         return view('livewire.admin.rating-structure.insurance-list', [
-            'insurances' => Insurance::orderBy('order_column')->paginate(15),
+            'insurances' => Insurance::where('name', 'like', '%' . $this->search . '%')
+                ->orderBy($this->sortField, $this->sortDirection)
+                ->paginate(15),
         ]);
     }
 }

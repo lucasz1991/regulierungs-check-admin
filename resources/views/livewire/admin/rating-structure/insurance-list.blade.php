@@ -2,20 +2,41 @@
     <div class="flex justify-between mb-4">
         <h1 class="flex items-center justify-center text-lg px-2 py-1 w-max">
             <span class="w-max">Versicherungen</span>
-            <span class="ml-2 bg-white text-sky-600 text-xs shadow border border-sky-200 font-bold aspect-square px-2 py-1 flex items-center justify-center rounded-full  h-7  leading-none">
-            {{ $insurances->total() }}
+            <span class="ml-2 mr-4 bg-white text-sky-600 text-xs shadow border border-sky-200 font-bold aspect-square px-2 py-1 flex items-center justify-center rounded-full  h-7  leading-none">
+            {{ $insurancesAllCount }}
             </span>
+            <x-list-comps.search-field wire:model.live.debounce.500ms="search" :results-count="$insurances->total()" />
         </h1>
-        <x-link-button href="#" @click.prevent="$dispatch('open-insurance-form')" class="btn-xs py-0 leading-[0]">
-            +
-        </x-link-button>
+        <div class="flex items-center gap-2">
+            <x-link-button href="#" @click.prevent="$dispatch('open-insurance-form')" class="btn-xs py-0 leading-[0]">
+                <svg  class="w-3 aspect-square" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M416 208H272V64c0-17.67-14.33-32-32-32h-32c-17.67 0-32 14.33-32 32v144H32c-17.67 0-32 14.33-32 32v32c0 17.67 14.33 32 32 32h144v144c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32V304h144c17.67 0 32-14.33 32-32v-32c0-17.67-14.33-32-32-32z"/></svg>
+            </x-link-button>
+            <x-dropdown class="">
+                <x-slot name="trigger">
+                    <x-link-button href="#" class="btn-xs py-0 leading-[0]">
+                        <svg  class="w-3 aspect-square" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8.046 40.2299"><defs><style>.a{fill:#2e2f30;}</style></defs><path class="a" d="M4.023,8.046A4.023,4.023,0,1,1,8.046,4.023,4.02293,4.02293,0,0,1,4.023,8.046Zm0,16.0919a4.023,4.023,0,1,1,4.023-4.023A4.02293,4.02293,0,0,1,4.023,24.1379Zm0,16.092a4.023,4.023,0,1,1,4.023-4.023A4.02293,4.02293,0,0,1,4.023,40.2299Z"/></svg>
+                    </x-link-button>
+                </x-slot>
+                <x-slot name="content">
+                    <x-dropdown-link wire:click="analyzeAllInsuranceOnlineViaGpt" class="cursor-pointer">
+                        <svg class="w-3 aspect-square mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M80 160l26.66-53.33L160 80l-53.34-26.67L80 0 53.34 53.34 0 80l53.34 26.67L80 160zm144-64l16-32 32-16-32-16-16-32-16 32-32 16 32 16 16 32zm234.66 245.33L432 288l-26.66 53.33L352 368l53.34 26.67L432 448l26.66-53.33L512 368l-53.34-26.67zM400 192c8.84 0 16-7.16 16-16v-27.96l91.87-101.83c5.72-6.32 5.48-16.02-.55-22.05L487.84 4.69c-6.03-6.03-15.73-6.27-22.05-.55L186.6 256H144c-8.84 0-16 7.16-16 16v36.87L10.53 414.84c-13.57 12.28-14.1 33.42-1.16 46.36l41.43 41.43c12.94 12.94 34.08 12.41 46.36-1.16L376.34 192H400z"/></svg>
+                       Ai Analyze All 
+                    </x-dropdown-link>
+                </x-slot>
+            </x-dropdown>
+        </div>
     </div>
-    <div>
-            <button wire:click.stop="analyzeAllInsuranceOnlineViaGpt()"
-            class="block w-full text-left px-4 py-2 hover:bg-blue-100">Analyze All Insurance Online</button>
-            </div>
     @livewire('admin.rating-structure.insurance.create-edit')
-
+    @if (session()->has('message'))
+        <div class="bg-green-100 text-green-700 p-2 rounded mb-4">
+            {{ session('message') }}
+        </div>
+    @endif
+    @if (session()->has('error'))
+        <div class="bg-red-100 text-red-700 p-2 rounded mb-4">
+            {{ session('error') }}
+        </div>
+    @endif
     <div class="w-full">
         <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300 text-left">
             <div class="col-span-6">Name</div>
@@ -23,7 +44,6 @@
             <div class="col-span-2">Status</div>
             <div class="col-span-2">Erstellung</div>
         </div>
-
         <div class="min-w-max lg:min-w-full" x-sort="$dispatch('orderInsurance', { item: $item, position: $position })">
             @foreach ($insurances as $insurance)
                 <div x-sort:item="{{ $insurance }}">

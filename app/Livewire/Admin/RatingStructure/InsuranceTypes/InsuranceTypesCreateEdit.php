@@ -6,6 +6,9 @@ use Livewire\Component;
 use App\Models\InsuranceType;
 use App\Models\InsuranceSubtype;
 use App\Models\Insurance;
+use Illuminate\Support\Facades\Log;
+use App\Support\PivotSorter;
+
 
 class InsuranceTypesCreateEdit extends Component
 {
@@ -22,7 +25,11 @@ class InsuranceTypesCreateEdit extends Component
     public $assignedInsuranceSubTypes = [];
     public $insuranceSubTypeToAdd = null;
 
-    protected $listeners = ['open-insurance-type-form' => 'open'];
+    protected $listeners = [
+        'open-insurance-type-form' => 'open',
+        'reorderAssignedInsuranceSubTypes' => 'handleReorderAssignedInsuranceSubTypes',
+        'reorderAssignedInsurances' => 'handleReorderAssignedInsurances',
+    ];
 
     public function open($id = null)
     {
@@ -46,11 +53,11 @@ class InsuranceTypesCreateEdit extends Component
             $this->is_active = $type->is_active;
 
             $this->assignedInsurances = $type->insurances
-                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name])
+                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_column' => $i->pivot->order_column])
                 ->values()
                 ->toArray();
-            $this->assignedInsuranceSubTypes = $type->subtypes
-                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name])
+            $this->assignedInsuranceSubTypes = $type->insuranceSubtypes
+                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_id' => $i->pivot->order_id])
                 ->values()
                 ->toArray();
         }
@@ -76,12 +83,13 @@ class InsuranceTypesCreateEdit extends Component
         $syncData = collect($this->assignedInsurances)->mapWithKeys(function($item, $index) {
             return [$item['id'] => ['order_column' => $index]];
         })->toArray();
+
         $type->insurances()->sync($syncData);
 
         $syncDataSubTypes = collect($this->assignedInsuranceSubTypes)->mapWithKeys(function($item, $index) {
             return [$item['id'] => ['order_id' => $index]];
         })->toArray();
-        $type->subtypes()->sync($syncDataSubTypes);
+        $type->insuranceSubtypes()->sync($syncDataSubTypes);
 
         $this->dispatch('refreshInsuranceTypes');
         $this->showModal = false;
@@ -116,7 +124,7 @@ class InsuranceTypesCreateEdit extends Component
         if (!$insuranceSubType) return;
 
         if (!collect($this->assignedInsuranceSubTypes)->pluck('id')->contains($insuranceSubType->id)) {
-            $this->assignedInsuranceSubTypes[] = ['id' => $insuranceSubType->id, 'name' => $insuranceSubType->name];
+            $this->assignedInsuranceSubTypes[] = ['id' => $insuranceSubType->id, 'name' => $insuranceSubType->name , 'order_id' => count($this->assignedInsuranceSubTypes)];
         }
         $this->insuranceSubTypeToAdd = null;
     }
@@ -129,21 +137,36 @@ class InsuranceTypesCreateEdit extends Component
             ->toArray();
     }
 
-    public function reorderAssignedInsurances($items)
+    public function handleReorderAssignedInsurances($item, $position)
     {
-        $this->assignedInsurances = collect($items)->map(fn($i) => [
-            'id' => $i['id'],
-            'name' => $i['name']
-        ])->toArray();
+        $model = InsuranceType::find($this->insuranceTypeId);
+        if (!$model) return;
+
+        PivotSorter::reorder(
+            $model,
+            'insurances',
+            $item,
+            $position,
+            'order_column',
+            $this->assignedInsurances
+        );
     }
 
-    public function reorderAssignedInsuranceSubTypes($items)
+    public function handleReorderAssignedInsuranceSubTypes($item, $position)
     {
-        $this->assignedInsuranceSubTypes = collect($items)->map(fn($i) => [
-            'id' => $i['id'],
-            'name' => $i['name']
-        ])->toArray();
+        $model = InsuranceType::find($this->insuranceTypeId);
+        if (!$model) return;
+
+        PivotSorter::reorder(
+            $model,
+            'insuranceSubtypes',
+            $item,
+            $position,
+            'order_id',
+            $this->assignedInsuranceSubTypes
+        );
     }
+
 
     public function render()
     {

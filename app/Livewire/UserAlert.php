@@ -20,10 +20,21 @@ class UserAlert extends Component
         $this->alertShow = true;
     }
 
-    public function mount()
-    {
-        $this->alertShow = false;
+public function mount()
+{
+    $this->alertShow = false;
+
+    if (session()->has('success')) {
+        $this->message = session('success');
+        $this->type = 'success';
+        $this->alertShow = true;
+    } elseif (session()->has('error')) {
+        $this->message = session('error');
+        $this->type = 'error';
+        $this->alertShow = true;
     }
+}
+
     
     public function render()
     {

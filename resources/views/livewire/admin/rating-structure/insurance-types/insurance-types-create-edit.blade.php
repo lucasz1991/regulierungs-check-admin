@@ -146,7 +146,8 @@
                                 </div>
                                 <div class="min-w-max lg:min-w-full max-h-[30vh] overflow-y-scroll p-3 bg-white scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 shadow-inner border scroll-container" x-sort="$dispatch('reorderAssignedInsuranceSubTypes', { item: $item, position: $position })">
                                     @foreach ($assignedInsuranceSubTypes as $assignedInsuranceSubType)
-                                        <div x-sort:item="{ id: {{ $assignedInsuranceSubType['id'] }}, name: '{{ $assignedInsuranceSubType['name'] }}' }">
+                                        <div x-sort:item="{ id: {{ $assignedInsuranceSubType['id'] }}, name: '{{ $assignedInsuranceSubType['name'] }}'  }">
+
                                             <div class="bg-blue-50 px-3 py-2 rounded flex justify-between items-center border mb-2">
                                                 <span class="text-sm">{{ $assignedInsuranceSubType['name'] }}</span>
                                                 <button type="button" class="text-red-500" wire:click="removeInsuranceSubType({{ $assignedInsuranceSubType['id'] }})">

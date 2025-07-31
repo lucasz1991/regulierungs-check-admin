@@ -8,6 +8,7 @@ use App\Models\InsuranceSubtype;
 use App\Models\Insurance;
 use Illuminate\Support\Facades\Log;
 use App\Support\PivotSorter;
+use Illuminate\Support\Str;
 
 
 class InsuranceTypesCreateEdit extends Component
@@ -35,7 +36,6 @@ class InsuranceTypesCreateEdit extends Component
     {
         $this->reset();
         if ($id) {
-            $this->showModal = true;
             $this->availableInsurances = Insurance::whereDoesntHave('insuranceTypes', function ($query) use ($id) {
                 if ($id) {
                     $query->where('insurance_type_id', $id);
@@ -51,16 +51,17 @@ class InsuranceTypesCreateEdit extends Component
             $this->name = $type->name;
             $this->description = $type->description;
             $this->is_active = $type->is_active;
-
+            
             $this->assignedInsurances = $type->insurances
-                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_column' => $i->pivot->order_column])
-                ->values()
-                ->toArray();
+            ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_column' => $i->pivot->order_column])
+            ->values()
+            ->toArray();
             $this->assignedInsuranceSubTypes = $type->insuranceSubtypes
-                ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_id' => $i->pivot->order_id])
-                ->values()
-                ->toArray();
+            ->map(fn($i) => ['id' => $i->id, 'name' => $i->name , 'order_id' => $i->pivot->order_id])
+            ->values()
+            ->toArray();
         }
+        $this->showModal = true;
     }
 
     public function save()
@@ -75,6 +76,7 @@ class InsuranceTypesCreateEdit extends Component
             ['id' => $this->insuranceTypeId],
             [
                 'name' => $this->name,
+                'slug' => Str::slug($this->name),
                 'description' => $this->description,
                 'is_active' => $this->is_active,
             ]

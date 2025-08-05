@@ -1,7 +1,28 @@
 <div>
     <x-dialog-modal wire:model="showModal">
         <x-slot name="title">
-            {{ $insuranceId ? 'Versicherung bearbeiten' : 'Neue Versicherung erstellen' }}
+            <div class="flex items-center justify-between space-x-2">
+                <div>
+                    {{ $insuranceId ? 'Versicherung bearbeiten' : 'Neue Versicherung erstellen' }}
+                </div>
+                <div>
+                    @if($insuranceId)
+                    <x-dropdown class="">
+                        <x-slot name="trigger">
+                            <x-link-button href="#" class="btn-xs py-0 leading-[0]">
+                                <svg  class="w-3 aspect-square" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8.046 40.2299"><defs><style>.a{fill:#2e2f30;}</style></defs><path class="a" d="M4.023,8.046A4.023,4.023,0,1,1,8.046,4.023,4.02293,4.02293,0,0,1,4.023,8.046Zm0,16.0919a4.023,4.023,0,1,1,4.023-4.023A4.02293,4.02293,0,0,1,4.023,24.1379Zm0,16.092a4.023,4.023,0,1,1,4.023-4.023A4.02293,4.02293,0,0,1,4.023,40.2299Z"/></svg>
+                            </x-link-button>
+                        </x-slot>
+                        <x-slot name="content">
+                            <x-dropdown-link wire:click.stop="analyzeInsuranceOnlineViaGpt()" class="cursor-pointer">
+                                <svg class="w-3 aspect-square mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path d="M80 160l26.66-53.33L160 80l-53.34-26.67L80 0 53.34 53.34 0 80l53.34 26.67L80 160zm144-64l16-32 32-16-32-16-16-32-16 32-32 16 32 16 16 32zm234.66 245.33L432 288l-26.66 53.33L352 368l53.34 26.67L432 448l26.66-53.33L512 368l-53.34-26.67zM400 192c8.84 0 16-7.16 16-16v-27.96l91.87-101.83c5.72-6.32 5.48-16.02-.55-22.05L487.84 4.69c-6.03-6.03-15.73-6.27-22.05-.55L186.6 256H144c-8.84 0-16 7.16-16 16v36.87L10.53 414.84c-13.57 12.28-14.1 33.42-1.16 46.36l41.43 41.43c12.94 12.94 34.08 12.41 46.36-1.16L376.34 192H400z"/></svg>
+                                Ai Analyze
+                            </x-dropdown-link>
+                        </x-slot>
+                    </x-dropdown>
+                    @endif
+                </div>
+            </div>
         </x-slot>
 
         <x-slot name="content">
@@ -25,11 +46,6 @@
                         </label>
                     </div>
             </div>
-            <div>
-            <button wire:click.stop="analyzeInsuranceOnlineViaGpt()"
-            class="block w-full text-left px-4 py-2 hover:bg-blue-100">AnalyzeInsuranceOnlineViaGpt</button>
-            </div>
-
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
                 <textarea wire:model.defer="description" rows="3" class="mt-1 block w-full border rounded px-4 py-2"></textarea>

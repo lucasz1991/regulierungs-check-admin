@@ -3,7 +3,6 @@
         <x-slot name="title">
             {{ $insuranceTypeId ? 'Versicherungstyp bearbeiten' : 'Neuer Versicherungstyp' }}
         </x-slot>
-
         <x-slot name="content">
             <div class="space-y-4">
                 <div class="mb-4 grid grid-cols-5 gap-4">
@@ -31,10 +30,7 @@
                     <textarea wire:model.defer="description" rows="3" class="mt-1 block w-full border rounded px-4 py-2"></textarea>
                     @error('description') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                 </div>
-
-
-
-                            <!-- Accordion -->
+                <!-- Accordion -->
                 <div x-data="{ openTab: 'incurance' }" class="">
                     <!-- Tabs -->
                     <div class="flex -mb-[1px] space-x-2">
@@ -59,14 +55,12 @@
                             </h1>
                         </button>
                     </div>
-
                     <!-- Basic Settings -->
                     <div x-show="openTab === 'incurance'">
                         <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300  z-10">
                                 <!-- Sortierbare Liste -->
                                 <div class="mt-4" x-data="{ addInsuranceOpen: false }">
                                     <div class="flex justify-end items-center mb-3">
-                                        
                                         <!-- Dropdown für neue Versicherung -->
                                         <div class="relative" >
                                             <button @click="addInsuranceOpen = !addInsuranceOpen" type="button" class="flex items-center text-sm px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50">
@@ -75,7 +69,6 @@
                                                 </svg>
                                                 Hinzufügen
                                             </button>
-                    
                                         </div>
                                     </div>
                                     <div x-show="addInsuranceOpen" @click.away="addInsuranceOpen = false" class="mt-2 mb-5  bg-white border rounded">
@@ -90,7 +83,6 @@
                                                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
                                                         </svg>
-                                                        
                                                     </button>
                                                 </div>
                                             </div>
@@ -106,18 +98,15 @@
                                             </div>
                                         @endforeach
                                     </div>
-
                                 </div>
                         </div>
                     </div>
-
                     <!-- SEO Settings -->
                     <div x-show="openTab === 'incuranceSubType'" class="">
                         <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300  z-10">
                             <!-- Sortierbare Liste -->
                             <div class="mt-4" x-data="{ addInsuranceSubTypeOpen: false }">
                                 <div class="flex justify-end items-center mb-3">
-                                    
                                     <!-- Dropdown für neue Versicherung -->
                                     <div class="relative" >
                                         <button @click="addInsuranceSubTypeOpen = !addInsuranceSubTypeOpen" type="button" class="flex items-center text-sm px-2 py-1 bg-white border rounded shadow-sm hover:bg-gray-50">
@@ -126,7 +115,6 @@
                                             </svg>
                                             Hinzufügen
                                         </button>
-                                        
                                     </div>
                                 </div>
                                 <div x-show="addInsuranceSubTypeOpen" @click.away="addInsuranceSubTypeOpen = false" class="mt-2 mb-5  bg-white border rounded">
@@ -147,7 +135,6 @@
                                 <div class="min-w-max lg:min-w-full max-h-[30vh] overflow-y-scroll p-3 bg-white scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 shadow-inner border scroll-container" x-sort="$dispatch('reorderAssignedInsuranceSubTypes', { item: $item, position: $position })">
                                     @foreach ($assignedInsuranceSubTypes as $assignedInsuranceSubType)
                                         <div x-sort:item="{ id: {{ $assignedInsuranceSubType['id'] }}, name: '{{ $assignedInsuranceSubType['name'] }}'  }">
-
                                             <div class="bg-blue-50 px-3 py-2 rounded flex justify-between items-center border mb-2">
                                                 <span class="text-sm">{{ $assignedInsuranceSubType['name'] }}</span>
                                                 <button type="button" class="text-red-500" wire:click="removeInsuranceSubType({{ $assignedInsuranceSubType['id'] }})">
@@ -163,7 +150,6 @@
                 </div>
             </div>
         </x-slot>
-
         <x-slot name="footer">
         <div class="flex items-center space-x-3">
                 <x-button wire:click="save" class="btn-xs text-sm">

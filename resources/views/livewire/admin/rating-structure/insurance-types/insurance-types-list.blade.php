@@ -10,7 +10,6 @@
             +
         </x-link-button>
     </div>
-
     <div class="w-full">
         <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300 text-left">
             <div class="col-span-4">Name</div>
@@ -19,7 +18,6 @@
             <div class="col-span-2">Status</div>
             <div class="col-span-2">Erstellung</div>
         </div>
-
         <div class="min-w-max lg:min-w-full" x-sort="$dispatch('orderInsuranceType', { item: $item, position: $position })">
             @foreach ($types as $type)
                 <div x-sort:item="{ id: {{ $type->id }} }">
@@ -27,15 +25,12 @@
                         <div class="col-span-4 font-semibold truncate pr-4">
                             {{ $type->name }}
                         </div>
-
                         <div class="col-span-2 text-xs text-gray-700">
                             <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $type->insurances->count() }}</span>
                         </div>
-
                         <div class="col-span-2 text-xs text-gray-700">
                             <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $type->subtypes->count() }}</span>
                         </div>
-
                         <div class="col-span-2 text-sm">
                             @if($type->is_active)
                                 <span class="text-green-700 bg-green-50 px-2 py-1 text-xs rounded">Aktiv</span>
@@ -43,12 +38,10 @@
                                 <span class="text-red-700 bg-red-50 px-2 py-1 text-xs rounded">Inaktiv</span>
                             @endif
                         </div>
-
                         <div class="col-span-2 text-xs text-gray-500">
                             <span>{{ $type->created_at->locale('de')->diffForHumans() }}</span><br>
                             <small>(Bearbeitet: {{ $type->updated_at->locale('de')->diffForHumans() }})</small>
                         </div>
-
                         <div class="absolute right-0">
                             <div x-data="{ open: false }" class="relative">
                                 <button @click="open = !open" class="w-max text-center px-4 py-2 text-xl font-semibold hover:bg-gray-100 rounded-lg">
@@ -81,5 +74,4 @@
         </div>
     </div>
     @livewire('admin.rating-structure.insurance-types.insurance-types-create-edit')
-
 </div>

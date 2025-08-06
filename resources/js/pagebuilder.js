@@ -9,12 +9,12 @@ import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
 
-window.initGrapesJs = async function() {
+window.initGrapesJs = async function(grapejskey) {
     if (!document.getElementById("studio-editor") && document.getElementById('studio-editor').getAttribute('data-project') != null) {
         return;
     }
     var selectedProject = document.getElementById('studio-editor').getAttribute('data-project');
-    console.log("Initialisiere GrapesJS Studio mit Lizenz:", 'a15cafec95f0407b8d6ed899618f792c8a45f41b505c4736a22acb54236e8b15');
+    console.log("Initialisiere GrapesJS Studio mit Lizenz:", grapejskey);
     if (window.editor) {
         console.log("Bestehenden GrapesJS Editor zerstören...");
         window.editor.destroy();
@@ -23,7 +23,7 @@ window.initGrapesJs = async function() {
     try {
         window.editor = await createStudioEditor({
             root: '#studio-editor',
-            licenseKey: 'a15cafec95f0407b8d6ed899618f792c8a45f41b505c4736a22acb54236e8b15',
+            licenseKey: grapejskey,
             plugins: [
               rteTinyMce.init({
                 enableOnClick: true,

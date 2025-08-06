@@ -31,14 +31,14 @@
     @endif
     @if($grapejsSetting)
         <div 
-            x-effect="setTimeout(() => {initGrapesJs();}, 300)"
+            x-effect="setTimeout(() => {initGrapesJs('{{ $grapejsSetting }}');}, 300)"
             id="studio-editor"
             data-project="{{ $project->id }}"
             style="height: 80vh"
             wire:ignore
         >
-            <div x-cloak class="flex items-center gap-2">
-                Editor konnte nicht geladen werden. Bitte lade die Seite neu.
+            <div x-show="! $grapejsSetting" x-cloak class="flex items-center gap-2">
+                Editor konnte nicht geladen werden. Bitte lade die Seite neu.<br>
                 <button 
                     @click="window.location.reload()"
                     class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded hover:bg-blue-600 transition">

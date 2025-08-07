@@ -57,7 +57,7 @@
                     <td class="border px-4 py-2">{{ $content->key }}</td>
                     <td class="border px-4 py-2">{!! $content->value ? Str::limit($content->value, 30) : 'Keine Antwort' !!}</td>
                     <td class="border px-4 py-2">
-                        <div class="">
+                        <div class="text-right">
                             <div x-data="{ open: false }" class="relative">
                                 <button @click="open = !open" class="w-max text-center px-4  text-xl font-semibold hover:bg-gray-100  rounded-lg">
                                     &#x22EE;

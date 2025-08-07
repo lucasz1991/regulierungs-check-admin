@@ -14,10 +14,10 @@
         <!-- Modal für das Erstellen einer neuen FAQ -->
         <x-dialog-modal wire:model="faqModalOpen">
             <x-slot name="title">
-                <h3 class="text-xl font-semibold">Neue FAQ hinzufügen</h3>
+                <h3 class="text-xl font-semibold">FAQ {{ $newKey ? 'bearbeiten' : 'hinzufügen' }}</h3>
             </x-slot>
             <x-slot name="content">
-                <form wire:submit.prevent="addContent" class="space-y-4">
+                <form wire:submit.prevent="updateOrCreate" class="space-y-4">
                     <div>
                         <label for="newKey" class="block text-sm font-medium text-gray-700">Frage</label>
                         <input type="text" id="newKey" wire:model="newKey" required class="mt-1 block w-full border rounded px-4 py-2">
@@ -34,32 +34,59 @@
                 </form>
             </x-slot>
             <x-slot name="footer">
-                <button wire:click="addContent" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                <button wire:click="updateOrCreate" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
                     Speichern
                 </button>
-                <button @click="faqModalOpen = false" class="text-gray-500 hover:text-gray-700 px-4 py-2">Abbrechen</button>
+                <button wire:click="closeForm" class="text-gray-500 hover:text-gray-700 px-4 py-2">Abbrechen</button>
             </x-slot>
         </x-dialog-modal>
     </div>
+
     <!-- Tabelle mit FAQ-WebContents -->
-    <table class="table-auto w-full mb-6">
-        <thead>
+    <x-list-comps.table :resultsCount="$contents->count()">
+        <x-slot name="header">
             <tr class="bg-gray-100">
                 <th class="px-4 py-2 text-left border">Frage</th>
                 <th class="px-4 py-2 text-left border">Antwort</th>
-                <th class="px-4 py-2 border">Aktionen</th>
+                <th class="px-4 py-2 text-left border">Aktionen</th>
             </tr>
-        </thead>
-        <tbody>
+        </x-slot>
+        <x-slot name="body">
             @foreach ($contents as $content)
-                <tr>
+                <tr class="hover:bg-gray-50 transition-colors duration-200 relative">
                     <td class="border px-4 py-2">{{ $content->key }}</td>
-                    <td class="border px-4 py-2">{{ $content->value }}</td>
-                    <td class="border px-4 py-2 text-center">
-                        <button wire:click="deleteContent({{ $content->id }})" class="text-red-500 hover:text-red-700">Löschen</button>
-                    </td>
+                    <td class="border px-4 py-2">{!! $content->value ? Str::limit($content->value, 30) : 'Keine Antwort' !!}</td>
+                    <td class="border px-4 py-2">
+                        <div class="">
+                            <div x-data="{ open: false }" class="relative">
+                                <button @click="open = !open" class="w-max text-center px-4  text-xl font-semibold hover:bg-gray-100  rounded-lg">
+                                    &#x22EE;
+                                </button>
+                            <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-10">
+                                <ul>
+                                        <li>
+                                            <button 
+                                                wire:click="editContent({{ $content->id }})"
+                                                class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                                Bearbeiten
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button wire:click="deleteContent({{ $content->id }})" 
+                                            class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                                Löschen
+                                            </button>
+                                        </li>
+                                </ul>
+                            </div>
+                        </div>
+</td>
                 </tr>
             @endforeach
-        </tbody>
-    </table>
+        </x-slot>
+    </x-list-comps.table>
+
+
+
+
 </div>

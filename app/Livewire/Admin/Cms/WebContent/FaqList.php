@@ -13,6 +13,7 @@ class FaqList extends Component
     public $newValue;
     public $newType = 'faq';
     public $faqModalOpen = false;
+    public $editingId = null;
 
     public function mount()
     {
@@ -24,24 +25,46 @@ class FaqList extends Component
         $this->contents = WebContent::where('type', 'faq')->get();
     }
 
-    public function addContent()
+    public function editContent($id)
+    {
+        $content = WebContent::findOrFail($id);
+        $this->editingId = $id;
+        $this->newKey = $content->key;
+        $this->newValue = $content->value;
+        $this->newType = $content->type;
+        $this->faqModalOpen = true;
+    }
+
+    public function closeForm()
+    {
+        $this->reset(['newKey', 'newValue', 'newType', 'editingId']);
+        $this->faqModalOpen = false;
+        $this->loadContents();
+    }
+
+
+    public function updateOrCreate()
     {
         $this->validate([
-            'newKey' => 'required|string|max:255|unique:web_contents,key',
+            'newKey' => 'required|string|max:255|unique:web_contents,key,' . $this->editingId,
             'newValue' => 'required|string',
             'newType' => 'required|in:text,html,faq',
         ]);
 
-        WebContent::create([
+        WebContent::updateOrCreate([
+            'id' => $this->editingId,
+        ], [
             'key' => $this->newKey,
             'value' => $this->newValue,
             'type' => $this->newType,
         ]);
-
-        $this->reset(['newKey', 'newValue', 'newType']);
+        $this->faqModalOpen = false;
+        $this->reset(['newKey', 'newValue', 'newType', 'editingId']);
         $this->loadContents();
-        session()->flash('success', 'WebContent hinzugefügt!');
+        session()->flash('success', 'WebContent gespeichert!');
     }
+
+
 
     public function deleteContent($id)
     {

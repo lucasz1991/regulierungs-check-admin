@@ -91,8 +91,7 @@ class WebPage extends Model
             $apiUrl = '';
         }
 
-        return $this->header_image
-            ? $apiUrl . '/storage/' . $this->header_image : null;
+        return $this->header_image ? $apiUrl . '/storage/' . $this->header_image : null;
     }
 
     // Beziehung zum Pagebuilder-Projekt

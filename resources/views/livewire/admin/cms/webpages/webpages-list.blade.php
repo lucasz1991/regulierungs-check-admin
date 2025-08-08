@@ -226,8 +226,8 @@
                                 <!-- Button / Bild für das Öffnen der Datei-Auswahl -->
                                 <button @click="showFileInput = !showFileInput"
                                         class="border rounded p-2 bg-white flex items-center justify-center  w-full aspect-video mt-2">
-                                    @if($header_image) 
-                                        <img src="{{ $page->getHeaderImageUrlAttribute() }}" class="w-full h-full object-cover object-center rounded border">
+                                    @if($header_image_url) 
+                                        <img src="{{ $header_image_url }}" class="w-full h-full object-cover object-center rounded border">
                                     @else
                                         <span class="text-gray-400 text-xs">Kein Bild vorhanden</span>
                                     @endif

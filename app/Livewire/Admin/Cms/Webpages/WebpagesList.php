@@ -22,7 +22,7 @@ class WebpagesList extends Component
     public $editingId = null;
     public $modalOpen = false;
     public $page = null;
-    
+    public $header_image_url = null;
 
 
 
@@ -40,6 +40,7 @@ class WebpagesList extends Component
         $this->editingId = $this->page->id;
         $this->fill($this->page->toArray());
         $this->header_image = $this->page->header_image; 
+        $this->header_image_url = $this->page->getHeaderImageUrlAttribute(); 
         $this->showHeader = $this->page->settings['showHeader'] ?? false;
 
         $this->modalOpen = true;
@@ -122,6 +123,7 @@ class WebpagesList extends Component
         $this->custom_meta = [];
         $this->icon = null;
         $this->header_image = null;
+        $this->header_image_url = null;
         $this->new_header_image = null;
         $this->is_active = true;
         $this->published_from = $this->published_until = null;

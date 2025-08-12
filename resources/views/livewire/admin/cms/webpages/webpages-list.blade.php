@@ -248,10 +248,10 @@
                                         <option value="center">Zentriert</option>
                                         <option value="left">Links</option>
                                         <option value="right">Rechts</option>
-                                        <option value="top-left">Links - Oben</option>
-                                        <option value="top-right">Rechts - Oben</option>
-                                        <option value="bottom-left">Links - Unten</option>
-                                        <option value="bottom-right">Rechts - Unten</option>
+                                        <option value="top left">Links - Oben</option>
+                                        <option value="top right">Rechts - Oben</option>
+                                        <option value="bottom left">Links - Unten</option>
+                                        <option value="bottom right">Rechts - Unten</option>
                                     </select>
                                     @error('header_image_positioning') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                 </div>

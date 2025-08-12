@@ -54,7 +54,7 @@ class WebpagesList extends Component
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
             'custom_meta' => 'nullable|array',
-            'new_header_image' => 'nullable|image|max:2048',
+            'new_header_image' => 'nullable|image|max:16048',
         ]);
 
         if (!$this->slug) {
@@ -65,6 +65,10 @@ class WebpagesList extends Component
         if ($this->new_header_image) {
             if ($this->header_image) {
                 $this->deleteImageViaMediaController($this->header_image); // Altes Bild löschen
+            }
+            // Bildgröße überprüfen und korrigieren sodass es höchstens 700kb
+            if ($this->new_header_image->getSize() > 700 * 1024) {
+                $this->new_header_image = $this->resizeImage($this->new_header_image, 700);
             }
             $this->header_image = $this->uploadImageViaMediaController($this->new_header_image);
         }

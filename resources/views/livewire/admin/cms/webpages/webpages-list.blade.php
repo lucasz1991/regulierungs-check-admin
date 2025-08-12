@@ -240,6 +240,21 @@
                                         <span class="text-sm text-green-600">Neues Bild ausgewählt</span>
                                     @endif
                                 </div>
+                                @error('new_header_image') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                <div class="mt-2">
+                                    <label class="block text-sm font-medium">Header-Bild Positionierung</label>
+                                    <select wire:model="header_image_positioning" class="w-full border rounded px-4 py-2 mt-2">
+                                        <option value="center">Zentriert</option>
+                                        <option value="left">Links</option>
+                                        <option value="right">Rechts</option>
+                                        <option value="top-left">Links - Oben</option>
+                                        <option value="top-right">Rechts - Oben</option>
+                                        <option value="bottom-left">Links - Unten</option>
+                                        <option value="bottom-right">Rechts - Unten</option>
+                                    </select>
+                                    @error('header_image_positioning') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                </div>
                             </div>
                         </div>
     

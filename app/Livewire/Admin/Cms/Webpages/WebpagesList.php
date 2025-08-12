@@ -18,7 +18,7 @@ class WebpagesList extends Component
     public $title, $slug, $meta_title, $meta_description, $meta_keywords, $canonical_url, $robots_meta;
     public $og_title, $og_description, $og_image;
     public $custom_css, $custom_js, $custom_meta;
-    public $icon, $header_image, $new_header_image, $is_active, $published_from, $published_until, $language, $showHeader;
+    public $icon, $header_image, $new_header_image, $is_active, $published_from, $published_until, $language, $showHeader, $header_image_positioning;
     public $editingId = null;
     public $modalOpen = false;
     public $page = null;
@@ -42,6 +42,7 @@ class WebpagesList extends Component
         $this->header_image = $this->page->header_image; 
         $this->header_image_url = $this->page->getHeaderImageUrlAttribute(); 
         $this->showHeader = $this->page->settings['showHeader'] ?? false;
+        $this->header_image_positioning = $this->page->settings['header_image_positioning'] ?? 'center';
 
         $this->modalOpen = true;
     }
@@ -93,6 +94,7 @@ class WebpagesList extends Component
             'published_until' => $this->published_until,
             'settings' => [ 
                 'showHeader' => $this->showHeader, 
+                'header_image_positioning' => $this->header_image_positioning,
             ],
         ];
 

@@ -242,9 +242,46 @@
                                 </div>
                                 @error('new_header_image') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
 
-                                <div class="mt-2">
+                                <div class="mt-2"
+                                    x-data="{
+                                        value: @entangle('header_image_positioning'),
+                                        showCustom: false,
+                                    }"
+                                    x-init="showCustom = !/^[A-Za-z]/.test(value || '')"
+                                >
                                     <label class="block text-sm font-medium">Header-Bild Positionierung</label>
-                                    <select wire:model="header_image_positioning" class="w-full border rounded px-4 py-2 mt-2">
+
+                                    <div>
+                                        <label for="customPositioning" class="flex items-center cursor-pointer mt-2">
+                                            <input
+                                                id="customPositioning"
+                                                type="checkbox"
+                                                class="sr-only peer"
+                                                x-model="showCustom"
+                                                @change="
+                                                    // Beim Umschalten den Wert passend setzen,
+                                                    // damit die Regex-Logik nicht sofort wieder 'zurückspringt'.
+                                                    if (showCustom) {
+                                                        // Custom aktiv: falls aktuell ein Wort wie 'center' gesetzt ist,
+                                                        // leeren wir den Wert (oder setze einen Beispielwert).
+                                                        if (/^[A-Za-z]/.test(value || '')) value = '';
+                                                    } else {
+                                                        // Custom aus: Standardwert setzen, der mit Buchstabe beginnt.
+                                                        if (!/^[A-Za-z]/.test(value || '')) value = 'center';
+                                                    }
+                                                "
+                                            />
+                                            <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                                            <span class="ms-3 text-sm font-medium">Custom</span>
+                                        </label>
+                                    </div>
+
+                                    {{-- Vordefinierte Positionen (nur wenn showCustom = false) --}}
+                                    <select
+                                        x-show="!showCustom"
+                                        x-model="value"
+                                        class="w-full border rounded px-4 py-2 mt-2"
+                                    >
                                         <option value="center">Zentriert</option>
                                         <option value="left">Links</option>
                                         <option value="right">Rechts</option>
@@ -253,8 +290,18 @@
                                         <option value="bottom left">Links - Unten</option>
                                         <option value="bottom right">Rechts - Unten</option>
                                     </select>
-                                    @error('header_image_positioning') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+
+                                    {{-- Freitext (nur wenn showCustom = true) --}}
+                                    <div x-show="showCustom" class="mt-2">
+                                        <input type="text" x-model="value" class="w-full border rounded px-4 py-2"
+                                            placeholder="z. B. 50% 20%">
+                                    </div>
+
+                                    @error('header_image_positioning')
+                                        <span class="text-red-500 text-sm">{{ $message }}</span>
+                                    @enderror
                                 </div>
+
                             </div>
                         </div>
     

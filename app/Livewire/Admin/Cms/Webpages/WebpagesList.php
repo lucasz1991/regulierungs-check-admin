@@ -59,7 +59,7 @@ class WebpagesList extends Component
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
             'custom_meta' => 'nullable|array',
-            'new_header_image' => 'nullable|image|max:16048',
+            'new_header_image' => 'nullable|image|mimes:jpeg,png,webp|max:16048',
         ]);
 
         if (!$this->slug) {

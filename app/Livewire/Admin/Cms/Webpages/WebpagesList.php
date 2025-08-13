@@ -10,6 +10,10 @@ use App\Http\Controllers\Admin\MediaController;
 use App\Models\WebPage;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Laravel\Facades\Image;
+use Illuminate\Http\UploadedFile;
+
+
 
 class WebpagesList extends Component
 {
@@ -136,7 +140,71 @@ class WebpagesList extends Component
         $this->page = null;
     }
 
+    protected function resizeImage($file, int $maxKb = 700): UploadedFile
+    {
+        $targetBytes = $maxKb * 1024;
+        $tmpDir = storage_path('app/tmp');
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0775, true);
+        }
 
+        // Bild laden
+        $image = Image::read($file->getRealPath());
+
+        // 1) Auf sinnvolle Maximalbreite runterskalieren (Proportionen bleiben)
+        $maxWidth = 1920;
+        if ($image->width() > $maxWidth) {
+            $image->scaleDown(width: $maxWidth);
+        }
+
+        // 2) Versuchsparameter
+        $quality = 85;       // Start-Qualität
+        $minQuality = 45;    // Nicht darunter gehen
+        $attempts  = 0;
+        $maxAttempts = 10;
+
+        // Wir probieren erst WebP (meist kleiner) und fallen bei Bedarf auf JPEG zurück
+        $useWebp = true;
+
+        do {
+            // Bei weiteren Versuchen, wenn noch zu groß: Qualität senken
+            if ($attempts > 0) {
+                $quality -= 5;
+                if ($quality < $minQuality) {
+                    // Wenn Qualität zu niedrig, noch etwas breiter runterskalieren (90 %)
+                    $quality = 80;
+                    $image->scaleDown(width: max(600, (int)round($image->width() * 0.9)));
+                }
+            }
+
+            // Encode
+            $encoded = $useWebp
+                ? $image->toWebp($quality)
+                : $image->toJpeg($quality); // JPEG strippt EXIF -> spart Bytes
+
+            // Wenn WebP aus irgendeinem Grund größer bleibt, fallback zu JPEG
+            if ($useWebp && strlen($encoded) > $targetBytes && $attempts >= 3) {
+                $useWebp = false;
+                $quality = 85; // reset für JPEG
+                $attempts++;
+                continue;
+            }
+
+            $attempts++;
+        } while (strlen($encoded) > $targetBytes && $attempts < $maxAttempts);
+
+        // Finales Format/MIME bestimmen
+        $extension = $useWebp ? 'webp' : 'jpg';
+        $mime = $useWebp ? 'image/webp' : 'image/jpeg';
+
+        // In temporäre Datei schreiben
+        $filename = 'header_' . uniqid() . '.' . $extension;
+        $tmpPath  = $tmpDir . DIRECTORY_SEPARATOR . $filename;
+        file_put_contents($tmpPath, $encoded);
+
+        // Als UploadedFile zurückgeben (test mode = true, d. h. keine echte HTTP-Uploadprüfung)
+        return new UploadedFile($tmpPath, $filename, $mime, null, true);
+    }
     
     protected function uploadImageViaMediaController($file)
     {
@@ -178,6 +246,7 @@ class WebpagesList extends Component
             \Log::warning('Bild konnte nicht über MediaController gelöscht werden: ' . $e->getMessage());
         }
     }
+
 
     public function render()
     {

@@ -36,6 +36,15 @@ class InsuranceSubtype extends Model
                     ->withPivot('order_id')
                     ->orderBy('pivot_order_id');
     }
+
+    public function insurances()
+    {
+        return Insurance::whereHas('insuranceTypes', function ($query) {
+            $query->whereHas('subtypes', function ($subQuery) {
+                $subQuery->where('insurance_subtypes.id', $this->id);
+            });
+        });
+    }
     
 
     public function ratingQuestions()

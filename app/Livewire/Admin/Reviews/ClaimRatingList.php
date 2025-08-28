@@ -30,6 +30,10 @@ class ClaimRatingList extends Component
     public $mailBody = '';
     public $mailLink = '';
 
+    protected $listeners = [
+        'anonymousReviewSaved' => 'resetPage',
+    ];
+
     public function updatingSearch()
     {   
         $this->resetPage();

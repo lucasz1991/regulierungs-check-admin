@@ -15,6 +15,13 @@
             <h2 class="text-2xl font-bold text-gray-700">Bewertungen</h2>
             <p class="text-sm text-gray-500">Insgesamt {{ $ratings->total() }} Einträge</p>
         </div>
+        <div>
+            <x-button class="btn btn-xs" x-on:click="Livewire.dispatch('showFormModal');">
+                + Anonyme Bewertung erfassen
+            </x-button>
+            <livewire:admin.reviews.anonymous-review-form />
+
+        </div>
     </div>
     <div x-data="{ focused: false }" @click.away="focused = false" x-cloak class="relative my-6">
             <div class="flex items-center border border-gray-300 rounded-full ring  ring-offset-4 transition-all duration-300"

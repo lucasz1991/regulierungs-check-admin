@@ -16,6 +16,7 @@ class ClaimRating extends Model
     // - pending: The claim rating is awaiting review.
     // - approved: The claim rating has been approved.
     // - rejected: The claim rating has been rejected.
+
     protected $fillable = [
         'user_id',
         'insurance_subtype_id',
@@ -26,8 +27,10 @@ class ClaimRating extends Model
         'status',
         'attachments',
         'rating_score',
+        'tag_ids',
         'moderator_comment',
         'is_public',
+        'admin_review',
         'verification_hash',
     ];
 
@@ -35,6 +38,7 @@ class ClaimRating extends Model
         'answers' => 'array',
         'attachments' => 'array',
         'is_public' => 'boolean',
+        'admin_review' => 'array',
     ];
 
     public function reanalyse(){

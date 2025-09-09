@@ -86,11 +86,28 @@
                     value="{{ $rating->id }}"
                     onclick="event.stopPropagation();"
                 />
-                <span>{{ $rating->id ?? '-' }}</span>
+                <span>
+                    @if($rating->is_public)
+                        <span class="text-green-400 bg-green-200 h-2 w-2 rounded-full inline-block mr-1" title="Öffentliche Bewertung">
+                        </span>
+                    @else
+                        <span class="text-gray-400 bg-gray-200 h-2 w-2 rounded-full inline-block mr-1" title="Öffentliche Bewertung">
+                        </span>
+                    @endif
+                    {{ $rating->id ?? '-' }}               
+                    @if($rating->user?->isAdmin())
+                        <span class="text-gray-400" title="Admin-Bewertung">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                        </span>
+                    @endif
+                </span>
             </div>
             <div class="col-span-3 cursor-pointer hover:text-blue-600" >
 
-                {{ $rating->user->name ?? '-' }}
+                {{ $rating->user->name ?? '-' }} 
+ 
             </div>
             <div class="col-span-3 cursor-pointer hover:text-blue-600">
                 {{ $rating->insurance->name ?? '-' }}
@@ -122,6 +139,15 @@
                                     class="block w-full text-left px-4 py-2 hover:bg-blue-100">Neu analysieren</button>
                             <button wire:click="toggleRatingSelection({{ $rating->id }})"
                                     class="block w-full text-left px-4 py-2 hover:bg-blue-100">auswählen</button>
+                            @if($rating->user?->isAdmin())
+                                @if($rating->is_public)
+                                    <button wire:click.stop="makePrivate({{ $rating->id }})"
+                                        class="block w-full text-left px-4 py-2 hover:bg-yellow-100 text-yellow-700">Privat machen</button>
+                                @else
+                                    <button wire:click.stop="makePublic({{ $rating->id }})"
+                                        class="block w-full text-left px-4 py-2 hover:bg-green-100 text-green-700">Öffentlich machen</button>
+                                @endif
+                            @endif
                             <button wire:click.stop="deleteRating({{ $rating->id }})"
                                     class="block w-full text-left px-4 py-2 hover:bg-red-100 text-red-700">Löschen</button>
                         </div>

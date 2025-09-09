@@ -147,6 +147,28 @@ class ClaimRatingList extends Component
         $claimRating->reanalyse();
     }
 
+    public function makePublic( $ratingId ){
+        $claimRating = ClaimRating::find($ratingId);
+        if($claimRating->user?->isAdmin()){
+            $claimRating->is_public = true;
+            $claimRating->save();
+            $this->dispatch('showAlert', 'Die Bewertung wurde öffentlich gemacht.', 'success');
+        } else {
+            $this->dispatch('showAlert', 'Nur Admin-Bewertungen können öffentlich gemacht werden.', 'error');
+        }
+    }
+
+    public function makePrivate( $ratingId ){
+        $claimRating = ClaimRating::find($ratingId);
+        if($claimRating->user?->isAdmin()){
+            $claimRating->is_public = false;
+            $claimRating->save();
+            $this->dispatch('showAlert', 'Die Bewertung wurde privat gemacht.', 'success');
+        } else {
+            $this->dispatch('showAlert', 'Nur Admin-Bewertungen können privat gemacht werden.', 'error');
+        }
+    }
+
     public function render()
     {
         $ratings = ClaimRating::with('insurance', 'user')

@@ -91,7 +91,7 @@
                         <span class="text-green-400 bg-green-200 h-2 w-2 rounded-full inline-block mr-1" title="Öffentliche Bewertung">
                         </span>
                     @else
-                        <span class="text-gray-400 bg-gray-200 h-2 w-2 rounded-full inline-block mr-1" title="Öffentliche Bewertung">
+                        <span class="text-gray-400 bg-gray-200 h-2 w-2 rounded-full inline-block mr-1" title="Private Bewertung">
                         </span>
                     @endif
                     {{ $rating->id ?? '-' }}               

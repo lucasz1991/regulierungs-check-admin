@@ -41,6 +41,18 @@ class ClaimRating extends Model
         'admin_review' => 'array',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::created(function ($claimRating) {
+            $claimRating->reanalyse();
+        });
+        static::updated(function ($claimRating) {
+            $claimRating->reanalyse();
+        });
+    }
+
     public function reanalyse(){
         $this->status = 'rating';
         $this->saveQuietly();

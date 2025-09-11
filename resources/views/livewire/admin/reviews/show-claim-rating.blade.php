@@ -1,8 +1,15 @@
 <div class="p-6 space-y-6 " @if($rating->status == 'rating') wire:poll.5s @endif x-data="{ rating: @entangle('rating').live }">
     <div class="flex items-center justify-between">
         <div>
+            {{-- back button --}}
+            <button onclick="window.history.back()"  class="flex items-center text-gray-500 hover:text-gray-800 transition duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span class="ml-2">Zurück</span>
+            </button>
             {{-- Kundeninformation --}}
-            <h1 class="text-2xl font-bold text-gray-800">Bewertung im Detail</h1>
+            <h1 class="text-2xl font-bold text-gray-800 mt-2">Bewertung im Detail</h1>
         </div>
         {{-- Drei-Punkte-Menü --}}
         <div x-data="{ open: false }" class="relative">

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Reviews;
 use Livewire\Component;
 use App\Models\ClaimRating;
 use App\Jobs\ClaimRatingAIEval;
+use Livewire\Attributes\On;
 
 class ShowClaimRating extends Component
 {
@@ -21,6 +22,15 @@ class ShowClaimRating extends Component
         $this->rating = ClaimRating::find($ratingId);
         $this->rating->reanalyse();
 
+    }
+
+    // Beispiel: In deiner Liste
+    #[On('claim-rating-updated')]
+    public function onUpdated($id)
+    {
+        // z.B. Refresh, Toast, etc.
+        $this->dispatch('toast', type: 'success', message: 'Bewertung aktualisiert.');
+        $this->resetPage();
     }
 
     public function render()

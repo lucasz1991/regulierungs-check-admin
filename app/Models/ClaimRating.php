@@ -48,9 +48,6 @@ class ClaimRating extends Model
         static::created(function ($claimRating) {
             $claimRating->reanalyse();
         });
-        static::updated(function ($claimRating) {
-            $claimRating->reanalyse();
-        });
     }
 
     public function reanalyse(){

@@ -1,4 +1,5 @@
 <div class="p-6 space-y-6 " @if($rating->status == 'rating') wire:poll.5s @endif x-data="{ rating: @entangle('rating').live }">
+    <livewire:admin.reviews.edit-claim-rating-modal lazy/>
     <div class="flex items-center justify-between">
         <div>
             {{-- back button --}}
@@ -35,7 +36,7 @@
                         </button>
                     </li>
                     <li>
-                        <button wire:click="editRating({{ $rating->id }})"
+                        <button   x-on:click="Livewire.dispatch('edit-claim-rating', { ratingId: {{ $rating->id }} })"
                                 class="block w-full px-4 py-2 text-left hover:bg-gray-100">
                             Bearbeiten
                         </button>

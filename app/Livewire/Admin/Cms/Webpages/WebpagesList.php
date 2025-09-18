@@ -60,10 +60,42 @@ class WebpagesList extends Component
             'meta_keywords' => 'nullable|string',
             'custom_meta' => 'nullable|array',
             'new_header_image' => 'nullable|image|mimes:jpeg,png,webp|max:16048',
+            'og_title'          => 'nullable|string|max:255',
+            'og_description'    => 'nullable|string|max:500',
+            'custom_css'        => 'nullable|string',
+            'custom_js'         => 'nullable|string',
+            'custom_meta'       => 'nullable|string',
+
         ]);
 
         if (!$this->slug) {
             $this->slug = Str::slug($this->title);
+        }
+
+                // JSON aus Textarea in Array parsen + validieren
+        $customMetaArr = [];
+        if (!empty($this->custom_meta)) {
+            try {
+                $decoded = json_decode($this->custom_meta, true, 512, JSON_THROW_ON_ERROR);
+                if (!is_array($decoded)) {
+                    throw new \RuntimeException('JSON muss ein Array sein.');
+                }
+                $customMetaArr = $this->normalizeCustomMetaArray($decoded);
+            } catch (\Throwable $e) {
+                $this->addError('custom_meta', 'Ungültiges JSON: '.$e->getMessage());
+                return; // Speichern abbrechen
+            }
+        }
+
+        // OG-Fallbacks (optional sinnvoll)
+        if (!$this->og_title && $this->meta_title) {
+            $this->og_title = $this->meta_title;
+        }
+        if (!$this->og_description && $this->meta_description) {
+            $this->og_description = $this->meta_description;
+        }
+        if (!$this->robots_meta) {
+            $this->robots_meta = 'index,follow';
         }
 
         // Falls ein neues Bild hochgeladen wurde, speichere es
@@ -88,9 +120,10 @@ class WebpagesList extends Component
             'robots_meta' => $this->robots_meta,
             'og_title' => $this->og_title,
             'og_description' => $this->og_description,
+            'og_image' => $this->og_image,
             'custom_css' => $this->custom_css,
             'custom_js' => $this->custom_js,
-            'custom_meta' => $this->custom_meta,
+            'custom_meta' => $customMetaArr,
             'icon' => $this->icon,
             'header_image' => $this->header_image,
             'is_active' => $this->is_active,

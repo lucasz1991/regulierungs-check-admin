@@ -348,6 +348,25 @@
                         </div>
 
                         <div>
+                            <label class="block text-sm font-medium">Open Graph Titel</label>
+                            <input type="text" wire:model="og_title" class="w-full border rounded px-4 py-2 mt-2">
+                            @error('og_title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium">Open Graph Beschreibung</label>
+                            <textarea wire:model="og_description" class="w-full border rounded px-4 py-2 mt-2"></textarea>
+                            @error('og_description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            // Custom meta array
+                            <label class="block text-sm font-medium">Benutzerdefinierte Meta-Tags (JSON-Format)</label>
+                            <textarea wire:model="custom_meta" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2" rows="4" placeholder='[{"name": "author", "content": "John Doe"}]'></textarea>
+                            @error('custom_meta') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
                             <label class="block text-sm font-medium">Benutzerdefiniertes CSS</label>
                             <textarea wire:model="custom_css" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2"></textarea>
                             @error('custom_css') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

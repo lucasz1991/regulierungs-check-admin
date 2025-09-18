@@ -324,6 +324,11 @@
                 <div x-show="openTab === 'seo'" class="">
                     <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300  z-10">
                         <div>
+                            <label class="block text-sm font-medium">Meta-Titel</label>
+                            <input type="text" wire:model="meta_title" class="w-full border rounded px-4 py-2 mt-2">
+                            @error('meta_title') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
                             <label class="block text-sm font-medium">Meta-Beschreibung</label>
                             <textarea wire:model="meta_description" class="w-full border rounded px-4 py-2 mt-2"></textarea>
                             @error('meta_description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

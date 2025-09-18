@@ -56,6 +56,7 @@ class WebpagesList extends Component
         $this->validate([
             'title' => 'required|string|max:255|unique:web_pages,title,' . $this->editingId,
             'slug' => 'required|string|max:255|unique:web_pages,slug,' . $this->editingId,
+            'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
             'custom_meta' => 'nullable|array',

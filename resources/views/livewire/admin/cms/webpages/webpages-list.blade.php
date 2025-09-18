@@ -360,7 +360,6 @@
                         </div>
 
                         <div>
-                            // Custom meta array
                             <label class="block text-sm font-medium">Benutzerdefinierte Meta-Tags (JSON-Format)</label>
                             <textarea wire:model="custom_meta" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2" rows="4" placeholder='[{"name": "author", "content": "John Doe"}]'></textarea>
                             @error('custom_meta') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

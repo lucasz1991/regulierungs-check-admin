@@ -85,41 +85,44 @@ class EditClaimRatingModal extends Component
 
     protected function loadRating(int $id): void
     {
-        $this->rating = ClaimRating::with([
-            'insuranceSubtype', // Fragen kommen darüber
-            'insurance',
-            'insuranceType',
-        ])->findOrFail($id);
+        $this->rating = ClaimRating::with(['insuranceSubtype','insurance','insuranceType'])->findOrFail($id);
 
-        // IDs aus ClaimRating übernehmen
-        $this->insuranceTypeId    = $this->rating->insurance_type_id;
-        $this->insuranceSubTypeId = $this->rating->insurance_subtype_id;
-        $this->insuranceId        = $this->rating->insurance_id;
+        // 1) IDs & Stammdaten aus answers
+        $ans = (array) ($this->rating->answers ?? []);
 
-        // Status & Vertrag
-        $this->regulationType     = $this->rating->regulation_type;
-        $this->regulationDetails  = (array)($this->rating->regulation_details ?? []);
-        $this->regulationComment  = $this->rating->regulation_comment;
-        $this->contractDetails    = array_replace($this->contractDetails, (array)($this->rating->contract_details ?? []));
+        $this->insuranceTypeId    = (int) data_get($ans, 'insuranceTypeId');
+        $this->insuranceSubTypeId = (int) data_get($ans, 'insuranceSubTypeId');
+        $this->insuranceId        = (int) data_get($ans, 'insuranceId');
 
-        // Zeiträume
-        $this->started_at    = $this->rating->started_at?->format('d.m.Y');
-        $this->ended_at      = $this->rating->ended_at?->format('d.m.Y');
-        $this->is_closed     = !is_null($this->rating->ended_at);
+        // 2) Status / Vertrag aus answers
+        $this->regulationType    = data_get($ans, 'regulationType'); // 'vollzahlung'|'teilzahlung'|'ablehnung'|'austehend'
+        $regDetail               = (array) data_get($ans, 'regulationDetail', []);
+        $this->regulationDetails = (array) ($regDetail['selected_values'] ?? []);
+        $this->regulationComment = $regDetail['textarea_value'] ?? null;
+
+        $contract                = (array) data_get($ans, 'contractDetails', []);
+        $this->contractDetails   = array_replace($this->contractDetails, $contract);
+
+        // 3) Zeitraum aus answers
+        $dateArr      = (array) data_get($ans, 'selectedDates', []);
+        $this->started_at = $dateArr['started_at'] ?? null; // bereits dd.mm.YY
+        $this->ended_at   = $dateArr['ended_at']   ?? null; // bereits dd.mm.YY
+        $this->is_closed  = (bool) data_get($ans, 'is_closed', !empty($this->ended_at));
         $this->selectedDates = $this->composeSelectedDates($this->started_at, $this->ended_at);
 
-        // Third Party
-        $this->thirdPartyInsurance         = (bool)($this->rating->third_party_insurance ?? false);
-        $this->thirdPartyInsuranceAllowed  = $this->detectThirdPartyAllowed($this->insuranceSubTypeId);
+        // 4) Third-party
+        $this->thirdPartyInsurance = (bool) data_get($ans, 'thirdPartyInsurance', false);
+        $this->thirdPartyInsuranceAllowed = $this->detectThirdPartyAllowed($this->insuranceSubTypeId);
 
-        // Fragen & Antworten
+        // 5) Zusatzfragen & Antworten
         $this->variableQuestions = $this->loadVariableQuestions($this->insuranceSubTypeId);
-        $this->answers           = (array)($this->rating->answers ?? []);
+        $this->answers = $ans; // komplette answers hinein, damit alle keys verfügbar sind
 
-        // abhängige Listen
+        // 6) abhängige Listen
         $this->updatedInsuranceTypeId();
         $this->updatedInsuranceSubTypeId();
     }
+
 
     protected function composeSelectedDates(?string $start, ?string $end): ?string
     {

@@ -1,5 +1,5 @@
 <div class="p-6 space-y-6 " @if($rating->status == 'rating') wire:poll.5s @endif x-data="{ rating: @entangle('rating').live }">
-    <livewire:admin.reviews.edit-claim-rating-modal lazy/>
+    <livewire:admin.reviews.edit-claim-rating-modal :ratingId="$rating->id"/>
     <div class="flex items-center justify-between">
         <div>
             {{-- back button --}}

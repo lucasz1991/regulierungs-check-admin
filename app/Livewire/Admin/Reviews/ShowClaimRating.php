@@ -28,8 +28,6 @@ class ShowClaimRating extends Component
     #[On('admin.claim-rating-updated')]
     public function onUpdated($id)
     {
-        // z.B. Refresh, Toast, etc.
-        $this->dispatch('toast', type: 'success', message: 'Bewertung aktualisiert.');
         $this->resetPage();
     }
 

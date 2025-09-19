@@ -290,31 +290,56 @@ class EditClaimRatingModal extends Component
         $this->validate();
 
         $rating = $this->rating ?? ClaimRating::findOrFail($this->ratingId);
+        $ans    = (array) ($rating->answers ?? []);
 
-        $payload = [
-            'insurance_type_id'    => $this->insuranceTypeId,   // wichtig: kommt vom TYPE, nicht Subtype
+        // IDs + Stammdaten
+        $ans['insuranceTypeId']    = $this->insuranceTypeId;
+        $ans['insuranceSubTypeId'] = $this->insuranceSubTypeId;
+        $ans['insuranceId']        = $this->insuranceId;
+
+        // Status / Vertrag
+        $ans['regulationType']   = $this->regulationType;
+        $ans['regulationDetail'] = [
+            'selected_values' => array_values($this->regulationDetails ?? []),
+            'textarea_value'  => $this->regulationComment,
+        ];
+        $ans['contractDetails']  = $this->contractDetails;
+
+        // Zeitraum
+        $ans['selectedDates'] = [
+            'started_at' => $this->started_at,               // dd.mm.YY
+            'ended_at'   => $this->is_closed ? $this->ended_at : null,
+        ];
+        $ans['is_closed'] = $this->is_closed;
+
+        // Third-party
+        $ans['thirdPartyInsurance'] = $this->thirdPartyInsurance;
+
+        // Zusatzfragen (bereits in $this->answers enthalten) in $ans mergen,
+        // aber Kernkeys nicht überschreiben:
+        foreach ($this->answers as $k => $v) {
+            if (!in_array($k, [
+                'insuranceTypeId','insuranceSubTypeId','insuranceId',
+                'regulationType','regulationDetail','contractDetails',
+                'selectedDates','is_closed','thirdPartyInsurance'
+            ], true)) {
+                $ans[$k] = $v;
+            }
+        }
+
+        // Speichern: nur existierende Spalten + answers
+        $rating->fill([
+            'insurance_type_id'    => $this->insuranceTypeId,
             'insurance_subtype_id' => $this->insuranceSubTypeId,
             'insurance_id'         => $this->insuranceId,
-
-            'regulation_type'      => $this->regulationType,
-            'regulation_details'   => array_values($this->regulationDetails ?? []),
-            'regulation_comment'   => $this->regulationComment,
-
-            'contract_details'     => $this->contractDetails,
-            'third_party_insurance'=> $this->thirdPartyInsurance,
-
-            'started_at'           => $this->deToIsoDate($this->started_at),
-            'ended_at'             => $this->is_closed ? $this->deToIsoDate($this->ended_at) : null,
-
-            'answers'              => $this->answers,
-        ];
-
-        $rating->fill($payload)->save();
+            'answers'              => $ans,
+        ])->save();
 
         $this->dispatch('admin.claim-rating-updated', id: $rating->id);
         $this->showFormModal = false;
         $this->resetValidation();
     }
+
 
     protected function deToIsoDate(?string $d): ?string
     {

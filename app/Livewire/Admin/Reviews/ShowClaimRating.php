@@ -25,7 +25,7 @@ class ShowClaimRating extends Component
     }
 
     // Beispiel: In deiner Liste
-    #[On('claim-rating-updated')]
+    #[On('admin.claim-rating-updated')]
     public function onUpdated($id)
     {
         // z.B. Refresh, Toast, etc.

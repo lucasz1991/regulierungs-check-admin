@@ -28,7 +28,7 @@ class ShowClaimRating extends Component
     #[On('claim-rating-updated')]
     public function onUpdated()
     {
-        $this->resetPage();
+        $this->rating = ClaimRating::find($this->ratingId);
     }
 
     public function render()

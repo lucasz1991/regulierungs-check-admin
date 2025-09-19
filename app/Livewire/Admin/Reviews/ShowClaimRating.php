@@ -25,8 +25,8 @@ class ShowClaimRating extends Component
     }
 
     // Beispiel: In deiner Liste
-    #[On('admin.claim-rating-updated')]
-    public function onUpdated($id)
+    #[On('claim-rating-updated')]
+    public function onUpdated()
     {
         $this->resetPage();
     }

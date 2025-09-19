@@ -335,7 +335,7 @@ class EditClaimRatingModal extends Component
             'answers'              => $ans,
         ])->save();
 
-        $this->dispatch('admin.claim-rating-updated', id: $rating->id);
+        $this->dispatch('claim-rating-updated');
         $this->showFormModal = false;
         $this->resetValidation();
     }

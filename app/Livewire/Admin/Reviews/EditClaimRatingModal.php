@@ -16,6 +16,7 @@ class EditClaimRatingModal extends Component
 
     public ?int $ratingId = null;
     public ?ClaimRating $rating = null;
+    public bool  $isAdminRating = false;
 
     // Stammdaten
     public ?int $insuranceTypeId = null;
@@ -86,7 +87,7 @@ class EditClaimRatingModal extends Component
     protected function loadRating(int $id): void
     {
         $this->rating = ClaimRating::with(['insuranceSubtype','insurance','insuranceType'])->findOrFail($id);
-
+        $this->isAdminRating = (bool) ($this->rating->admin_review['created_by_admin'] ?? false);
         // 1) IDs & Stammdaten aus answers
         $ans = (array) ($this->rating->answers ?? []);
 

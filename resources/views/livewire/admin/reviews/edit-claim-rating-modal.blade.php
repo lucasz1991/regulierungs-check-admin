@@ -116,7 +116,8 @@
                         <span class="ml-2 text-sm text-gray-700">Fremdversicherung</span>
                     </label>
                 @endif
-
+                @if($rating->user?->isAdmin())
+                
                 {{-- Fallstatus --}}
                 <div class="mb-6">
                     <label class="block text-sm font-medium mb-2">Fallstatus</label>
@@ -347,6 +348,7 @@
                             @endforeach
                         </div>
                     </div>
+                @endif
                 @endif
 
                 {{-- Footer --}}

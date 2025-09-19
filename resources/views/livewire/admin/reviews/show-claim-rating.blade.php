@@ -67,7 +67,21 @@
         @if($rating->answers['is_closed'])
             <x-ratings.row label="Beendet">{{ $rating->answers['selectedDates']['ended_at'] ?? '–' }}</x-ratings.row>
         @endif
-        <x-ratings.row label="Details">{{ $rating->answers['regulationDetail']['selected_value'] ?? '–' }}</x-ratings.row>
+        @php
+            $vals = data_get($rating->answers, 'regulationDetail.selected_values', []);
+            // normalize: string -> array, null/leer -> []
+            $vals = is_array($vals) ? $vals : (filled($vals) ? [$vals] : []);
+        @endphp
+
+        <x-ratings.row label="Details">
+            @forelse ($vals as $v)
+                <span class="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-xs font-medium mr-1 mb-1">
+                    {{ $v }}
+                </span>
+            @empty
+                &ndash;
+            @endforelse
+        </x-ratings.row>
         <x-ratings.row label="Detail-Kommentar">{{ $rating->answers['regulationDetail']['textarea_value'] ?? '–' }}</x-ratings.row>
     </x-ratings.section>
     {{-- Variable Fragen --}}

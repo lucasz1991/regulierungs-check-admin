@@ -1,4 +1,4 @@
-<div x-cloak class="space-y-6"  x-data="{ changed: false }" x-init="initColorPickers()">
+<div x-cloak class="space-y-6"  x-data="{ changed: false }" >
     <!-- Überschrift & Wartungsmodus -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between">
         <h2 class="text-2xl font-semibold">Basis Einstellungen</h2>
@@ -83,7 +83,7 @@
             </x-slot>
             <x-slot name="content">
                 <!-- Grundfarben Auswahl -->
-                <div class="">
+                <div x-cloak class="" x-init="initColorPickers()">
                     <div wire:ignore class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Primärfarbe -->
                         <div class="space-y-2">
@@ -216,15 +216,5 @@
             </x-button>
         </div>
     </div>
-    @section('css')
-            <!-- color picker css -->
-            <link rel="stylesheet" href="{{ URL::asset('build/libs/@simonwep/pickr/themes/classic.min.css') }}" />
-            <!-- 'classic' theme -->
-            <link rel="stylesheet" href="{{ URL::asset('build/libs/@simonwep/pickr/themes/monolith.min.css') }}" />
-    @endsection
-    @section('scripts')
-        <script src="{{ URL::asset('build/libs/@simonwep/pickr/pickr.min.js') }}"></script>
-        <script src="{{ URL::asset('build/libs/@simonwep/pickr/pickr.es5.min.js') }}"></script>
-        <script src="{{ URL::asset('build/js/pages/form-advanced.init.js') }}"></script>
-    @endsection
+
 </div>

@@ -16,6 +16,7 @@ class InsuranceSubtype extends Model
         'name',
         'slug',
         'description',
+        'style',
         'weight',
         'average_rating_speed',
         'average_rating_fairness',
@@ -28,6 +29,7 @@ class InsuranceSubtype extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'allow_third_party' => 'boolean',
+        'style' => 'array',
     ];
 
     public function insuranceTypes()

@@ -18,10 +18,10 @@ class ShowClaimRating extends Component
         $this->rating = ClaimRating::with('user', 'insurance', 'insuranceSubtype')->findOrFail($ratingId);
     }
 
-    public function reanalyse( $ratingId ){
+    public function reanalyse( $ratingId )
+    {
         $this->rating = ClaimRating::find($ratingId);
         $this->rating->reanalyse();
-
     }
 
     // Beispiel: In deiner Liste

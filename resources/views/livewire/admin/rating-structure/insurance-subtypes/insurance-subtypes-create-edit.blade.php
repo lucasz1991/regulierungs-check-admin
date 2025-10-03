@@ -1,4 +1,4 @@
-<div>
+<div  x-data="{ changed: false }" >
     <x-dialog-modal wire:model="showModal">
         <x-slot name="title">
             @if($insuranceSubtypeId)
@@ -66,6 +66,13 @@
                                 </span>
                             </h1>
                         </button>
+                        <button @click="openTab = 'incuranceDisplaySettings'" 
+                        :class="openTab === 'incuranceDisplaySettings' ? 'text-blue-600 border-blue-600 bg-gray-100 border-b-0' : 'text-gray-500 bg-white'" 
+                        class="px-4 py-2  text-sm font-medium transition-all border  border-gray-300 rounded-t-lg z-30">
+                        <h1 class="flex items-center justify-center">
+                            <span class="w-max">Darstellung</span>
+                        </h1>
+                    </button>
                     </div>
 
                     <!-- incuranceType Settings -->
@@ -116,6 +123,57 @@
                                     </div>
 
                                 </div>
+                        </div>
+                    </div>
+                    <!-- incuranceDisplaySettings Settings -->
+                <div x-show="openTab === 'incuranceDisplaySettings'" class="">
+                    <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300  z-10">
+                        <div class="mb-4 grid grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Schriftfarbe
+                                    <div class="flex items-center mt-1">
+                                        <div class="border rounded-s p-4 h-full" style="background-color: {{ $style['font_color'] }};"></div>
+                                        <input id="font_color" type="text" wire:model.live="style.font_color" @change="changed = true" value="{{ $style['font_color'] }}"  class="mt-1 block w-full border rounded px-4 py-2">
+                                    </div>
+                                </label>
+                                @error('style.font_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Hintergrund
+                                    <div class="flex items-center mt-1">
+                                        <div class="border rounded-s p-4 h-full" style="background-color: {{ $style['bg_color'] }};"></div>
+                                        <input id="bg_color" type="text" wire:model.live="style.bg_color" @change="changed = true" value="{{ $style['bg_color'] }}" class="mt-1 block w-full border rounded px-4 py-2">
+                                    </div>
+                                </label>
+                                @error('style.bg_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Umrandung
+                                    <div class="flex items-center mt-1">
+                                        <div class="border rounded-s p-4 h-full" style="background-color: {{ $style['border_color'] }};"></div>
+                                        <input id="border_color" type="text" wire:model.live="style.border_color" @change="changed = true" value="{{ $style['border_color'] }}" class="mt-1 block w-full border rounded px-4 py-2">
+                                    </div>
+                                </label>
+                                @error('style.border_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div>
+                            <div>
+                                <label class="font-semibold">Logo</label>
+                                <div class="flex items-center gap-4 mt-1">
+                                    <input type="file" wire:model="logo_image_file" accept="image/*" class="block">
+
+                                    @if($current_logo)
+                                        <img src="{{ $current_logo }}" class="h-12 rounded border" alt="Logo">
+                                        <button type="button"
+                                                class="text-red-600 text-sm underline"
+                                                wire:click="removeLogoImage">
+                                            Logo löschen
+                                        </button>
+                                    @endif
+                                </div>
+                                @error('logo_image_file') <p class="text-red-500 text-xs">{{ $message }}</p> @enderror
+                            </div>
                         </div>
                     </div>
                 </div>

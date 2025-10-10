@@ -157,6 +157,35 @@
                                 @error('style.border_color') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                             </div>
                         </div>
+
+                        <!-- Badge-Vorschau -->
+                        <div class="mt-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                Badge-Vorschau
+                            </label>
+
+                            <div
+                                @class([
+                                    'inline-flex items-center gap-2 px-3 py-2 rounded-full border shadow-sm transition',
+                                    'opacity-60 grayscale' => !$is_active, // Vorschau abdunkeln, wenn inaktiv
+                                ])
+                                style="
+                                    color: {{ $style['font_color'] ?? '#0f172a' }};
+                                    background-color: {{ $style['bg_color'] ?? '#f1f5f9' }};
+                                    border-color: {{ $style['border_color'] ?? '#cbd5e1' }};
+                                "
+                                title="So sieht der Badge mit den gewählten Farben aus"
+                            >
+
+                                {{-- Text --}}
+                                <span class="text-xs font-medium truncate max-w-[16rem]">
+                                    {{ $name ?: 'Beispiel-Untertyp' }}
+                                </span>
+
+                            </div>
+
+                        </div>
+
                         <div>
                             <div>
                                 <label class="font-semibold">Logo</label>

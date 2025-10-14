@@ -21,6 +21,7 @@ class CreateEdit extends Component
     public $name;
     public $slug;
     public $description;
+    public $helptext;
     public $initials;
     public $style = [
         'font_color' => null,
@@ -57,6 +58,7 @@ class CreateEdit extends Component
             $this->name = $this->insurance->name;
             $this->slug = $this->insurance->slug;
             $this->description = $this->insurance->description;
+            $this->helptext = $this->insurance->helptext;
             $this->initials = $this->insurance->initials;
             $this->style = $this->insurance->style;
             $this->current_logo = $this->insurance->logo;
@@ -86,6 +88,7 @@ class CreateEdit extends Component
         $validated = $this->validate([
             'name' => 'required|string|max:255|unique:insurances,name,' . $this->insuranceId,
             'description' => 'nullable|string',
+            'helptext' => 'nullable|string',
             'initials' => 'nullable|string|max:10',
             'style' => 'nullable|array',
             'style.*' => 'nullable|max:255',
@@ -107,6 +110,7 @@ class CreateEdit extends Component
                 'name' => $this->name,
                 'slug' => $this->name ? Str::slug($this->name) : null,
                 'description' => $this->description,
+                'helptext' => $this->helptext,
                 'initials' => $this->initials,
                 'style' => $this->style,
                 'logo' => $this->logo_image_file,

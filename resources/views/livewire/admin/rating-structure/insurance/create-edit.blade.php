@@ -52,6 +52,12 @@
                 @error('description') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
             </div>
 
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700">Hilf Text</label>
+                <textarea wire:model.defer="helptext" rows="3" class="mt-1 block w-full border rounded px-4 py-2"></textarea>
+                @error('helptext') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+            </div>
+
 
             <div x-data="{ openTab: 'incuranceType' }" class="">
                 <!-- Tabs -->

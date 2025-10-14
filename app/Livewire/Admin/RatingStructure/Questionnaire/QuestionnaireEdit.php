@@ -3,94 +3,137 @@
 namespace App\Livewire\Admin\RatingStructure\Questionnaire;
 
 use Livewire\Component;
-use App\Models\InsuranceType;
 use App\Models\InsuranceSubtype;
 use App\Models\RatingQuestion;
+use App\Support\PivotSorter; // wichtig: gleicher Import wie im anderen Component
 
 class QuestionnaireEdit extends Component
 {
     public $insuranceSubTypeId;
     public $insuranceSubType;
+    public $showModal = false;
+
     public $availableQuestions = [];
     public $assignedQuestions = [];
     public $questionToAdd = null;
-    public $showModal = false;
 
-    protected $listeners = ['open-formbuilder' => 'open'];
+    protected $listeners = [
+        'open-formbuilder' => 'open',
+        'reorderAssignedQuestions' => 'handleReorderAssignedQuestions', // identisch zu deinen anderen Reorder-Events
+    ];
 
-    public function open($typeId)
+    public function open($id = null)
     {
-        $this->reset(['insuranceSubTypeId', 'availableQuestions', 'assignedQuestions', 'questionToAdd']);
-        $this->insuranceSubTypeId = $typeId;
-        $this->insuranceSubType = InsuranceSubtype::findOrFail($typeId);
+        // exakt wie im anderen Component: einmal hart resetten
+        $this->reset();
 
-        $this->loadData();
+        if ($id) {
+            // Basisdaten laden
+            $this->insuranceSubType = InsuranceSubtype::with(['ratingQuestions' => function ($q) {
+                $q->orderBy('insurance_subtype_rating_question.order_column');
+            }])->findOrFail($id);
+
+            $this->insuranceSubTypeId = $this->insuranceSubType->id;
+
+            // Zugeordnete (mit Pivot-Sortierung)
+            $this->assignedQuestions = $this->insuranceSubType->ratingQuestions
+                ->map(fn($q) => [
+                    'id'            => $q->id,
+                    'title'         => $q->title,
+                    'type'          => $q->type,
+                    'order_column'  => $q->pivot->order_column,
+                ])
+                ->values()
+                ->toArray();
+
+            // Verfügbare = alle, die NICHT zugeordnet sind
+            $assignedIds = collect($this->assignedQuestions)->pluck('id');
+            $this->availableQuestions = RatingQuestion::whereNotIn('id', $assignedIds)->orderBy('title')->get();
+        }
+
         $this->showModal = true;
     }
 
-    public function loadData()
+    public function save()
     {
-        $this->insuranceSubType->load(['ratingQuestions' => function ($q) {
-            $q->orderBy('insurance_subtype_rating_question.order_column');
-        }]);
-
-        $assignedIds = $this->insuranceSubType->ratingQuestions->pluck('id')->toArray();
-        $this->assignedQuestions = $this->insuranceSubType->ratingQuestions
-            ->map(fn($i) => ['id' => $i->id, 'title' => $i->title, 'type' => $i->type, 'order_column' => $i->pivot->order_column])
+        $this->assignedQuestions = collect($this->assignedQuestions)
             ->values()
+            ->map(fn($it, $i) => array_merge($it, ['order_column' => $i]))
             ->toArray();
 
-        $this->availableQuestions = RatingQuestion::whereNotIn('id', $assignedIds)->get();
+        $syncData = collect($this->assignedQuestions)
+            ->mapWithKeys(fn ($item, $index) => [$item['id'] => ['order_column' => $index]])
+            ->toArray();
+
+        $this->insuranceSubType()->ratingQuestions()->sync($syncData);
+
+        $this->dispatch('refreshQuestionnaires');
+        $this->showModal = false;
     }
+
 
     public function addQuestion()
     {
         if (!$this->questionToAdd) return;
 
-        $question = RatingQuestion::find($this->questionToAdd);
+        $question = $this->availableQuestions->firstWhere('id', $this->questionToAdd)
+                 ?? RatingQuestion::find($this->questionToAdd);
 
         if (!$question) return;
 
-        $this->assignedQuestions[] = [
-            'id' => $question->id,
-            'title' => $question->title,
-            'type' => $question->type,
-            'order_column' => count($this->assignedQuestions),
-        ];
+        if (!collect($this->assignedQuestions)->pluck('id')->contains($question->id)) {
+            $this->assignedQuestions[] = [
+                'id'           => $question->id,
+                'title'        => $question->title,
+                'type'         => $question->type,
+                'order_column' => count($this->assignedQuestions),
+            ];
+        }
 
+        // Auswahl zurücksetzen und Available neu bilden
         $this->questionToAdd = null;
-
-        // Optional: Refresh availableQuestions
-        $this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assignedQuestions)->pluck('id'))->get();
-
+        $this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assignedQuestions)->pluck('id'))
+            ->orderBy('title')->get();
     }
 
     public function removeQuestion($id)
     {
-        $this->assignedQuestions = collect($this->assignedQuestions)->reject(fn ($q) => $q['id'] == $id)->values()->toArray();
+        $this->assignedQuestions = collect($this->assignedQuestions)
+            ->reject(fn ($q) => $q['id'] == $id)
+            ->values()
+            ->toArray();
+
+        // Available neu bilden
+        $this->availableQuestions = RatingQuestion::whereNotIn('id', collect($this->assignedQuestions)->pluck('id'))
+            ->orderBy('title')->get();
     }
 
-    public function reorder($items)
+    public function handleReorderAssignedQuestions($item, $position)
     {
-        $this->assignedQuestions = collect($items)->map(function ($item, $index) {
-            return array_merge($item, ['order_column' => $index]);
-        })->toArray();
+        if (!$this->insuranceSubTypeId || $item === null || $position === null) return;
+
+        PivotSorter::reorder(
+            \App\Models\InsuranceSubtype::find($this->insuranceSubTypeId),
+            'ratingQuestions',
+            $item,
+            (int)$position,
+            'order_column',
+            $this->assignedQuestions,
+            fn($q, string $pivotKey) => [
+                'id'      => $q->id,
+                'title'   => $q->title,
+                'type'    => $q->type,
+                $pivotKey => $q->pivot->{$pivotKey},
+            ]
+        );
     }
 
-    public function save()
+
+    // kleiner Helper wie bei save()
+    protected function insuranceSubType(): InsuranceSubtype
     {
-        $syncData = [];
-
-        foreach ($this->assignedQuestions as $index => $q) {
-            $syncData[$q['id']] = [
-                'order_column' => $index,
-            ];
-        }
-
-        $this->insuranceSubType->ratingQuestions()->sync($syncData);
-
-        $this->dispatch('refreshQuestionnaires');
-        $this->showModal = false;
+        // frisch laden, falls nötig
+        return $this->insuranceSubType ??= InsuranceSubtype::findOrFail($this->insuranceSubTypeId);
     }
 
     public function render()

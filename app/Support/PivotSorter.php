@@ -4,65 +4,69 @@ namespace App\Support;
 
 class PivotSorter
 {
-    /**
-     * Reorders a pivot relation based on the given new order.
-     *
-     * @param \Illuminate\Database\Eloquent\Model $model
-     * @param string $relationMethod
-     * @param array $movedItem ['id' => int]
-     * @param int $newPosition
-     * @param string $pivotOrderKey
-     * @param array &$localArray Reference to local array to update
-     * @return void
-     */
     public static function reorder(
         $model,
         string $relationMethod,
-        array $movedItem,
+        $movedItem,            // int | ['id'=>…] | ['item'=>…, 'position'=>…]
         int $newPosition,
         string $pivotOrderKey,
-        array &$localArray
+        array &$localArray,
+        ?callable $mapModelToLocal = null
     ): void {
-        if (!isset($movedItem['id'])) {
+        // Payload robust parsen
+        if (is_numeric($movedItem)) {
+            $movedItem = ['id' => (int) $movedItem];
+        } elseif (is_array($movedItem) && isset($movedItem['id'])) {
+            // ok
+        } elseif (is_array($movedItem) && array_key_exists('item', $movedItem)) {
+            $movedItem = ['id' => (int) $movedItem['item']];
+        } else {
             return;
         }
 
-        if (!method_exists($model, $relationMethod)) {
-            return;
-        }
+        if (!method_exists($model, $relationMethod)) return;
 
-        // Liste sortieren
-        $current = collect($localArray);
-        $filtered = $current->reject(fn($i) => $i['id'] == $movedItem['id'])->values();
+        // Lokale Liste neu zusammenbauen
+        $current  = collect($localArray);
+        $filtered = $current->reject(fn($i) => (int)$i['id'] === (int)$movedItem['id'])->values();
 
         $reordered = collect();
         foreach ($filtered as $index => $item) {
             if ($index == $newPosition) {
-                $reordered->push($movedItem);
+                $existing = $current->firstWhere('id', $movedItem['id']) ?? [];
+                $reordered->push(array_replace($existing, $movedItem));
             }
             $reordered->push($item);
         }
         if ($newPosition >= $filtered->count()) {
-            $reordered->push($movedItem);
+            $existing = $current->firstWhere('id', $movedItem['id']) ?? [];
+            $reordered->push(array_replace($existing, $movedItem));
         }
 
-        // Pivot-Sync-Daten vorbereiten
+        // Pivot-Sync
         $syncData = $reordered->mapWithKeys(fn($item, $index) => [
             $item['id'] => [$pivotOrderKey => $index]
         ])->toArray();
 
-        // Sync durchführen
-        $model->{$relationMethod}()->sync($syncData);
+        $relation = $model->{$relationMethod}();
+        $relation->sync($syncData);
 
-        // Lokale Liste aktualisieren
-        $localArray = $model->{$relationMethod}()
-            ->get()
-            ->map(fn($i) => [
+        // Lokalen State aus DB neu aufbauen (mit Mapper) + stabil nach Pivot sortieren
+        $fresh = $relation->get();
+
+        $localArray = $fresh->map(function ($i) use ($pivotOrderKey, $mapModelToLocal) {
+            if ($mapModelToLocal) {
+                return $mapModelToLocal($i, $pivotOrderKey);
+            }
+            // Default (für Entities mit 'name')
+            return [
                 'id' => $i->id,
-                'name' => $i->name,
-                $pivotOrderKey => $i->pivot->{$pivotOrderKey}
-            ])
-            ->values()
-            ->toArray();
+                'name' => $i->name ?? null,
+                $pivotOrderKey => $i->pivot->{$pivotOrderKey},
+            ];
+        })
+        ->sortBy(fn($row) => $row[$pivotOrderKey])
+        ->values()
+        ->toArray();
     }
 }

@@ -46,6 +46,11 @@ class Insurance extends Model
         'updated_at',
     ];
 
+    public function claimRatings()
+    {
+        return $this->hasMany(ClaimRating::class);
+    }
+
     public function analyzeInsuranceOnlineViaGpt()
     {
         AnalyzeInsuranceOnlineViaGpt::dispatch($this);

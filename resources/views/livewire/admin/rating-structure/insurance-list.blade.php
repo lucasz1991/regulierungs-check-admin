@@ -6,6 +6,16 @@
             {{ $insurancesAllCount }}
             </span>
             <x-list-comps.search-field wire:model.live.debounce.500ms="search" :results-count="$insurances->total()" />
+            <select
+                wire:model.live="ratingsFilter"
+                class="ml-2 rounded border border-gray-200 bg-white text-sm px-2 py-1 h-7"
+                title="Nach Bewertungen filtern"
+            >
+                <option value="all">Alle</option>
+                <option value="with">Mit Bewertungen</option>
+                <option value="without">Ohne Bewertungen</option>
+            </select>
+
         </h1>
         <div class="flex items-center gap-2">
             <x-link-button href="#" @click.prevent="$dispatch('open-insurance-form')" class="btn-xs py-0 leading-[0]">

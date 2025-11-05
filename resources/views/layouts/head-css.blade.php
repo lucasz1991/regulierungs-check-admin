@@ -8,3 +8,4 @@
         <script src="{{ URL::asset('adminresources/flatpickr/flatpickr.min.js') }}"></script>
         <script src="{{ URL::asset('adminresources/flatpickr/l10n/de.js') }}"></script>
 
+    <link rel="stylesheet" href="{{ asset('adminresources/fontawesome6/css/all.min.css') }}">

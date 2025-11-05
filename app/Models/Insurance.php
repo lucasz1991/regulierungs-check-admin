@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\InsuranceType;
 use App\Jobs\AnalyzeInsuranceOnlineViaGpt;
+use App\Jobs\Insurance\AnalyzeInsuranceClaimRatings;
+
 use App\Models\Setting;
 
 
@@ -54,6 +56,11 @@ class Insurance extends Model
     public function analyzeInsuranceOnlineViaGpt()
     {
         AnalyzeInsuranceOnlineViaGpt::dispatch($this);
+    }
+
+    public function insuranceAnalyzeClaimRatingsViaGpt(?int $insuranceSubtypeId = null): void
+    {
+        AnalyzeInsuranceClaimRatings::dispatch($this->id, $insuranceSubtypeId);
     }
 
     //  URL zum Bild (oder Fallback)

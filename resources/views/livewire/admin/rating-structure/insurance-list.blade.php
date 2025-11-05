@@ -107,6 +107,12 @@
                                 <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-40 bg-white border rounded-lg shadow-lg z-10">
                                     <ul>
                                         <li>
+                                            <a href="#"    @click.prevent="$dispatch('open-insurance-show-modal', [{{ $insurance->id }}])"
+                                            class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
+                                                Details
+                                            </a>
+                                        </li>
+                                        <li>
                                             <a href="#"    @click.prevent="$dispatch('open-insurance-form', [{{ $insurance->id }}])"
                                             class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">
                                                 Bearbeiten
@@ -134,4 +140,6 @@
             {{ $insurances->links() }}
         </div>
     </div>
+    <livewire:admin.rating-structure.insurance.show-modal lazy />
+
 </div>

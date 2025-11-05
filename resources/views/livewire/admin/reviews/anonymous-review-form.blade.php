@@ -165,17 +165,61 @@
                                     @endforeach
                                 </select>
                                 <div id="spacerInsuranceSubTypeId" class="" ></div>
-                                {{-- Falls dieser Versicherungstyp eine Fremd-Versicherung-Regelung erlaubt --}}
-                                    @if ($thirdPartyInsuranceAllowed && $insuranceSubTypeId)
-                                        <div class="">
-                                            <label class="inline-flex items-center mt-2">
-                                                <input type="checkbox" wire:model.live="thirdPartyInsurance" class="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500" />
-                                                <span class="ml-2 text-sm text-gray-700">Fremdversicherung</span>
-                                            </label>
-                                            <p class="text-xs text-gray-500 mt-1">Falls du eine Fremdversicherung bewerten möchtest, aktiviere diese Option.</p>
-                                        </div>
-                                    @endif
+                                        {{-- Falls dieser Versicherungstyp eine Fremd-Versicherung-Regelung erlaubt --}}
+                                        @if ($thirdPartyInsuranceAllowed && $insuranceSubTypeId)
+                                            <div class="mt-4 space-y-3">
+                                                {{-- Toggle für Fremdversicherung --}}
+                                                <label for="thirdPartyInsurance" class="flex items-center justify-center  cursor-pointer">
+                                                    <input 
+                                                        id="thirdPartyInsurance" 
+                                                        name="thirdPartyInsurance" 
+                                                        type="checkbox" 
+                                                        wire:model.live="thirdPartyInsurance" 
+                                                        class="sr-only peer"
+                                                    />
+                                                    <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                                                                peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer 
+                                                                dark:bg-gray-700 peer-checked:after:translate-x-full 
+                                                                rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white 
+                                                                after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                                                after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                                                after:h-4 after:w-4 after:transition-all dark:border-gray-600 
+                                                                peer-checked:bg-blue-600">
+                                                    </div>
+                                                    <span class="ms-3 text-sm font-medium text-gray-700">Fremdversicherung</span>
+                                                </label>
+                                                <p class="text-xs text-gray-500">Falls du eine Fremdversicherung bewerten möchtest, aktiviere diese Option.</p>
 
+                                                {{-- Toggle für Kontakt zur gegnerischen Versicherung --}}
+                                                @if ($thirdPartyInsurance)
+                                                    <div class="mt-2">
+                                                        <label for="thirdPartyInsuranceHasContact" class="flex items-center justify-center cursor-pointer">
+                                                            <input 
+                                                                id="thirdPartyInsuranceHasContact" 
+                                                                name="thirdPartyInsuranceHasContact" 
+                                                                type="checkbox" 
+                                                                wire:model.live="thirdPartyInsuranceHasContact" 
+                                                                class="sr-only peer"
+                                                            />
+                                                            <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 
+                                                                        peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer 
+                                                                        dark:bg-gray-700 peer-checked:after:translate-x-full 
+                                                                        rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white 
+                                                                        after:content-[''] after:absolute after:top-[2px] after:start-[2px] 
+                                                                        after:bg-white after:border-gray-300 after:border after:rounded-full 
+                                                                        after:h-4 after:w-4 after:transition-all dark:border-gray-600 
+                                                                        peer-checked:bg-blue-600">
+                                                            </div>
+                                                            <span class="ms-3 text-sm font-medium text-gray-700">Kontakt</span>
+                                                        </label>
+                                                        <p class="text-xs text-gray-500 mt-1 leading-snug">
+                                                            Aktiviere diese Option wenn du <span class="font-medium text-gray-700">persönlichen Kontakt</span> mit der gegnerischen Versicherung hattest.
+                                                        </p>
+
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @endif
                             </div>
                             @error('insuranceSubTypeId')
                                 <p class="text-sm text-red-500 mt-2">{{ $message }}</p>
@@ -191,11 +235,17 @@
                     {{-- Step 2: Konkrete Versicherung auswählen --}}
                     <div x-show="step == 2"  x-data="{ insuranceId: @entangle('insuranceId') }" x-cloak>
                         <h2 class="text-lg font-bold mb-6">Welche Versicherungsgesellschaft?</h2>
-                        <x-alert class="mx-auto mb-6" role="alert">
+                        <x-alert class="mx-auto mb-6" role="alert" :mode="$this->insurance && !empty($this->insurance->helptext) ? 'warning' : 'info'">
+                            @if($this->insurance && ($this->insurance->helptext != null || $this->insurance->helptext != ''))
+                                <span>
+                                    {{$this->insurance->helptext}}
+                                </span>
+                            @else
                                 <span>
                                     Wähle die Gesellschaft, bei der du den Schaden gemeldet hast, damit wir den Fall zuordnen können.
                                 </span>
-                            </x-alert>
+                            @endif
+                        </x-alert>
                         <div class="max-w-md mx-auto " :class="{ 'selected': insuranceId != null }">
                             <select wire:model.live="insuranceId" 
                                     class="border rounded px-4 py-2"
@@ -528,12 +578,11 @@
                                 <x-buttons.furtherbutton wire:click="nextStep" />
                             @endif
                         </div>
-
                     </div>
                     {{-- Step 5: Versicherungs Vertragsdaten --}}
                     <div x-show="step == 5"  x-cloak  >
                         <div>
-                            <h2 class="text-lg font-bold mb-6">Finanzielle Eckdaten des Falls</h2>
+                            <h2 class="text-lg font-bold mb-6">Zusatzinfos zur Regulierung</h2>
                             <x-alert class="mx-auto mb-6" role="alert">
                                 <span>
                                     Gib die wichtigsten Beträge an, damit die Regulierung besser eingeordnet werden kann.
@@ -568,7 +617,7 @@
                                     @endif
                                 </div>
                                 <div x-data="{ charCount: 0 }" >
-                                    <h3 class="text-lg text-left font-semibold mb-2">Weitere Angaben zum Vertrag </h3>
+                                    <h3 class="text-lg text-left font-semibold mb-2">Weitere Angaben zum @if(!$thirdPartyInsurance) Vertrag @else Fall @endif </h3>
                                     <textarea wire:model.live.debounce.500ms="contractDetails.textarea_value"
                                             class="focus:shadow-blue-300 min-h-unset  text-base leading-5.6 ease-soft block h-auto w-full appearance-none rounded-lg border border-solid border-gray-300 bg-white bg-clip-padding px-3 py-2 font-normal text-gray-700 outline-none transition-all placeholder:text-gray-500 focus:border-blue-300 focus:outline-none" rows="6"
                                             x-on:input="charCount = $event.target.value.length"
@@ -658,13 +707,20 @@
                                 <p class="text-sm text-red-500 mt-2">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div class="flex justify-center space-x-4 mt-12">
-                            <x-buttons.backbutton wire:click="previousStep" />
+                            @php
+                                $hasVariableQuestions = !empty($variableQuestions) && count($variableQuestions) > 0;
+                            @endphp
 
-                            @if ($started_at && (!$is_closed || $ended_at))
-                                <x-buttons.furtherbutton wire:click="nextStep" />
-                            @endif
-                        </div>
+                            <div class="flex justify-center space-x-4 mt-12">
+                                <x-buttons.backbutton wire:click="previousStep" />
+
+                                @if ($started_at && (!$is_closed || $ended_at))
+                                    <x-buttons.furtherbutton
+                                        wire:click="{{ $hasVariableQuestions ? 'nextStep' : 'submit' }}"
+                                    />
+                                @endif
+                            </div>
+
                     </div>
                     {{-- Step 6: Fragen durchgehen --}}
                         @foreach ($variableQuestions as $index => $q)
@@ -753,9 +809,9 @@
                                     {{-- Navigation --}}
                                     <div class="flex justify-center space-x-4 mt-12">
                                         @if ($step > 0)
-                                        <x-buttons.backbutton wire:click="previousStep" />
+                                            <x-buttons.backbutton wire:click="previousStep" />
                                         @endif
-                                            <x-buttons.furtherbutton wire:click="{{ ($currentStep + 1) === $totalSteps ? 'submit' : 'nextStep' }}" />
+                                        <x-buttons.furtherbutton wire:click="{{ ($currentStep + 1) === $totalSteps ? 'submit' : 'nextStep' }}" />
                                     </div>
                                 </div>
                             </div>

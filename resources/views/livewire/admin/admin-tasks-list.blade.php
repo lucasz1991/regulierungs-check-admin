@@ -1,4 +1,5 @@
 <div class="">
+    {{-- Hinweisbox --}}
     <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
         <div class="flex">
             <div class="flex-shrink-0">
@@ -28,15 +29,18 @@
             </div>
         </div>
     </div>
+
+    {{-- Kopfbereich --}}
     <div class="mb-4 flex flex-wrap justify-between gap-4">
         <div class="mb-6 max-w-md">
             <h1 class="text-2xl font-bold text-gray-700">ToDo's</h1>
             <p class="text-gray-500">
-                Es gibt insgesamt {{ $tasks->where('status', 0)->count() }} offene Aufgaben.
+                Es gibt insgesamt {{ $tasks->where('status', 0)->count() }} offene Aufgaben (auf dieser Seite).
             </p>
         </div>
     </div>
-    <!-- Tabellenüberschrift -->
+
+    {{-- Tabellenüberschrift --}}
     <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300">
         <div class="col-span-1">ID</div>
         <div class="col-span-3">Aufgabentyp</div>
@@ -44,14 +48,27 @@
         <div class="col-span-3">Zugewiesen an</div>
         <div class="col-span-2 text-right">Status</div>
     </div>
-    <!-- Aufgaben -->
+
+    {{-- Aufgaben-Liste --}}
     <div>
         @foreach ($tasks as $task)
-            <div x-data="{ open: false }" class="border-b"  @click.away="open = false">
-                <!-- Tabellenzeile -->
-                <div @click="open = !open" class="cursor-pointer hover:bg-gray-50 grid grid-cols-12 items-center p-2 text-left" x-bind:class="{ 'bg-blue-50': open }">
+            <div x-data="{ open: false }" class="border-b" @click.away="open = false">
+                {{-- Tabellenzeile --}}
+                <div
+                    @click="open = !open"
+                    class="cursor-pointer hover:bg-gray-50 grid grid-cols-12 items-center p-2 text-left"
+                    x-bind:class="{ 'bg-blue-50': open }"
+                >
                     <div class="col-span-1">{{ $task->id }}</div>
-                    <div class="col-span-3">{{ $task->type }}</div>
+                    <div class="col-span-3">
+                        @if($task->type === 'claim_verification')
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                Claim-Verifikation
+                            </span>
+                        @else
+                            {{ $task->type }}
+                        @endif
+                    </div>
                     <div class="col-span-3">
                         @switch($task->related_model_type)
                             @case('App\\Models\\User')
@@ -64,40 +81,187 @@
                                 Nicht zugeordnet
                         @endswitch
                     </div>
-                    <div class="col-span-3">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</div>
+                    <div class="col-span-3">
+                        {{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}
+                    </div>
                     <div class="col-span-2 text-right">
                         @switch($task->status)
                             @case(0)
-                                <span class="text-red-500">Offen</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                    Offen
+                                </span>
                                 @break
                             @case(1)
-                                <span class="text-yellow-500">In Bearbeitung</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                                    In Bearbeitung
+                                </span>
                                 @break
                             @case(2)
-                                <span class="text-green-500">Abgeschlossen</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                    Abgeschlossen
+                                </span>
                                 @break
                             @default
-                                <span class="text-gray-500">Unbekannt</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                    Unbekannt
+                                </span>
                         @endswitch
                     </div>
                 </div>
-                <!-- Karte mit Footer für Optionen -->
-                <div x-show="open" x-collapse x-cloak class=" bg-blue-50 p-4 border-t">
-                    <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
-                    <p><strong>Beschreibung:</strong> {{ $task->description }}</p>
-                    <p><strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}</p>
-                    
-                    
 
-                    <!-- Footer mit Buttons -->
-                    <div class="mt-4 flex justify-end space-x-2 border-t pt-3">
+                {{-- Detail-Karte --}}
+                <div x-show="open" x-collapse x-cloak class="bg-blue-50 p-4 border-t">
+                    <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
+                    <p class="text-sm whitespace-pre-line">
+                        <strong>Beschreibung:</strong> {{ $task->description }}
+                    </p>
+                    <p class="text-sm mt-1">
+                        <strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}
+                    </p>
+
+                    {{-- Claim-Verifikations-Block --}}
+                    @if($task->type === 'claim_verification')
+                        @php
+                            /** @var \App\Models\ClaimRating|null $claim */
+                            $claim = $task->related;
+
+                            $verification      = $claim?->verification ?? null;
+                            $verificationState = $verification['state'] ?? 'none';
+                            $caseNumber        = $verification['caseNumber'] ?? null;
+                            $casefileUploaded  = $verification['casefileUploaded'] ?? false;
+
+                            $verificationFiles = $claim
+                                ? $claim->verificationFiles()->get()
+                                : collect();
+                        @endphp
+
+                        <div class="mt-4 space-y-3 border-t border-blue-200 pt-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <h4 class="text-base font-semibold flex items-center gap-2">
+                                    🔍 Verifikation der Schadenbewertung
+                                </h4>
+                                @if($verificationState === 'pending')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        Verifikation offen
+                                    </span>
+                                @elseif($verificationState === 'approved')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Verifiziert
+                                    </span>
+                                @elseif($verificationState === 'rejected')
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Abgelehnt
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                        Keine Verifikation
+                                    </span>
+                                @endif
+                            </div>
+
+                            @if($claim)
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <div class="space-y-1">
+                                        <p><strong>Bewertungs-ID:</strong> {{ $claim->id }}</p>
+                                        <p><strong>User-ID:</strong> {{ $claim->user_id }}</p>
+                                        <p><strong>Status:</strong> {{ $claim->status }}</p>
+                                        <p><strong>Verifikations-Score:</strong> {{ $claim->verification_score }} / 60</p>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <p>
+                                            <strong>Versicherung:</strong>
+                                            {{ optional($claim->insurance)->name ?? '—' }}
+                                        </p>
+                                        <p>
+                                            <strong>Fallnummer:</strong>
+                                            {{ $caseNumber ?: '—' }}
+                                        </p>
+                                        <p>
+                                            <strong>Verifikationsdatei vorhanden:</strong>
+                                            {{ $casefileUploaded ? 'Ja' : 'Nein' }}
+                                        </p>
+                                        <p>
+                                            <strong>Verifizierte User-E-Mail:</strong>
+                                            {{ $claim->user && $claim->user->email_verified_at ? 'Ja' : 'Nein' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {{-- Verifikations-Dateien --}}
+                                <div class="mt-3">
+                                    <p class="font-semibold text-sm mb-1">📎 Verifikationsdateien</p>
+
+                                    @if($verificationFiles->isEmpty())
+                                        <p class="text-sm text-gray-600">
+                                            Keine Verifikationsdateien hinterlegt.
+                                        </p>
+                                    @else
+                                        <ul class="text-sm list-disc list-inside space-y-1">
+                                            @foreach($verificationFiles as $file)
+                                                <li>
+                                                    {{-- Hier ggf. Download-Link mit deiner File-URL-Logik ergänzen --}}
+                                                    <span class="font-medium">
+                                                        Datei #{{ $file->id }}
+                                                    </span>
+                                                    – {{ $file->original_name ?? $file->file_name ?? 'ohne Namen' }}
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </div>
+
+                                {{-- Rohdaten optional anzeigen --}}
+                                <details class="mt-3 text-xs">
+                                    <summary class="cursor-pointer text-blue-600">
+                                        Rohdaten (verification) anzeigen
+                                    </summary>
+                                    <pre class="mt-2 bg-white/60 p-2 rounded border overflow-x-auto">
+{{ json_encode($verification, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}
+                                    </pre>
+                                </details>
+                            @else
+                                <p class="mt-2 text-sm text-red-600">
+                                    ⚠ Zugehörige Bewertung konnte nicht geladen werden.
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
+                    {{-- Footer mit Buttons --}}
+                    <div class="mt-4 flex flex-wrap justify-end gap-2 border-t pt-3">
+                        {{-- Claim-Verifikation Buttons (nur wenn in Bearbeitung + Claim vorhanden) --}}
+                        @if($task->type === 'claim_verification' && $task->status == 1 && isset($claim))
+                            <x-button
+                                wire:click.stop="rejectClaimVerification({{ $task->id }})"
+                                class="btn-xs text-sm bg-red-100 text-red-700 hover:bg-red-200"
+                            >
+                                ❌ Verifikation ablehnen
+                            </x-button>
+
+                            <x-button
+                                wire:click.stop="approveClaimVerification({{ $task->id }})"
+                                class="btn-xs text-sm bg-green-100 text-green-700 hover:bg-green-200"
+                            >
+                                ✅ Verifikation bestätigen
+                            </x-button>
+                        @endif
+
+                        {{-- Übernehmen nur, wenn nicht zugewiesen --}}
                         @if(!$task->assignedTo)
-                            <x-button wire:click="assignToMe({{ $task->id }})" class="btn-xs text-sm">
+                            <x-button
+                                wire:click.stop="assignToMe({{ $task->id }})"
+                                class="btn-xs text-sm"
+                            >
                                 ➕ Übernehmen
                             </x-button>
                         @endif
-                        @if($task->status == 1)
-                            <x-button wire:click="markAsCompleted({{ $task->id }})" class="btn-xs text-sm text-green-500">
+
+                        {{-- Generisches "Abschließen" nur für Nicht-Claim-Verifikations-Tasks --}}
+                        @if($task->status == 1 && $task->type !== 'claim_verification')
+                            <x-button
+                                wire:click.stop="markAsCompleted({{ $task->id }})"
+                                class="btn-xs text-sm text-green-500"
+                            >
                                 ✅ Abschließen
                             </x-button>
                         @endif
@@ -106,7 +270,8 @@
             </div>
         @endforeach
     </div>
-    <!-- Pagination -->
+
+    {{-- Pagination --}}
     <div class="mt-4">
         {{ $tasks->links() }}
     </div>

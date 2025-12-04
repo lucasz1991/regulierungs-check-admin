@@ -212,7 +212,7 @@ class ClaimRating extends Model
     // AI-Analyse / Scorings
     // --------------------------------------
 
-    public function reanalyze(): void
+    public function reanalyse(): void
     {
         $this->is_public = false;
         $this->status    = self::STATUS_PENDING;

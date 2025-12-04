@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use App\Models\ClaimRating;
+
 
 class AdminTask extends Model
 {
@@ -49,11 +51,16 @@ class AdminTask extends Model
     public const PRIORITY_HIGH = 2;
 
     /**
-     * Polymorphe Beziehung zum verbundenen Modell (z. B. ClaimRating, User etc.).
+     * Polymorphe Beziehung zum verbundenen Modell (z. B. ClaimRating, User etc.).
      */
     public function related(): MorphTo
     {
-        return $this->morphTo();
+        // WICHTIG: explizit sagen, welche Spalten genutzt werden
+        return $this->morphTo(
+            name: 'related',
+            type: 'related_model_type',
+            id: 'related_model_id'
+        );
     }
 
     /**

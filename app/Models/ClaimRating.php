@@ -451,4 +451,6 @@ class ClaimRating extends Model
         return $score;
     }
 
+
+
 }

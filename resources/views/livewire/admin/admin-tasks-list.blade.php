@@ -113,119 +113,123 @@
                 <div x-show="open" x-collapse x-cloak class="bg-blue-50 p-4 border-t">
                     <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
                     <p class="text-sm whitespace-pre-line">
-                        <strong>Beschreibung:</strong> {{ $task->description }}
+                        <strong>Beschreibung:</strong><br> {{ $task->description }}
                     </p>
                     <p class="text-sm mt-1">
                         <strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}
                     </p>
 
-                    {{-- Claim-Verifikations-Block --}}
-                    @if($task->type === 'claim_verification')
-                        @php
-                            /** @var \App\Models\ClaimRating|null $claim */
-                            $claim = $task->related;
+{{-- Claim-Verifikations-Block --}}
+@if($task->type === 'claim_verification')
+    @php
+        /** @var \App\Models\ClaimRating|null $claim */
+        $claim = $task->related instanceof \App\Models\ClaimRating
+            ? $task->related
+            : null;
 
-                            $verification      = $claim?->verification ?? null;
-                            $verificationState = $verification['state'] ?? 'none';
-                            $caseNumber        = $verification['caseNumber'] ?? null;
-                            $casefileUploaded  = $verification['casefileUploaded'] ?? false;
+        // Immer ein Array, dank Accessor im Model
+        $verification = $claim ? $claim->verification : [];
 
-                            $verificationFiles = $claim
-                                ? $claim->verificationFiles()->get()
-                                : collect();
-                        @endphp
+        $verificationState = $verification['state'] ?? 'none';
+        $caseNumber        = $verification['caseNumber'] ?? null;
+        $casefileUploaded  = $verification['casefileUploaded'] ?? false;
 
-                        <div class="mt-4 space-y-3 border-t border-blue-200 pt-3">
-                            <div class="flex items-center justify-between gap-3">
-                                <h4 class="text-base font-semibold flex items-center gap-2">
-                                    🔍 Verifikation der Schadenbewertung
-                                </h4>
-                                @if($verificationState === 'pending')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                        Verifikation offen
-                                    </span>
-                                @elseif($verificationState === 'approved')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        Verifiziert
-                                    </span>
-                                @elseif($verificationState === 'rejected')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                        Abgelehnt
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                        Keine Verifikation
-                                    </span>
-                                @endif
-                            </div>
+        $verificationFiles = $claim
+            ? $claim->verificationFiles()->get()
+            : collect();
+    @endphp
 
-                            @if($claim)
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                    <div class="space-y-1">
-                                        <p><strong>Bewertungs-ID:</strong> {{ $claim->id }}</p>
-                                        <p><strong>User-ID:</strong> {{ $claim->user_id }}</p>
-                                        <p><strong>Status:</strong> {{ $claim->status }}</p>
-                                        <p><strong>Verifikations-Score:</strong> {{ $claim->verification_score }} / 60</p>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <p>
-                                            <strong>Versicherung:</strong>
-                                            {{ optional($claim->insurance)->name ?? '—' }}
-                                        </p>
-                                        <p>
-                                            <strong>Fallnummer:</strong>
-                                            {{ $caseNumber ?: '—' }}
-                                        </p>
-                                        <p>
-                                            <strong>Verifikationsdatei vorhanden:</strong>
-                                            {{ $casefileUploaded ? 'Ja' : 'Nein' }}
-                                        </p>
-                                        <p>
-                                            <strong>Verifizierte User-E-Mail:</strong>
-                                            {{ $claim->user && $claim->user->email_verified_at ? 'Ja' : 'Nein' }}
-                                        </p>
-                                    </div>
-                                </div>
+    <div class="mt-4 space-y-3 border-t border-blue-200 pt-3">
+        <div class="flex items-center justify-between gap-3">
+            <h4 class="text-base font-semibold flex items-center gap-2">
+                🔍 Verifikation der Schadenbewertung
+            </h4>
+            @if($verificationState === 'pending')
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Verifikation offen
+                </span>
+            @elseif($verificationState === 'approved')
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Verifiziert
+                </span>
+            @elseif($verificationState === 'rejected')
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    Abgelehnt
+                </span>
+            @else
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                    Keine Verifikation
+                </span>
+            @endif
+        </div>
 
-                                {{-- Verifikations-Dateien --}}
-                                <div class="mt-3">
-                                    <p class="font-semibold text-sm mb-1">📎 Verifikationsdateien</p>
+        @if($claim)
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div class="space-y-1">
+                    <p><strong>Bewertungs-ID:</strong> {{ $claim->id }}</p>
+                    <p><strong>User-ID:</strong> {{ $claim->user_id }}</p>
+                    <p><strong>Status:</strong> {{ $claim->status }}</p>
+                    <p><strong>Verifikations-Score:</strong> {{ $claim->verification_score }} / 60</p>
+                </div>
+                <div class="space-y-1">
+                    <p>
+                        <strong>Versicherung:</strong>
+                        {{ optional($claim->insurance)->name ?? '—' }}
+                    </p>
+                    <p>
+                        <strong>Fallnummer:</strong>
+                        {{ $caseNumber ?: '—' }}
+                    </p>
+                    <p>
+                        <strong>Verifikationsdatei vorhanden:</strong>
+                        {{ $casefileUploaded ? 'Ja' : 'Nein' }}
+                    </p>
+                    <p>
+                        <strong>Verifizierte User-E-Mail:</strong>
+                        {{ $claim->user && $claim->user->email_verified_at ? 'Ja' : 'Nein' }}
+                    </p>
+                </div>
+            </div>
 
-                                    @if($verificationFiles->isEmpty())
-                                        <p class="text-sm text-gray-600">
-                                            Keine Verifikationsdateien hinterlegt.
-                                        </p>
-                                    @else
-                                        <ul class="text-sm list-disc list-inside space-y-1">
-                                            @foreach($verificationFiles as $file)
-                                                <li>
-                                                    {{-- Hier ggf. Download-Link mit deiner File-URL-Logik ergänzen --}}
-                                                    <span class="font-medium">
-                                                        Datei #{{ $file->id }}
-                                                    </span>
-                                                    – {{ $file->original_name ?? $file->file_name ?? 'ohne Namen' }}
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </div>
+{{-- Verifikations-Dateien --}}
+<div class="mt-3">
+    <p class="font-semibold text-sm mb-1">📎 Verifikationsdateien</p>
 
-                                {{-- Rohdaten optional anzeigen --}}
-                                <details class="mt-3 text-xs">
-                                    <summary class="cursor-pointer text-blue-600">
-                                        Rohdaten (verification) anzeigen
-                                    </summary>
-                                    <pre class="mt-2 bg-white/60 p-2 rounded border overflow-x-auto">
-{{ json_encode($verification, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}
-                                    </pre>
-                                </details>
-                            @else
-                                <p class="mt-2 text-sm text-red-600">
-                                    ⚠ Zugehörige Bewertung konnte nicht geladen werden.
-                                </p>
-                            @endif
-                        </div>
-                    @endif
+    @if($verificationFiles->isEmpty())
+        <p class="text-sm text-gray-600">
+            Keine Verifikationsdateien hinterlegt.
+        </p>
+    @else
+        <ul class="text-sm list-disc list-inside space-y-1">
+            @foreach($verificationFiles as $file)
+                <li class="flex items-center gap-2">
+                    {{-- Preview-Button über FilePreviewModal --}}
+                    <button
+                        type="button"
+                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
+                        x-on:click.stop="$dispatch('filepool-preview', { id: {{ $file->id }} })"
+                        title="Datei-Vorschau öffnen"
+                    >
+                        <i class="fas fa-eye mr-1"></i> Vorschau
+                    </button>
+
+                    <span class="font-medium">
+                        Datei #{{ $file->id }}
+                    </span>
+                    – {{ $file->name ?? 'ohne Namen' }}
+                </li>
+            @endforeach
+        </ul>
+    @endif
+</div>
+
+        @else
+            <p class="mt-2 text-sm text-red-600">
+                ⚠ Zugehörige Bewertung konnte nicht geladen werden.
+            </p>
+        @endif
+    </div>
+@endif
 
                     {{-- Footer mit Buttons --}}
                     <div class="mt-4 flex flex-wrap justify-end gap-2 border-t pt-3">
@@ -275,4 +279,5 @@
     <div class="mt-4">
         {{ $tasks->links() }}
     </div>
+    <livewire:tools.file-pools.file-preview-modal />
 </div>

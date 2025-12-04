@@ -198,7 +198,7 @@ class ClaimRating extends Model
 
         $this->status    = self::STATUS_REJECTED;
         $this->is_public = false;
-
+ 
         if ($reason) {
             $adminReview = $this->admin_review ?? [];
             $adminReview['verification_reject_reason'] = $reason;

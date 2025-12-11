@@ -214,7 +214,7 @@ class ClaimRatingList extends Component
             ->paginate(10);
 
         $this->hasRatings = $ratings->count() > 0;
-        $this->hasActiveRating = ClaimRating::where('status', 'rating')->exists();
+$this->hasActiveRating = ClaimRating::whereIn('status', ['rating', 'pending'])->exists();
 
 
         return view('livewire.admin.reviews.claim-rating-list', [

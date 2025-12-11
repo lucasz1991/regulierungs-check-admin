@@ -23,6 +23,14 @@
                                     </svg>
                                     <span>Bewertet</span>
                                     @break
+                                @case('pending')
+                                    <!-- Spinner / Ladeanimation -->
+                                    <svg class="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span>Wartet...</span>
+                                    @break
                                 @case('rating')
                                     <!-- Spinner / Ladeanimation -->
                                     <svg class="animate-spin h-4 w-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

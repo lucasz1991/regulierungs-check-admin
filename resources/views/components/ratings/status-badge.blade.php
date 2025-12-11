@@ -13,7 +13,7 @@
                                 @case('approved') bg-green-600 @break
                                 @case('rejected') bg-red-600 @break
                                 @default bg-gray-600
-                            @endswitch
+                            @endswitch 
                         ">
                             @switch($status)
                                 @case('rated')

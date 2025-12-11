@@ -1,4 +1,4 @@
-<div @if($hasActiveRating) wire:poll.5s @endif  x-data="{ selectedRatings: @entangle('selectedRatings'), search: @entangle('search'), hasRatings: @entangle('hasRatings') }">
+<div @if($hasActiveRating) wire:poll.2s @endif  x-data="{ selectedRatings: @entangle('selectedRatings'), search: @entangle('search'), hasRatings: @entangle('hasRatings') }">
     <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
         <div class="flex space-x-4">
             <svg class="h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 23.625 23.625" fill="currentColor" aria-hidden="true">

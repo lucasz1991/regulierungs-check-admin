@@ -170,35 +170,34 @@ class ClaimRatingList extends Component
     }
 
     public function deleteRating($ratingId)
-{
-    $rating = ClaimRating::find($ratingId);
+    {
+        $rating = ClaimRating::find($ratingId);
 
-    if (! $rating) {
-        $this->dispatch('showAlert', 'Bewertung wurde nicht gefunden.', 'error');
-        return;
+        if (! $rating) {
+            $this->dispatch('showAlert', 'Bewertung wurde nicht gefunden.', 'error');
+            return;
+        }
+
+        // Optional: Berechtigungscheck, z. B. nur Admin
+        if (! auth()->user()?->isAdmin()) {
+            $this->dispatch('showAlert', 'Du hast keine Berechtigung, diese Bewertung zu löschen.', 'error');
+            return;
+        }
+
+        // Wenn das Model SoftDeletes nutzt (tut es bei dir), wird nur "soft" gelöscht
+        $rating->delete();
+
+        // Falls das Rating in der Auswahl war, dort auch entfernen
+        $this->selectedRatings = array_filter(
+            $this->selectedRatings,
+            fn ($id) => $id != $ratingId
+        );
+
+        // Pagination ggf. zurücksetzen, damit man nicht auf einer leeren Seite landet
+        $this->resetPage();
+
+        $this->dispatch('showAlert', 'Bewertung wurde gelöscht.', 'success');
     }
-
-    // Optional: Berechtigungscheck, z. B. nur Admin
-    if (! auth()->user()?->isAdmin()) {
-        $this->dispatch('showAlert', 'Du hast keine Berechtigung, diese Bewertung zu löschen.', 'error');
-        return;
-    }
-
-    // Wenn das Model SoftDeletes nutzt (tut es bei dir), wird nur "soft" gelöscht
-    $rating->delete();
-
-    // Falls das Rating in der Auswahl war, dort auch entfernen
-    $this->selectedRatings = array_filter(
-        $this->selectedRatings,
-        fn ($id) => $id != $ratingId
-    );
-
-    // Pagination ggf. zurücksetzen, damit man nicht auf einer leeren Seite landet
-    $this->resetPage();
-
-    $this->dispatch('showAlert', 'Bewertung wurde gelöscht.', 'success');
-}
-
 
     public function render()
     {

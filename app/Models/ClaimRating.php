@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\Customer\ClaimRatingController;
+
 use App\Jobs\ClaimRatingAIEval;
+use App\Models\ClaimRating;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -65,13 +66,13 @@ class ClaimRating extends Model
         parent::boot();
 
         static::created(function (ClaimRating $claimRating) {
-            ClaimRatingController::evaluateScore($claimRating);
+            ClaimRatingAIEval::dispatch($claimRating);
         });
 
         static::updated(function (ClaimRating $claimRating) {
             // AI-Re-Score nur, wenn Antworten/Attachments geändert wurden
             if ($claimRating->wasChanged('attachments') || $claimRating->wasChanged('answers')) {
-                ClaimRatingController::evaluateScore($claimRating);
+                ClaimRatingAIEval::dispatch($claimRating);
             }
 
             // AdminTask nur, wenn sich data geändert hat (inkl. verification)

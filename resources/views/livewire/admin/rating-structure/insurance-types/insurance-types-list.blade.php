@@ -23,7 +23,27 @@
                 <div x-sort:item="{ id: {{ $type->id }} }">
                     <div class="grid grid-cols-12 relative border-b py-2 px-2 items-center">
                         <div class="col-span-4 font-semibold truncate pr-4">
-                            {{ $type->name }}
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-8 h-8 shrink-0 rounded bg-white  flex items-center justify-center overflow-hidden">
+                                    @if(!empty($type->icon_svg))
+                                        <div class="w-full h-full p-1 flex items-center justify-center [&_svg]:w-5 [&_svg]:h-5 [&_svg]:max-w-full [&_svg]:max-h-full">
+                                            @if($type->icon_type === 'svg' && $type->icon_svg)
+                                                {!! $type->icon_svg !!}
+                                            @elseif($type->icon_type === 'fontawesome')
+                                                <i class="{!! $type->icon_svg !!}"></i>
+                                            @endif
+
+                                        </div>
+                                    @else
+                                        <span class="text-[10px] text-gray-400"></span>
+                                    @endif
+                                </div>
+
+                                {{-- Name --}}
+                                <span class="truncate">
+                                    {{ $type->name }}
+                                </span>
+                            </div>
                         </div>
                         <div class="col-span-2 text-xs text-gray-700">
                             <span class="bg-gray-200 px-2 py-1 rounded text-xs">{{ $type->insurances->count() }}</span>

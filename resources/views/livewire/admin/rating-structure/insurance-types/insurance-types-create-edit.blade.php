@@ -54,6 +54,13 @@
                                 </span>
                             </h1>
                         </button>
+                        <button @click="openTab = 'icon'" 
+                            :class="openTab === 'icon' ? 'text-blue-600 border-blue-600 bg-gray-100 border-b-0' : 'text-gray-500 bg-white'" 
+                            class="px-4 py-2  text-sm font-medium transition-all border  border-gray-300 rounded-t-lg z-30">
+                            <h1 class="flex items-center justify-center">
+                                <span class="w-max">icon</span>
+                            </h1>
+                        </button>
                     </div>
                     <!-- Basic Settings -->
                     <div x-show="openTab === 'incurance'">
@@ -147,6 +154,86 @@
                             </div>
                         </div>
                     </div>
+<!-- Icon -->
+<div x-show="openTab === 'icon'" class="">
+    <div class="space-y-4 bg-gray-100 p-4 rounded-b-lg rounded-se-lg border border-gray-300 z-10">
+        <div class="space-y-3">
+            <label class="block text-sm font-medium text-gray-700">Icon-Typ</label>
+
+            <div class="flex items-center gap-6">
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="radio" wire:model.live="icon_type" value="svg" class="rounded border-gray-300">
+                    <span>SVG</span>
+                </label>
+
+                <label class="inline-flex items-center gap-2 text-sm">
+                    <input type="radio" wire:model.live="icon_type" value="fontawesome" class="rounded border-gray-300">
+                    <span>FontAwesome</span>
+                </label>
+            </div>
+
+            @error('icon_type')
+                <span class="text-red-500 text-sm">{{ $message }}</span>
+            @enderror
+        </div>
+
+        {{-- SVG --}}
+        @if(($icon_type ?? 'svg') === 'svg')
+            <div x-data="{ showTextarea: false }">
+                <label class="block text-sm font-medium text-gray-700">SVG-Icon</label>
+
+                <div class="flex items-center gap-2 mt-2">
+                    <button @click="showTextarea = !showTextarea"
+                            type="button"
+                            class="border rounded p-2 w-full aspect-video bg-white">
+                        <div class="flex items-center justify-center object-contain object-center max-h-full svg-icon-button overflow-hidden">
+                            {!! $icon ?: '<span class="text-gray-400 text-xs">SVG</span>' !!}
+                        </div>
+                    </button>
+                </div>
+
+                <div x-show="showTextarea" class="mt-2" @click.away="showTextarea = false">
+                    <textarea wire:model.live.defer="icon"
+                              rows="8"
+                              class="w-full border rounded px-4 py-2 h-auto font-mono text-xs"></textarea>
+                    @error('icon') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                </div>
+            </div>
+
+        {{-- FontAwesome --}}
+        @else
+            <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">FontAwesome Klassen</label>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                    <div>
+                        <input type="text"
+                               wire:model.live.defer="icon"
+                               placeholder="z.B. fas fa-car-crash"
+                               class="mt-1 block w-full border rounded px-4 py-2 bg-white">
+                        @error('icon') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        <div class="text-xs text-gray-500 mt-1">
+                            Bitte als Klassenstring eingeben (FA5), z.B. <span class="font-mono">fas fa-shield-alt</span>
+                        </div>
+                    </div>
+
+                    <div class="border rounded bg-white p-3">
+                        <div class="text-xs text-gray-500 mb-2">Vorschau</div>
+                        @php($fa = trim((string) $icon))
+                        <div class="text-2xl">
+                            @if($fa)
+                                <i class="{{ $fa }}"></i>
+                            @else
+                                <span class="text-gray-400 text-sm">—</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+</div>
+
                 </div>
             </div>
         </x-slot>

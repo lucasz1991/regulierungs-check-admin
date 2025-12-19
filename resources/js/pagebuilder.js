@@ -9,12 +9,15 @@ import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
 
-window.initGrapesJs = async function(grapejskey) {
+window.initGrapesJs = async function() {
     if (!document.getElementById("studio-editor") && document.getElementById('studio-editor').getAttribute('data-project') != null) {
         return;
     }
     var selectedProject = document.getElementById('studio-editor').getAttribute('data-project');
-    console.log("Initialisiere GrapesJS Studio mit Lizenz:", grapejskey);
+    var licenseKey = document.getElementById('studio-editor').getAttribute('data-license');
+    var apiUrl = document.getElementById('studio-editor').getAttribute('data-api-url');
+
+    console.log("Initialisiere GrapesJS Studio mit Lizenz:", licenseKey, "und Projekt-ID:", selectedProject + "API URL:", apiUrl);
     if (window.editor) {
         console.log("Bestehenden GrapesJS Editor zerstören...");
         window.editor.destroy();
@@ -23,7 +26,7 @@ window.initGrapesJs = async function(grapejskey) {
     try {
         window.editor = await createStudioEditor({
             root: '#studio-editor',
-            licenseKey: grapejskey,
+            licenseKey: licenseKey,
             plugins: [
               rteTinyMce.init({
                 enableOnClick: true,
@@ -161,7 +164,7 @@ window.initGrapesJs = async function(grapejskey) {
                         body.append('file', file);
                     }
                     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    var response = await fetch('https://dev.regulierungs-check.de/api/pagebuilder/upload', {
+                    var response = await fetch( apiUrl + '/api/pagebuilder/upload', {
                         method: 'POST',
                         body,
                         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token'), 'X-CSRF-TOKEN': csrfToken }
@@ -175,7 +178,7 @@ window.initGrapesJs = async function(grapejskey) {
                     return [{ src: result.url }];
                 },
                 onLoad: async () => {
-                    var response = await fetch('https://dev.regulierungs-check.de/api/pagebuilder/assets', {
+                    var response = await fetch( apiUrl + '/api/pagebuilder/assets', {
                         headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token') },
                     });
                     console.log(response);

@@ -56,7 +56,7 @@ class InsuranceTypesCreateEdit extends Component
             $this->is_active = $type->is_active;
 
             $this->icon = $type->icon_svg;
-$this->icon_type = $type->icon_type ?? 'svg';
+            $this->icon_type = $type->icon_type ?? 'svg';
 
             $this->assignedInsurances = $type->insurances
                 ->map(fn ($i) => ['id' => $i->id, 'name' => $i->name, 'order_column' => $i->pivot->order_column])
@@ -78,31 +78,31 @@ $this->icon_type = $type->icon_type ?? 'svg';
 
     public function save()
     {
-$validated = $this->validate([
-    'name' => 'required|string|max:255',
-    'description' => 'nullable|string|max:500',
-    'is_active' => 'boolean',
+        $validated = $this->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:500',
+            'is_active' => 'boolean',
 
-    'icon_type' => 'required|in:svg,fontawesome',
-    'icon' => 'nullable|string|max:20000',
-]);
+            'icon_type' => 'required|in:svg,fontawesome',
+            'icon' => 'nullable|string|max:20000',
+        ]);
 
-$iconValue = $this->icon_type === 'svg'
-    ? $this->sanitizeSvg($this->icon)
-    : (is_string($this->icon) ? trim($this->icon) : null);
+        $iconValue = $this->icon_type === 'svg'
+            ? $this->sanitizeSvg($this->icon)
+            : (is_string($this->icon) ? trim($this->icon) : null);
 
-$type = InsuranceType::updateOrCreate(
-    ['id' => $this->insuranceTypeId],
-    [
-        'name' => $this->name,
-        'slug' => Str::slug($this->name),
-        'description' => $this->description,
-        'is_active' => $this->is_active,
+        $type = InsuranceType::updateOrCreate(
+            ['id' => $this->insuranceTypeId],
+            [
+                'name' => $this->name,
+                'slug' => Str::slug($this->name),
+                'description' => $this->description,
+                'is_active' => $this->is_active,
 
-        'icon_type' => $this->icon_type,
-        'icon_svg'  => $iconValue,
-    ]
-);
+                'icon_type' => $this->icon_type,
+                'icon_svg'  => $iconValue,
+            ]
+        );
 
         $syncData = collect($this->assignedInsurances)
             ->mapWithKeys(fn ($item, $index) => [$item['id'] => ['order_column' => $index]])

@@ -132,7 +132,7 @@ class CreateEdit extends Component
     protected function uploadImageViaMediaController($file)
     {
         // Temporäres Request-Objekt mit dem File als 'file'
-        $request = Request::create('/admin/media/upload', 'POST', [], ['disk' => 'public'], ['file' => $file]);
+        $request = Request::create('/admin/media/upload', 'POST', ['visibility' => 'public'], [], ['file' => $file]);
 
         // MediaController manuell instanziieren und aufrufen
         $controller = new MediaController();

@@ -84,8 +84,7 @@
   @endscript
 <div
   x-data="tuiEditorFactory({
-    // Wenn wireModel vorhanden, binde bidirektional; sonst lokale Einbahnstraße mit initialValue
-    model: @if($wireModel) @entangle($wireModel).live @else null @endif,
+    model: @if($wireModel) @entangle($wireModel) @else null @endif,
     height: @js($height),
     previewStyle: @js($previewStyle),
     initialEditType: @js($initialEditType),

@@ -7,5 +7,6 @@
         <script src="{{ URL::asset('adminresources/choices.js/public/assets/scripts/choices.min.js') }}"></script>
         <script src="{{ URL::asset('adminresources/flatpickr/flatpickr.min.js') }}"></script>
         <script src="{{ URL::asset('adminresources/flatpickr/l10n/de.js') }}"></script>
-
+               <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+        <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js" defer></script>
     <link rel="stylesheet" href="{{ asset('adminresources/fontawesome6/css/all.min.css') }}">

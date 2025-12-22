@@ -7,7 +7,7 @@ use App\Models\Insurance;
 use App\Models\InsuranceType;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\MediaController;
 use Illuminate\Support\Str;
 
 

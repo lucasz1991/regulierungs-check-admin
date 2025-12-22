@@ -6,7 +6,7 @@ use App\Models\Post;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\MediaController;
 use App\Models\BlogCategory;
 
 class BlogEditCreate extends Component

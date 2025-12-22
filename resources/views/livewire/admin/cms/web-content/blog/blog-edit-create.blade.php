@@ -205,7 +205,7 @@
     <x-slot name="footer">
         <div class="flex items-center justify-between w-full gap-3">
             <x-button wire:click="$set('show', false)">Abbrechen</x-button>
-            <x-button wire:click="save" class="bg-primary-600 hover:bg-primary-700 text-white">Speichern</x-button>
+            <x-button wire:click="save" class="bg-primary hover:bg-primary-700 text-white">Speichern</x-button>
         </div>
     </x-slot>
 </x-dialog-modal>

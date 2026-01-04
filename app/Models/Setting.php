@@ -16,7 +16,7 @@ class Setting extends Model
         'value' => 'array',
     ];
 
-    /**
+    /** 
      * Cache prefix, um Keys konsistent zu halten.
      */
     protected static $cachePrefix = 'settings.';

@@ -83,39 +83,13 @@ class FilePreviewModal extends Component
         }
 
         // 1) Ephemere URL von deinem MediaController holen
-        $remoteUrl = $this->file->getEphemeralPublicUrl(600); // z. B. 10 Minuten
+        $remoteUrl = $this->file->getEphemeralPublicUrl(); // z. B. 10 Minuten
         if (! $remoteUrl) {
             return null;
         }
+        \Log::info('FilePreviewModal getUrlProperty: '.$remoteUrl, ['file_id' => $this->file->id]);
 
-        try {
-            // 2) Datei vom Remote-Storage holen
-            $response = Http::withoutVerifying()->get($remoteUrl);
-
-            if (! $response->successful()) {
-                return null;
-            }
-
-            $content = $response->body();
-        } catch (\Throwable $e) {
-            // Optional: Loggen, wenn du willst
-            // \Log::warning('FilePreviewModal getUrlProperty error: '.$e->getMessage(), ['file_id' => $this->file->id]);
-            return null;
-        }
-
-        // 3) sinnvollen Dateinamen/Endung bestimmen
-        $nameWithExt = $this->file->name_with_extension ?? ($this->file->name ?? 'datei');
-        $ext = pathinfo($nameWithExt, PATHINFO_EXTENSION) ?: 'bin';
-
-        $filename = 'preview_' . $this->file->id . '_' . Str::random(8) . '.' . $ext;
-        $tempPath = 'tmp/previews/' . $filename; // wird auf public-Disk gespeichert
-
-        // 4) Inhalt als temp-Datei auf public-Disk schreiben
-        Storage::disk('public')->put($tempPath, $content);
-
-        // 5) URL zur temp-Datei merken & zurückgeben
-        $this->tempPath = $tempPath;
-        $this->tempUrl  = Storage::disk('public')->url($tempPath);
+        $this->tempUrl  = $remoteUrl;
 
         return $this->tempUrl;
     }

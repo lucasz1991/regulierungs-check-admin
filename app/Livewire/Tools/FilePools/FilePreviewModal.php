@@ -53,11 +53,6 @@ class FilePreviewModal extends Component
 
     public function close(): void
     {
-        // temp-Datei aufräumen
-        if ($this->tempPath && Storage::disk('public')->exists($this->tempPath)) {
-            Storage::disk('public')->delete($this->tempPath);
-        }
-
         $this->open     = false;
         $this->fileId   = null;
         $this->file     = null;
@@ -87,7 +82,6 @@ class FilePreviewModal extends Component
         if (! $remoteUrl) {
             return null;
         }
-        \Log::info('FilePreviewModal getUrlProperty: '.$remoteUrl, ['file_id' => $this->file->id]);
 
         $this->tempUrl  = $remoteUrl;
 

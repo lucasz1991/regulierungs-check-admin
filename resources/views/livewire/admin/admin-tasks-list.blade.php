@@ -1,283 +1,300 @@
-<div class="">
-    {{-- Hinweisbox --}}
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 23.625 23.625" fill="currentColor" aria-hidden="true">
-                    <path
-                        d="M11.812 0C5.289 0 0 5.289 0 11.812s5.289 11.813 11.812 11.813 11.813-5.29 11.813-11.813S18.335 0 11.812 0zm2.459 18.307c-.608.24-1.092.422-1.455.548a3.838 3.838 0 0 1-1.262.189c-.736 0-1.309-.18-1.717-.539s-.611-.814-.611-1.367c0-.215.015-.435.045-.659a8.23 8.23 0 0 1 .147-.759l.761-2.688c.067-.258.125-.503.171-.731.046-.23.068-.441.068-.633 0-.342-.071-.582-.212-.717-.143-.135-.412-.201-.813-.201-.196 0-.398.029-.605.09-.205.063-.383.12-.529.176l.201-.828c.498-.203.975-.377 1.43-.521a4.225 4.225 0 0 1 1.29-.218c.731 0 1.295.178 1.692.53.395.353.594.812.594 1.376 0 .117-.014.323-.041.617a4.129 4.129 0 0 1-.152.811l-.757 2.68a7.582 7.582 0 0 0-.167.736 3.892 3.892 0 0 0-.073.626c0 .356.079.599.239.728.158.129.435.194.827.194.185 0 .392-.033.626-.097.232-.064.4-.121.506-.17l-.203.827zm-.134-10.878a1.807 1.807 0 0 1-1.275.492c-.496 0-.924-.164-1.28-.492a1.57 1.57 0 0 1-.533-1.193c0-.465.18-.865.533-1.196a1.812 1.812 0 0 1 1.28-.497c.497 0 .923.165 1.275.497.353.331.53.731.53 1.196 0 .467-.177.865-.53 1.193z"
-                        data-original="#030104" />
-                </svg>
+<div class="relative">
+    <style>
+        :root {
+            --tasks-ink: #0f172a;
+            --tasks-muted: #475569;
+            --tasks-line: #dbe3ee;
+            --tasks-surface: #ffffff;
+            --tasks-accent-a: #0ea5a4;
+            --tasks-accent-b: #f59e0b;
+            --tasks-bg-a: #ecfeff;
+            --tasks-bg-b: #fff7ed;
+        }
+    </style>
+
+    @php
+        $openCount = $tasks->where('status', 0)->count();
+        $inProgressCount = $tasks->where('status', 1)->count();
+        $doneCount = $tasks->where('status', 2)->count();
+    @endphp
+
+    <section class="mb-6 rounded-2xl border p-6 shadow-sm"
+             style="background: linear-gradient(120deg, var(--tasks-bg-a), var(--tasks-bg-b)); border-color: var(--tasks-line);">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <p class="text-xs font-semibold tracking-[0.16em] uppercase" style="color: var(--tasks-muted);">Admin Dashboard</p>
+                <h1 class="mt-1 text-3xl font-black leading-tight" style="color: var(--tasks-ink);">Aufgabenmanagement</h1>
+                <p class="mt-2 text-sm" style="color: var(--tasks-muted);">
+                    Klare Priorisierung, schnelle Uebernahme und sauberer Abschluss deiner Aufgaben.
+                </p>
             </div>
-            <div class="ml-3">
-                <div class="text-sm">
-                    <h2 class="text-lg font-semibold mb-2">Hinweis zur Aufgabenverwaltung</h2>
-                    <p class="text-sm">
-                        Hier findest du alle offenen, in Bearbeitung befindlichen und abgeschlossenen Aufgaben.  
-                        Je nach Status können Aufgaben unterschiedlich behandelt werden:
-                    </p>
-                    <ul class="mt-2 text-sm list-disc list-inside">
-                        <li><strong class="text-red-400">Offene Aufgaben</strong>  – Können übernommen und bearbeitet werden.</li>
-                        <li><strong class="text-yellow-400">In Bearbeitung</strong>  – Bereits einem Admin zugewiesen.</li>
-                        <li><strong class="text-green-400">Abgeschlossene Aufgaben</strong>  – Erledigt, keine weiteren Aktionen nötig.</li>
-                    </ul>
-                    <p class="mt-2 text-sm">
-                        Falls du eine Aufgabe übernehmen möchtest, klicke auf <strong class="text-blue-600">"Übernehmen"</strong>.  
-                        Sobald du sie erledigt hast, kannst du sie mit <strong class="text-blue-600">"Abschließen"</strong> als erledigt markieren. ✅
-                    </p>
+
+            <div class="grid w-full max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
+                <div class="rounded-xl border bg-white/80 p-3 backdrop-blur" style="border-color: var(--tasks-line);">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Offen</p>
+                    <p class="mt-1 text-2xl font-extrabold text-rose-600">{{ $openCount }}</p>
+                </div>
+                <div class="rounded-xl border bg-white/80 p-3 backdrop-blur" style="border-color: var(--tasks-line);">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">In Bearbeitung</p>
+                    <p class="mt-1 text-2xl font-extrabold text-amber-600">{{ $inProgressCount }}</p>
+                </div>
+                <div class="rounded-xl border bg-white/80 p-3 backdrop-blur" style="border-color: var(--tasks-line);">
+                    <p class="text-xs uppercase tracking-wide text-slate-500">Abgeschlossen</p>
+                    <p class="mt-1 text-2xl font-extrabold text-emerald-600">{{ $doneCount }}</p>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    {{-- Kopfbereich --}}
-    <div class="mb-4 flex flex-wrap justify-between gap-4">
-        <div class="mb-6 max-w-md">
-            <h1 class="text-2xl font-bold text-gray-700">ToDo's</h1>
-            <p class="text-gray-500">
-                Es gibt insgesamt {{ $tasks->where('status', 0)->count() }} offene Aufgaben (auf dieser Seite).
-            </p>
+    <section class="mb-6 rounded-2xl border bg-white p-4 shadow-sm" style="border-color: var(--tasks-line);">
+        <div class="flex items-start gap-3">
+            <div class="mt-0.5 rounded-lg bg-cyan-100 p-2 text-cyan-700">
+                <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 5.25a1.25 1.25 0 110 2.5 1.25 1.25 0 010-2.5zM13 17h-2v-6h2v6z"/>
+                </svg>
+            </div>
+            <div>
+                <h2 class="text-base font-bold" style="color: var(--tasks-ink);">Hinweis zur Aufgabenverwaltung</h2>
+                <p class="mt-1 text-sm" style="color: var(--tasks-muted);">
+                    Offene Aufgaben koennen uebernommen werden. Aufgaben in Bearbeitung sind bereits zugewiesen. Abgeschlossene Aufgaben sind erledigt.
+                </p>
+                <p class="mt-1 text-sm" style="color: var(--tasks-muted);">
+                    Mit <span class="font-semibold text-cyan-700">Uebernehmen</span> startest du die Bearbeitung, mit
+                    <span class="font-semibold text-emerald-700">Abschliessen</span> beendest du sie.
+                </p>
+            </div>
         </div>
-    </div>
+    </section>
 
-    {{-- Tabellenüberschrift --}}
-    <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300">
+    <div class="mb-3 hidden rounded-xl border bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 md:grid md:grid-cols-12"
+         style="border-color: var(--tasks-line);">
         <div class="col-span-1">ID</div>
         <div class="col-span-3">Aufgabentyp</div>
-        <div class="col-span-3">Zugehörigkeit</div>
+        <div class="col-span-3">Zugehoerigkeit</div>
         <div class="col-span-3">Zugewiesen an</div>
         <div class="col-span-2 text-right">Status</div>
     </div>
 
-    {{-- Aufgaben-Liste --}}
-    <div>
-        @foreach ($tasks as $task)
-            <div x-data="{ open: false }" class="border-b" @click.away="open = false">
-                {{-- Tabellenzeile --}}
-                <div
+    <div class="space-y-3">
+        @forelse ($tasks as $task)
+            @php
+                $typeLabel = $task->type === 'claim_verification' ? 'Claim-Verifikation' : $task->type;
+
+                $relatedLabel = match ($task->related_model_type) {
+                    'App\\Models\\User' => 'User',
+                    'App\\Models\\ClaimRating' => 'Bewertung',
+                    default => 'Nicht zugeordnet',
+                };
+
+                $statusLabel = match ($task->status) {
+                    0 => 'Offen',
+                    1 => 'In Bearbeitung',
+                    2 => 'Abgeschlossen',
+                    default => 'Unbekannt',
+                };
+
+                $statusClass = match ($task->status) {
+                    0 => 'bg-rose-100 text-rose-700 ring-rose-200',
+                    1 => 'bg-amber-100 text-amber-700 ring-amber-200',
+                    2 => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+                    default => 'bg-slate-100 text-slate-700 ring-slate-200',
+                };
+            @endphp
+
+            <article x-data="{ open: false }" @click.away="open = false" class="overflow-hidden rounded-2xl border bg-white shadow-sm"
+                     style="border-color: var(--tasks-line);">
+                <button
+                    type="button"
                     @click="open = !open"
-                    class="cursor-pointer hover:bg-gray-50 grid grid-cols-12 items-center p-2 text-left"
-                    x-bind:class="{ 'bg-blue-50': open }"
+                    class="grid w-full grid-cols-1 gap-3 px-4 py-4 text-left transition hover:bg-slate-50 md:grid-cols-12 md:items-center"
                 >
-                    <div class="col-span-1">{{ $task->id }}</div>
-                    <div class="col-span-3">
-                        @if($task->type === 'claim_verification')
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                Claim-Verifikation
+                    <div class="md:col-span-1">
+                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-bold text-slate-700">
+                            #{{ $task->id }}
+                        </span>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <p class="text-xs uppercase tracking-wide text-slate-500 md:hidden">Aufgabentyp</p>
+                        <span class="inline-flex items-center rounded-full bg-cyan-100 px-2.5 py-1 text-xs font-semibold text-cyan-800">
+                            {{ $typeLabel }}
+                        </span>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <p class="text-xs uppercase tracking-wide text-slate-500 md:hidden">Zugehoerigkeit</p>
+                        <p class="text-sm font-medium text-slate-700">{{ $relatedLabel }}</p>
+                    </div>
+
+                    <div class="md:col-span-3">
+                        <p class="text-xs uppercase tracking-wide text-slate-500 md:hidden">Zugewiesen an</p>
+                        <p class="text-sm font-medium text-slate-700">{{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}</p>
+                    </div>
+
+                    <div class="md:col-span-2 md:text-right">
+                        <div class="flex items-center gap-2 md:justify-end">
+                            <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ $statusClass }}">
+                                {{ $statusLabel }}
                             </span>
-                        @else
-                            {{ $task->type }}
-                        @endif
+                            <svg class="h-4 w-4 text-slate-400 transition-transform" :class="{ 'rotate-180': open }"
+                                 xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.51a.75.75 0 01-1.08 0l-4.25-4.51a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
                     </div>
-                    <div class="col-span-3">
-                        @switch($task->related_model_type)
-                            @case('App\\Models\\User')
-                                User
-                                @break
-                            @case('App\\Models\\ClaimRating')
-                                Bewertung
-                                @break
-                            @default
-                                Nicht zugeordnet
-                        @endswitch
+                </button>
+
+                <div x-show="open" x-collapse x-cloak class="border-t px-4 pb-4 pt-4" style="border-color: var(--tasks-line); background: #fcfdff;">
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="rounded-xl border bg-white p-4" style="border-color: var(--tasks-line);">
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Aufgaben-Details</h3>
+                            <p class="mt-2 text-sm whitespace-pre-line text-slate-700">
+                                <span class="font-semibold">Beschreibung:</span><br>{{ $task->description }}
+                            </p>
+                            <p class="mt-3 text-xs text-slate-500">
+                                Erstellt am: {{ $task->created_at->format('d.m.Y H:i') }}
+                            </p>
+                        </div>
                     </div>
-                    <div class="col-span-3">
-                        {{ $task->assignedTo ? $task->assignedTo->name : 'Nicht zugewiesen' }}
-                    </div>
-                    <div class="col-span-2 text-right">
-                        @switch($task->status)
-                            @case(0)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                                    Offen
+
+                    @if($task->type === 'claim_verification')
+                        @php
+                            /** @var \App\Models\ClaimRating|null $claim */
+                            $claim = $task->related instanceof \App\Models\ClaimRating
+                                ? $task->related
+                                : null;
+
+                            $verification = $claim ? $claim->verification : [];
+                            $verificationState = $verification['state'] ?? 'none';
+                            $caseNumber = $verification['caseNumber'] ?? null;
+                            $casefileUploaded = $verification['casefileUploaded'] ?? false;
+                            $verificationFiles = $claim ? $claim->verificationFiles()->get() : collect();
+
+                            $verificationLabel = match ($verificationState) {
+                                'pending' => 'Verifikation offen',
+                                'approved' => 'Verifiziert',
+                                'rejected' => 'Abgelehnt',
+                                default => 'Keine Verifikation',
+                            };
+
+                            $verificationClass = match ($verificationState) {
+                                'pending' => 'bg-amber-100 text-amber-700 ring-amber-200',
+                                'approved' => 'bg-emerald-100 text-emerald-700 ring-emerald-200',
+                                'rejected' => 'bg-rose-100 text-rose-700 ring-rose-200',
+                                default => 'bg-slate-100 text-slate-700 ring-slate-200',
+                            };
+                        @endphp
+
+                        <div class="mt-4 rounded-xl border bg-white p-4" style="border-color: var(--tasks-line);">
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                <h4 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Claim-Verifikation</h4>
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 {{ $verificationClass }}">
+                                    {{ $verificationLabel }}
                                 </span>
-                                @break
-                            @case(1)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                                    In Bearbeitung
-                                </span>
-                                @break
-                            @case(2)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                                    Abgeschlossen
-                                </span>
-                                @break
-                            @default
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                    Unbekannt
-                                </span>
-                        @endswitch
+                            </div>
+
+                            @if($claim)
+                                <div class="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                                    <div class="space-y-1 text-slate-700">
+                                        <p><span class="font-semibold">Bewertungs-ID:</span> {{ $claim->id }}</p>
+                                        <p><span class="font-semibold">User-ID:</span> {{ $claim->user_id }}</p>
+                                        <p><span class="font-semibold">Status:</span> {{ $claim->status }}</p>
+                                        <p><span class="font-semibold">Verifikations-Score:</span> {{ $claim->verification_score }} / 60</p>
+                                    </div>
+                                    <div class="space-y-1 text-slate-700">
+                                        <p><span class="font-semibold">Versicherung:</span> {{ optional($claim->insurance)->name ?? '-' }}</p>
+                                        <p><span class="font-semibold">Fallnummer:</span> {{ $caseNumber ?: '-' }}</p>
+                                        <p><span class="font-semibold">Verifikationsdatei vorhanden:</span> {{ $casefileUploaded ? 'Ja' : 'Nein' }}</p>
+                                        <p><span class="font-semibold">Verifizierte User-E-Mail:</span> {{ $claim->user && $claim->user->email_verified_at ? 'Ja' : 'Nein' }}</p>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Verifikationsdateien</p>
+
+                                    @if($verificationFiles->isEmpty())
+                                        <p class="mt-2 text-sm text-slate-600">Keine Verifikationsdateien hinterlegt.</p>
+                                    @else
+                                        <ul class="mt-2 space-y-2">
+                                            @foreach($verificationFiles as $file)
+                                                <li class="flex flex-wrap items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                                                    style="border-color: var(--tasks-line);">
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                                        x-on:click.stop="$dispatch('filepool-preview', { id: {{ $file->id }} })"
+                                                        title="Datei-Vorschau oeffnen"
+                                                    >
+                                                        <i class="fas fa-eye mr-1"></i> Vorschau
+                                                    </button>
+                                                    <span class="font-semibold">Datei #{{ $file->id }}</span>
+                                                    <span>- {{ $file->name ?? 'ohne Namen' }}</span>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @endif
+                                </div>
+                            @else
+                                <p class="text-sm text-rose-600">Zugehoerige Bewertung konnte nicht geladen werden.</p>
+                            @endif
+                        </div>
+                    @endif
+
+                    <div class="mt-4 rounded-xl border bg-white p-4" style="border-color: var(--tasks-line);">
+                        <div class="mb-2 flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Aktionen</h3>
+                            <span class="text-xs text-slate-400">Task #{{ $task->id }}</span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            @if($task->type === 'claim_verification' && $task->status == 1 && $task->related instanceof \App\Models\ClaimRating)
+                                <x-button
+                                    wire:click.stop="approveClaimVerification({{ $task->id }})"
+                                    class="btn-xs text-sm bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                >
+                                    Verifikation bestaetigen
+                                </x-button>
+
+                                <x-button
+                                    wire:click.stop="rejectClaimVerification({{ $task->id }})"
+                                    class="btn-xs text-sm bg-rose-100 text-rose-700 hover:bg-rose-200"
+                                >
+                                    Verifikation ablehnen
+                                </x-button>
+                            @endif
+
+                            @if(!$task->assignedTo)
+                                <x-button
+                                    wire:click.stop="assignToMe({{ $task->id }})"
+                                    class="btn-xs text-sm"
+                                >
+                                    Uebernehmen
+                                </x-button>
+                            @endif
+
+                            @if($task->status == 1 && $task->type !== 'claim_verification')
+                                <x-button
+                                    wire:click.stop="markAsCompleted({{ $task->id }})"
+                                    class="btn-xs text-sm text-emerald-600"
+                                >
+                                    Abschliessen
+                                </x-button>
+                            @endif
+                        </div>
                     </div>
                 </div>
-
-                {{-- Detail-Karte --}}
-                <div x-show="open" x-collapse x-cloak class="bg-blue-50 p-4 border-t">
-                    <h3 class="text-lg font-bold mb-2">📝 Aufgaben-Details</h3>
-                    <p class="text-sm whitespace-pre-line">
-                        <strong>Beschreibung:</strong><br> {{ $task->description }}
-                    </p>
-                    <p class="text-sm mt-1">
-                        <strong>Erstellt am:</strong> {{ $task->created_at->format('d.m.Y H:i') }}
-                    </p>
-
-{{-- Claim-Verifikations-Block --}}
-@if($task->type === 'claim_verification')
-    @php
-        /** @var \App\Models\ClaimRating|null $claim */
-        $claim = $task->related instanceof \App\Models\ClaimRating
-            ? $task->related
-            : null;
-
-        // Immer ein Array, dank Accessor im Model
-        $verification = $claim ? $claim->verification : [];
-
-        $verificationState = $verification['state'] ?? 'none';
-        $caseNumber        = $verification['caseNumber'] ?? null;
-        $casefileUploaded  = $verification['casefileUploaded'] ?? false;
-
-        $verificationFiles = $claim
-            ? $claim->verificationFiles()->get()
-            : collect();
-    @endphp
-
-    <div class="mt-4 space-y-3 border-t border-blue-200 pt-3">
-        <div class="flex items-center justify-between gap-3">
-            <h4 class="text-base font-semibold flex items-center gap-2">
-                🔍 Verifikation der Schadenbewertung
-            </h4>
-            @if($verificationState === 'pending')
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Verifikation offen
-                </span>
-            @elseif($verificationState === 'approved')
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Verifiziert
-                </span>
-            @elseif($verificationState === 'rejected')
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    Abgelehnt
-                </span>
-            @else
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                    Keine Verifikation
-                </span>
-            @endif
-        </div>
-
-        @if($claim)
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div class="space-y-1">
-                    <p><strong>Bewertungs-ID:</strong> {{ $claim->id }}</p>
-                    <p><strong>User-ID:</strong> {{ $claim->user_id }}</p>
-                    <p><strong>Status:</strong> {{ $claim->status }}</p>
-                    <p><strong>Verifikations-Score:</strong> {{ $claim->verification_score }} / 60</p>
-                </div>
-                <div class="space-y-1">
-                    <p>
-                        <strong>Versicherung:</strong>
-                        {{ optional($claim->insurance)->name ?? '—' }}
-                    </p>
-                    <p>
-                        <strong>Fallnummer:</strong>
-                        {{ $caseNumber ?: '—' }}
-                    </p>
-                    <p>
-                        <strong>Verifikationsdatei vorhanden:</strong>
-                        {{ $casefileUploaded ? 'Ja' : 'Nein' }}
-                    </p>
-                    <p>
-                        <strong>Verifizierte User-E-Mail:</strong>
-                        {{ $claim->user && $claim->user->email_verified_at ? 'Ja' : 'Nein' }}
-                    </p>
-                </div>
+            </article>
+        @empty
+            <div class="rounded-2xl border border-dashed bg-white p-10 text-center shadow-sm" style="border-color: var(--tasks-line);">
+                <p class="text-lg font-semibold text-slate-700">Keine Aufgaben auf dieser Seite.</p>
+                <p class="mt-1 text-sm text-slate-500">Sobald neue Aufgaben vorhanden sind, erscheinen sie hier.</p>
             </div>
-
-{{-- Verifikations-Dateien --}}
-<div class="mt-3">
-    <p class="font-semibold text-sm mb-1">📎 Verifikationsdateien</p>
-
-    @if($verificationFiles->isEmpty())
-        <p class="text-sm text-gray-600">
-            Keine Verifikationsdateien hinterlegt.
-        </p>
-    @else
-        <ul class="text-sm list-disc list-inside space-y-1">
-            @foreach($verificationFiles as $file)
-                <li class="flex items-center gap-2">
-                    {{-- Preview-Button über FilePreviewModal --}}
-                    <button
-                        type="button"
-                        class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200"
-                        x-on:click.stop="$dispatch('filepool-preview', { id: {{ $file->id }} })"
-                        title="Datei-Vorschau öffnen"
-                    >
-                        <i class="fas fa-eye mr-1"></i> Vorschau
-                    </button>
-
-                    <span class="font-medium">
-                        Datei #{{ $file->id }}
-                    </span>
-                    – {{ $file->name ?? 'ohne Namen' }}
-                </li>
-            @endforeach
-        </ul>
-    @endif
-</div>
-
-        @else
-            <p class="mt-2 text-sm text-red-600">
-                ⚠ Zugehörige Bewertung konnte nicht geladen werden.
-            </p>
-        @endif
-    </div>
-@endif
-
-                    {{-- Footer mit Buttons --}}
-                    <div class="mt-4 flex flex-wrap justify-end gap-2 border-t pt-3">
-                        {{-- Claim-Verifikation Buttons (nur wenn in Bearbeitung + Claim vorhanden) --}}
-                        @if($task->type === 'claim_verification' && $task->status == 1 && isset($claim))
-                            <x-button
-                                wire:click.stop="rejectClaimVerification({{ $task->id }})"
-                                class="btn-xs text-sm bg-red-100 text-red-700 hover:bg-red-200"
-                            >
-                                ❌ Verifikation ablehnen
-                            </x-button>
-
-                            <x-button
-                                wire:click.stop="approveClaimVerification({{ $task->id }})"
-                                class="btn-xs text-sm bg-green-100 text-green-700 hover:bg-green-200"
-                            >
-                                ✅ Verifikation bestätigen
-                            </x-button>
-                        @endif
-
-                        {{-- Übernehmen nur, wenn nicht zugewiesen --}}
-                        @if(!$task->assignedTo)
-                            <x-button
-                                wire:click.stop="assignToMe({{ $task->id }})"
-                                class="btn-xs text-sm"
-                            >
-                                ➕ Übernehmen
-                            </x-button>
-                        @endif
-
-                        {{-- Generisches "Abschließen" nur für Nicht-Claim-Verifikations-Tasks --}}
-                        @if($task->status == 1 && $task->type !== 'claim_verification')
-                            <x-button
-                                wire:click.stop="markAsCompleted({{ $task->id }})"
-                                class="btn-xs text-sm text-green-500"
-                            >
-                                ✅ Abschließen
-                            </x-button>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        @endforeach
+        @endforelse
     </div>
 
-    {{-- Pagination --}}
-    <div class="mt-4">
+    <div class="mt-5">
         {{ $tasks->links() }}
     </div>
+
     <livewire:tools.file-pools.file-preview-modal />
 </div>

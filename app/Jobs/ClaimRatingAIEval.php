@@ -14,12 +14,14 @@ class ClaimRatingAIEval implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
     public ClaimRating $claimRating;
+    public bool $isAdminReanalysis;
     /**
      * Create a new job instance.
      */
-    public function __construct(ClaimRating $claimRating)
+    public function __construct(ClaimRating $claimRating, bool $isAdminReanalysis = false)
     {
         $this->claimRating = $claimRating;
+        $this->isAdminReanalysis = $isAdminReanalysis;
     }
 
     /**

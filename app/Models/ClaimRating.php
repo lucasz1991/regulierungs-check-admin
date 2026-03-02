@@ -219,7 +219,7 @@ class ClaimRating extends Model
         $this->status    = self::STATUS_PENDING;
         $this->saveQuietly();
 
-        ClaimRatingAIEval::dispatch($this);
+        ClaimRatingAIEval::dispatch($this, true);
     }
 
     public function comment(): string

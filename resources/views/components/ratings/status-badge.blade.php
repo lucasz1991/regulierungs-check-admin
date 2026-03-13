@@ -10,6 +10,7 @@
                                 @case('pending') bg-yellow-600 @break
                                 @case('rating') bg-blue-600  @break
                                 @case('rated') bg-green-600 @break
+                                @case('published') bg-green-600 @break
                                 @case('approved') bg-green-600 @break
                                 @case('rejected') bg-red-600 @break
                                 @default bg-gray-600
@@ -23,6 +24,13 @@
                                     </svg>
                                     <span>Bewertet</span>
                                     @break
+                                @case('published')
+                                    <!-- Haken -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 min-w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span>Bewertet</span>
+                                    @break    
                                 @case('pending')
                                     <!-- Spinner / Ladeanimation -->
                                     <svg class="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

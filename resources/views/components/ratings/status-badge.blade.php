@@ -5,7 +5,7 @@
                         @endphp
 
                     <div class="flex items-center" title="Status: {{ ucfirst($status) }}">
-                        <div class=" w-max rounded-full flex items-center  space-x-2 justify-center px-2 py-1 pr-3 text-white
+                        <div class="w-32 max-w-32 rounded-full flex items-center gap-2 overflow-hidden px-2 py-1 pr-3 text-white
                             @switch($status)
                                 @case('pending') bg-yellow-600 @break
                                 @case('pending_validation') bg-yellow-600 @break
@@ -23,14 +23,14 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 min-w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Bewertet</span>
+                                    <span class="truncate whitespace-nowrap">Bewertet</span>
                                     @break
                                 @case('published')
                                     <!-- Haken -->
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 min-w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Bewertet</span>
+                                    <span class="truncate whitespace-nowrap">Bewertet</span>
                                     @break    
                                 @case('pending')
                                     <!-- Spinner / Ladeanimation -->
@@ -38,7 +38,7 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                                     </svg>
-                                    <span>Wartet...</span>
+                                    <span class="truncate whitespace-nowrap">Wartet...</span>
                                     @break
                                 @case('pending_validation')
                                     <!-- Spinner / Ladeanimation -->
@@ -46,7 +46,7 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                                     </svg>
-                                    <span>Wartet auf Validierung...</span>
+                                    <span class="truncate whitespace-nowrap">Validierung...</span>
                                     @break
                                 @case('rating')
                                     <!-- Spinner / Ladeanimation -->
@@ -54,14 +54,14 @@
                                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                         <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                                     </svg>
-                                    <span>Analysiert...</span>
+                                    <span class="truncate whitespace-nowrap">Analysiert...</span>
                                     @break
                                 @case('approved')
                                     <!-- Haken -->
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 min-w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                                     </svg>
-                                    <span>Approved</span>
+                                    <span class="truncate whitespace-nowrap">Approved</span>
                                     @break
 
                                 @case('rejected')
@@ -69,7 +69,7 @@
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                     </svg>
-                                    <span>rejected</span>
+                                    <span class="truncate whitespace-nowrap">rejected</span>
                                     @break
 
                                 @default

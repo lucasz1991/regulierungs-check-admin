@@ -8,6 +8,7 @@
                         <div class=" w-max rounded-full flex items-center  space-x-2 justify-center px-2 py-1 pr-3 text-white
                             @switch($status)
                                 @case('pending') bg-yellow-600 @break
+                                @case('pending_validation') bg-yellow-600 @break
                                 @case('rating') bg-blue-600  @break
                                 @case('rated') bg-green-600 @break
                                 @case('published') bg-green-600 @break
@@ -38,6 +39,14 @@
                                         <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                                     </svg>
                                     <span>Wartet...</span>
+                                    @break
+                                @case('pending_validation')
+                                    <!-- Spinner / Ladeanimation -->
+                                    <svg class="animate-spin h-4 w-4 text-yellow-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                                    </svg>
+                                    <span>Wartet auf Validierung...</span>
                                     @break
                                 @case('rating')
                                     <!-- Spinner / Ladeanimation -->

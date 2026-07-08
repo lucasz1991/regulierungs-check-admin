@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Models\Setting;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Admin\MediaController;
+use App\Http\Controllers\MediaController;
 
 class Post extends Model
 {
@@ -21,11 +21,21 @@ class Post extends Model
         'category_id',
         'published',
         'published_at',
+        'layout',
+        'images',
     ];
 
     protected $casts = [
         'published' => 'boolean',
         'published_at' => 'datetime',
+        'images' => 'array',
+    ];
+
+    public const NEWS_LAYOUTS = [
+        'image_top',
+        'image_bottom',
+        'image_left',
+        'image_right',
     ];
 
     protected static function booted()
@@ -37,7 +47,7 @@ class Post extends Model
         });
 
         static::updating(function ($post) {
-            if ($post->isDirty('cover_image') && $post->getOriginal('cover_image')) {
+            if ($post->type !== 'news' && $post->isDirty('cover_image') && $post->getOriginal('cover_image')) {
                 self::deleteImageViaMediaController($post->getOriginal('cover_image'));
             }
             $cleanTitle = str_replace(['&shy;', "\u{00AD}"], '', $post->title);
@@ -47,6 +57,12 @@ class Post extends Model
         static::deleting(function ($post) {
             if ($post->cover_image) {
                 self::deleteImageViaMediaController($post->cover_image);
+            }
+
+            foreach ($post->newsImages() as $image) {
+                if (($image['path'] ?? null) && $image['path'] !== $post->cover_image) {
+                    self::deleteImageViaMediaController($image['path']);
+                }
             }
         });
     }
@@ -106,6 +122,47 @@ class Post extends Model
         $apiUrl = Setting::where('key', 'base_api_url')->value('value');
         return $this->cover_image
             ? $apiUrl . '/storage/' . $this->cover_image : null;
+    }
+
+    public function newsImages(): array
+    {
+        $apiUrl = rtrim((string) Setting::where('key', 'base_api_url')->value('value'), '/');
+
+        $images = collect($this->images ?? [])
+            ->filter(fn ($image) => is_array($image) && !empty($image['path']))
+            ->sortBy(fn ($image) => (int) ($image['sort'] ?? 0))
+            ->values()
+            ->map(function ($image) use ($apiUrl) {
+                $path = ltrim((string) $image['path'], '/');
+
+                return [
+                    'path' => $path,
+                    'url' => $apiUrl ? $apiUrl . '/storage/' . $path : null,
+                    'alt' => $image['alt'] ?? $this->title,
+                    'caption' => $image['caption'] ?? null,
+                    'sort' => (int) ($image['sort'] ?? 0),
+                ];
+            })
+            ->all();
+
+        if ($images === [] && $this->cover_image) {
+            $path = ltrim($this->cover_image, '/');
+
+            return [[
+                'path' => $path,
+                'url' => $apiUrl ? $apiUrl . '/storage/' . $path : null,
+                'alt' => $this->title,
+                'caption' => null,
+                'sort' => 0,
+            ]];
+        }
+
+        return $images;
+    }
+
+    public function firstNewsImage(): ?array
+    {
+        return $this->newsImages()[0] ?? null;
     }
 
     //  Vorschau aus dem Body generieren

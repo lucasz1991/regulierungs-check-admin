@@ -1,4 +1,4 @@
-<div x-data="{ selectedTab: $persist('webpages').using(sessionStorage) }" class="w-full">
+<div x-data="{ selectedTab: @entangle('selectedTab') }" class="w-full">
     <!-- Tab-Menü -->
     <ul class="flex w-max text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-200 rounded-lg shadow divide-gray-200 overflow-hidden">
         <!-- webpages Tab -->
@@ -41,6 +41,15 @@
                 Blog
             </button>
         </li>
+        <li class="border-l border-gray-200">
+            <button 
+                @click="selectedTab = 'news'" 
+                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'news' }" 
+                class="w-full px-4 py-2 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
+            >
+                News
+            </button>
+        </li>
         <!-- Ai Assist -->
         <li class="border-l border-gray-200">
             <button 
@@ -74,6 +83,9 @@
         <!-- Blog Inhalt -->
         <div x-show="selectedTab === 'blog'" x-cloak>
             <livewire:admin.cms.web-content.blog.blog-list lazy />
+        </div>
+        <div x-show="selectedTab === 'news'" x-cloak>
+            <livewire:admin.cms.web-content.news.news-list lazy />
         </div>
         <!-- tools Inhalt -->
         <div x-show="selectedTab === 'tools'" x-cloak>

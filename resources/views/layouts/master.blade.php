@@ -12,7 +12,7 @@
     @livewireStyles
     @yield('css')
 </head>
-    <body data-mode="light" data-sidebar-size="lg" class="group font-notosans">
+    <body data-mode="light" data-sidebar-size="lg" data-sidebar-collapsible="true" data-sidebar-expanded="false" class="group font-notosans">
         @livewire('user-alert')
         <!-- sidebar -->
         @include('layouts.sidebar')

@@ -3,7 +3,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build && mv public/build/.vite/manifest.json public/build/manifest.json && rm -rf public/build/.vite"
+        "build": "vite build && node -e \"const fs=require('fs');const from='public/build/.vite/manifest.json';const to='public/build/manifest.json';if(fs.existsSync(from)){fs.renameSync(from,to);}fs.rmSync('public/build/.vite',{recursive:true,force:true});\""
     },
     "devDependencies": {
         "@alpinejs/focus": "^3.10.5",
@@ -88,6 +88,7 @@
         "sweetalert2": "^11.6.13",
         "swiper": "^8.4.5",
         "table-edits": "^0.0.3",
+        "trix": "^2.1.19",
         "vite-plugin-static-copy": "^0.17.0",
         "wnumb": "^1.2.0",
         "zoomist": "^2.1.1"

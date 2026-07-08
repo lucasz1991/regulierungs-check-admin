@@ -56,6 +56,29 @@ class Setting extends Model
         return $setting;
     }
 
+    public static function enabled(string $type, string $key, bool $default = false): bool
+    {
+        $value = static::where('type', $type)->where('key', $key)->value('value');
+
+        if ($value === null) {
+            return $default;
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        if (is_array($value)) {
+            $value = $value['enabled'] ?? $value['value'] ?? reset($value);
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
+    }
+
     /**
      * Löscht den Cache für einen kompletten Setting-Type.
      */

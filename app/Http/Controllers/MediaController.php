@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Setting;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\JsonResponse;
-use App\Http\Controllers\Controller;
-use App\Models\Setting;
 
 class MediaController extends Controller
 {
@@ -14,97 +13,143 @@ class MediaController extends Controller
 
     public function __construct()
     {
-        $this->apiSettings['base_api_url'] = Setting::where('key', 'base_api_url')->value('value');
-        $this->apiSettings['base_api_key'] = Setting::where('key', 'base_api_key')->value('value');
+        $this->apiSettings['base_api_url'] = $this->settingValue('base_api_url');
+        $this->apiSettings['base_api_key'] = $this->settingValue('base_api_key');
+    }
+
+    protected function settingValue(string $key): ?string
+    {
+        $value = Setting::where('key', $key)->value('value');
+
+        if (is_array($value)) {
+            $value = $value['value'] ?? reset($value);
+        }
+
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = is_array($decoded) ? ($decoded['value'] ?? reset($decoded)) : $decoded;
+            }
+        }
+
+        return filled($value) ? (string) $value : null;
+    }
+
+    protected function baseEndpoint(string $path): ?string
+    {
+        $url = rtrim((string) ($this->apiSettings['base_api_url'] ?? ''), '/');
+        $key = $this->apiSettings['base_api_key'] ?? null;
+
+        if ($url === '' || ! $key) {
+            return null;
+        }
+
+        return $url . $path;
+    }
+
+    protected function missingBaseConfigurationResponse(): JsonResponse
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'Base-API ist nicht konfiguriert.',
+        ], 422);
     }
 
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|max:40960',
+            'file' => 'required|file|max:40960',
             'folder' => 'nullable|string',
             'visibility' => 'nullable|in:public,private',
         ]);
 
-        $file = $request->file('file');
+        $endpoint = $this->baseEndpoint('/api/admin/upload');
+        if (! $endpoint) {
+            return $this->missingBaseConfigurationResponse();
+        }
 
-        $response = Http::attach(
-            'file', 
-            file_get_contents($file->getRealPath()), 
+        $file = $request->file('file');
+        $requestBuilder = Http::timeout(120)->attach(
+            'file',
+            file_get_contents($file->getRealPath()),
             $file->getClientOriginalName()
         )->withHeaders([
             'X-API-KEY' => $this->apiSettings['base_api_key'],
-        ])->withoutVerifying()->post(
-            $this->apiSettings['base_api_url'] . '/api/admin/upload',
-            [
-                'folder'     => $request->input('folder'),
-                'visibility' => $request->input('visibility'),
-            ]
-        );
+        ])->withoutVerifying();
 
+        $payload = array_filter([
+            'folder' => $request->input('folder'),
+            'visibility' => $request->input('visibility'),
+        ], fn ($value) => filled($value));
 
-        if ($response->successful()) {
-            return response()->json($response->json());
-        }
+        $response = $requestBuilder->post($endpoint, $payload);
 
-        return response()->json(['success' => false, 'message' => 'Upload fehlgeschlagen.'], $response->status());
+        return $response->successful()
+            ? response()->json($response->json())
+            : response()->json(['success' => false, 'message' => 'Upload fehlgeschlagen.'], $response->status());
     }
 
     public function destroy(Request $request): JsonResponse
     {
         $request->validate([
             'path' => 'required|string',
+            'visibility' => 'nullable|in:public,private',
         ]);
 
-        $response = Http::withHeaders([
-            'X-API-KEY' => $this->apiSettings['base_api_key'],
-        ])->withoutVerifying()->delete($this->apiSettings['base_api_url'] . '/api/admin/delete', [
-            'path' => $request->path,
-        ]);
-
-        if ($response->successful()) {
-            return response()->json($response->json());
+        $endpoint = $this->baseEndpoint('/api/admin/delete');
+        if (! $endpoint) {
+            return $this->missingBaseConfigurationResponse();
         }
 
-        return response()->json(['success' => false, 'message' => 'Löschen fehlgeschlagen.'], $response->status());
+        $payload = ['path' => $request->path];
+        if ($request->filled('visibility')) {
+            $payload['visibility'] = $request->input('visibility');
+        }
+
+        $response = Http::timeout(60)->withHeaders([
+            'X-API-KEY' => $this->apiSettings['base_api_key'],
+        ])->withoutVerifying()->delete($endpoint, $payload);
+
+        return $response->successful()
+            ? response()->json($response->json())
+            : response()->json(['success' => false, 'message' => 'Loeschen fehlgeschlagen.'], $response->status());
     }
 
     public function resolve(Request $request): JsonResponse
     {
         $request->validate([
             'file_id' => 'required_without:url|nullable|integer|min:1',
-            'url'     => 'required_without:file_id|nullable|string|max:2048',
+            'url' => 'required_without:file_id|nullable|string|max:2048',
             'expires' => 'nullable|integer|min:30|max:86400',
-            'disk'    => 'nullable|in:private,public',
+            'disk' => 'nullable|in:private,public',
         ]);
 
-        $payload = [
-            // nur setzen, wenn vorhanden
+        $endpoint = $this->baseEndpoint('/api/admin/resolve-file-url');
+        if (! $endpoint) {
+            return $this->missingBaseConfigurationResponse();
+        }
+
+        $payload = array_filter([
             'expires' => $request->input('expires'),
-            'disk'    => $request->input('disk'),
-        ];
+            'disk' => $request->input('disk'),
+        ], fn ($value) => filled($value));
 
         if ($request->filled('file_id')) {
-            $payload['file_id'] = (int)$request->input('file_id');
+            $payload['file_id'] = (int) $request->input('file_id');
         } elseif ($request->filled('url')) {
             $payload['url'] = $request->input('url');
         }
 
-        // Aufruf der Basis-API
-        $response = Http::withHeaders([
-                'X-API-KEY' => $this->apiSettings['base_api_key'],
-            ])
-            ->withoutVerifying()
-            ->post($this->apiSettings['base_api_url'] . '/api/admin/resolve-file-url', $payload);
+        $response = Http::timeout(60)->withHeaders([
+            'X-API-KEY' => $this->apiSettings['base_api_key'],
+        ])->withoutVerifying()->post($endpoint, $payload);
 
-        if ($response->successful()) {
-            return response()->json($response->json());
-        }
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Auflösung fehlgeschlagen.',
-            'status'  => $response->status(),
-        ], $response->status());
+        return $response->successful()
+            ? response()->json($response->json())
+            : response()->json([
+                'success' => false,
+                'message' => 'Aufloesung fehlgeschlagen.',
+                'status' => $response->status(),
+            ], $response->status());
     }
 }

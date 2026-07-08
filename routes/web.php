@@ -18,6 +18,7 @@ use App\Livewire\Admin\ManageContacts;
 use App\Livewire\Admin\Cms\EditProject;
 use App\Livewire\Admin\Reviews\ClaimRatingList;
 use App\Livewire\Admin\Reviews\ShowClaimRating;
+use App\Livewire\Welcome;
 
 
 use App\Http\Controllers\PagebuilderProjectController;
@@ -35,10 +36,12 @@ use App\Http\Controllers\PagebuilderProjectController;
 |
 */
 
+Route::get('/', Welcome::class)->name('home');
+
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     // Admin Routes
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/', AdminDashboard::class)->name('admin.index');
+        Route::get('/admin', AdminDashboard::class)->name('admin.index');
         Route::get('/config', AdminConfig::class)->name('admin.config');
         Route::get('/web-content-manager', WebContentManager::class)->name('admin.webcontentmanager');
         Route::get('/web-content-manager/news', WebContentManager::class)->name('admin.webcontent.news');

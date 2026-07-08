@@ -53,9 +53,12 @@
         </div>
     </div>
 
-    <x-ui.datatables.table-wrapper label="Bewertungen">
+    <x-ui.datatables.table-wrapper
+        label="Bewertungen"
+        columns="md:grid-cols-[72px_minmax(140px,1.1fr)_minmax(180px,1.5fr)_220px] lg:grid-cols-[72px_minmax(140px,1fr)_minmax(180px,1.4fr)_150px_220px] xl:grid-cols-[72px_minmax(150px,1fr)_minmax(190px,1.3fr)_150px_220px_220px]"
+    >
         <x-slot:header>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-1 flex items-center">
+            <div data-role="datatable-heading" role="columnheader" class="flex items-center">
                 <x-button wire:click="toggleSelectAll" class="btn-xs mr-3 p-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
@@ -63,7 +66,7 @@
                 </x-button>
                 #
             </div>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-3 flex items-center">
+            <div data-role="datatable-heading" role="columnheader" class="flex min-w-0 items-center">
                 <button wire:click="sortByField('name')" class="flex items-center text-left">
                     Kunde
                     @if ($sortBy === 'user.name')
@@ -75,19 +78,23 @@
                     @endif
                 </button>
             </div>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-3">Versicherung</div>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-2">Regulierungsart</div>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-2">Score</div>
-            <div data-role="datatable-heading" role="columnheader" class="col-span-1">Status</div>
+            <div data-role="datatable-heading" role="columnheader" class="min-w-0">Versicherung</div>
+            <div data-role="datatable-heading" role="columnheader" class="hidden min-w-0 lg:block">Regulierungsart</div>
+            <div data-role="datatable-heading" role="columnheader" class="hidden min-w-0 xl:block">Score</div>
+            <div data-role="datatable-heading" role="columnheader" class="min-w-[220px] text-right">Status</div>
         </x-slot:header>
 
         @forelse($ratings as $rating)
-            <x-ui.datatables.table-item :item="$rating->id" wire:key="rating-row-{{ $rating->id }}">
+            <x-ui.datatables.table-item
+                :item="$rating->id"
+                columns="md:grid-cols-[72px_minmax(140px,1.1fr)_minmax(180px,1.5fr)_220px] lg:grid-cols-[72px_minmax(140px,1fr)_minmax(180px,1.4fr)_150px_220px] xl:grid-cols-[72px_minmax(150px,1fr)_minmax(190px,1.3fr)_150px_220px_220px]"
+                wire:key="rating-row-{{ $rating->id }}"
+            >
                 <div
                     data-role="datatable-cell"
                     data-label="#"
                     role="cell"
-                    class="col-span-1 flex cursor-pointer items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2 hover:text-blue-600 md:justify-start md:bg-transparent md:px-0 md:py-0"
+                    class="flex cursor-pointer items-center justify-between gap-3 rounded-md bg-gray-50 px-3 py-2 hover:text-blue-600 md:justify-start md:bg-transparent md:px-0 md:py-0"
                     wire:click="toggleRatingSelection({{ $rating->id }})"
                 >
                     <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">#</span>
@@ -117,31 +124,31 @@
                     </span>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Kunde" role="cell" class="col-span-3 min-w-0 cursor-pointer hover:text-blue-600">
+                <div data-role="datatable-cell" data-label="Kunde" role="cell" class="min-w-0 cursor-pointer hover:text-blue-600">
                     <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Kunde</span>
                     <span class="block truncate text-gray-800">{{ $rating->user->name ?? '-' }}</span>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Versicherung" role="cell" class="col-span-3 min-w-0 cursor-pointer hover:text-blue-600">
+                <div data-role="datatable-cell" data-label="Versicherung" role="cell" class="min-w-0 cursor-pointer hover:text-blue-600">
                     <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Versicherung</span>
                     <span class="block truncate text-gray-800">{{ $rating->insurance->name ?? '-' }}</span>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Regulierungsart" role="cell" class="col-span-2 min-w-0">
+                <div data-role="datatable-cell" data-label="Regulierungsart" role="cell" class="hidden min-w-0 lg:block">
                     <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Regulierungsart</span>
                     <span class="block truncate text-gray-700">{{ $rating->answers['regulationType'] ?? '-' }}</span>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Score" role="cell" class="col-span-2 font-semibold">
+                <div data-role="datatable-cell" data-label="Score" role="cell" class="hidden min-w-0 font-semibold xl:block">
                     <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Score</span>
                     <span class="{{ $rating->status === 'rating' ? 'opacity-50 cursor-wait' : '' }}">
                         <x-ratings.rating-stars :score="$rating->rating_score" />
                     </span>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Status" role="cell" class="relative col-span-1 text-gray-600">
-                    <div class="flex items-center justify-between gap-3">
-                        <div>
+                <div data-role="datatable-cell" data-label="Status" role="cell" class="relative min-w-[220px] text-gray-600">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0">
                             <span class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500 md:hidden">Status</span>
                             <x-ratings.status-badge :status="$rating->status" />
                         </div>
@@ -180,3 +187,4 @@
         {{ $ratings->links() }}
     </div>
 </div>
+

@@ -53,6 +53,7 @@ class NewsList extends Component
     {
         return view('livewire.admin.cms.web-content.news.news-list', [
             'posts' => Post::where('type', 'news')
+                ->with('newsCategory')
                 ->latest('published_at')
                 ->latest()
                 ->paginate($this->perPage),

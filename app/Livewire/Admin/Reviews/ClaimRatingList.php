@@ -206,6 +206,9 @@ class ClaimRatingList extends Component
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%');
                 })
+                ->orWhereHas('insurance', function ($q) {
+                    $q->where('name', 'like', '%' . $this->search . '%');
+                })
                 ->orWhere('answers->Service-Kommentar', 'like', '%' . $this->search . '%')
                 ->orWhere('attachments->scorings->ai_overall_comment', 'like', '%' . $this->search . '%');
             })

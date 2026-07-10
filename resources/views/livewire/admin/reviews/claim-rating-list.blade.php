@@ -36,7 +36,7 @@
             <input
                 type="text"
                 wire:model.live.debounce.500ms="search"
-                placeholder="Suchen..."
+                placeholder="Name, Anbieter, Kommentar..."
                 class="w-full border-none bg-transparent px-2 py-1 text-sm ring-none focus:ring-none"
                 x-ref="searchInput"
                 @click="focused = true"

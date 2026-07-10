@@ -1,17 +1,8 @@
-@php
-    $layoutLabels = [
-        'image_top' => 'Bild oben',
-        'image_bottom' => 'Bild unten',
-        'image_left' => 'Bild links',
-        'image_right' => 'Bild rechts',
-    ];
-@endphp
-
 <x-dialog-modal wire:model="show" :maxWidth="'4xl'">
     <x-slot name="title">
         <div class="flex flex-col gap-1">
             <span>{{ $postId ? 'News bearbeiten' : 'News erstellen' }}</span>
-            <span class="text-sm font-normal text-gray-500">Inhalt, Sichtbarkeit, Layout und Bilder in einer Ansicht pflegen.</span>
+            <span class="text-sm font-normal text-gray-500">Titel, Kategorie, Sichtbarkeit und Bilder pflegen &mdash; der Inhalt wird im Page Builder gestaltet.</span>
         </div>
     </x-slot>
 
@@ -48,12 +39,29 @@
                                 @error('excerpt') <div class="mt-1 text-xs text-red-600">{{ $message }}</div> @enderror
                             </div>
 
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold text-gray-800">Inhalt</label>
-                                <div class="rounded-lg border border-gray-200 bg-white p-2">
-                                    <x-ui.editor.trix wireModel="body" placeholder="News-Inhalt schreiben..." />
+                            <div class="rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+                                <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-gray-900">Inhalt im Page Builder</h4>
+                                        <p class="text-xs text-gray-500">
+                                            Der vollst&auml;ndige News-Inhalt wird &uuml;ber den Page Builder gestaltet &mdash; wie bei den anderen Seiten.
+                                        </p>
+                                    </div>
+
+                                    @if($postId)
+                                        <button
+                                            type="button"
+                                            wire:click="openPagebuilder"
+                                            class="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+                                        >
+                                            Im Page Builder bearbeiten
+                                        </button>
+                                    @else
+                                        <span class="shrink-0 rounded-lg bg-white px-3 py-2 text-xs text-gray-500 shadow-sm">
+                                            Erst speichern, dann Page Builder &ouml;ffnen
+                                        </span>
+                                    @endif
                                 </div>
-                                @error('body') <div class="mt-1 text-xs text-red-600">{{ $message }}</div> @enderror
                             </div>
                         </div>
                     </section>
@@ -146,19 +154,25 @@
                     </section>
 
                     <section class="rounded-lg border border-gray-200 bg-white p-4">
-                        <h3 class="text-sm font-semibold text-gray-900">Layout</h3>
+                        <h3 class="text-sm font-semibold text-gray-900">Kategorie</h3>
+                        <p class="mt-1 text-xs text-gray-500">Wird als farbiges Badge im Teaser und auf der Detailseite angezeigt.</p>
                         <div class="mt-4 space-y-2">
-                            @foreach($layoutLabels as $value => $label)
-                                <label class="flex cursor-pointer items-center justify-between rounded-lg border p-3 text-sm transition {{ $layout === $value ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-100' : 'border-gray-200 bg-white hover:bg-gray-50' }}">
-                                    <span>
-                                        <span class="block font-semibold text-gray-900">{{ $label }}</span>
-                                        <span class="block text-xs text-gray-500">{{ str_replace('_', ' ', $value) }}</span>
+                            <label class="flex cursor-pointer items-center justify-between rounded-lg border p-3 text-sm transition {{ empty($news_category_id) ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-100' : 'border-gray-200 bg-white hover:bg-gray-50' }}">
+                                <span class="font-semibold text-gray-600">Keine Kategorie</span>
+                                <input type="radio" wire:model.live="news_category_id" value="" class="text-blue-600 focus:ring-blue-500">
+                            </label>
+
+                            @foreach($categories as $category)
+                                <label class="flex cursor-pointer items-center justify-between rounded-lg border p-3 text-sm transition {{ (int) $news_category_id === $category->id ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-100' : 'border-gray-200 bg-white hover:bg-gray-50' }}">
+                                    <span class="flex items-center gap-2">
+                                        <span class="inline-block h-3.5 w-3.5 rounded-full" style="background-color: {{ $category->color }};"></span>
+                                        <span class="font-semibold text-gray-900">{{ $category->name }}</span>
                                     </span>
-                                    <input type="radio" wire:model.live="layout" value="{{ $value }}" class="text-blue-600 focus:ring-blue-500">
+                                    <input type="radio" wire:model.live="news_category_id" value="{{ $category->id }}" class="text-blue-600 focus:ring-blue-500">
                                 </label>
                             @endforeach
                         </div>
-                        @error('layout') <div class="mt-2 text-xs text-red-600">{{ $message }}</div> @enderror
+                        @error('news_category_id') <div class="mt-2 text-xs text-red-600">{{ $message }}</div> @enderror
                     </section>
                 </aside>
             </div>

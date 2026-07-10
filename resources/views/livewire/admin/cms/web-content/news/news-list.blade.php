@@ -20,6 +20,14 @@
 
             <button
                 type="button"
+                onclick="Livewire.dispatch('open-news-category-manager')"
+                class="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+                Kategorien
+            </button>
+
+            <button
+                type="button"
                 onclick="Livewire.dispatch('open-news-modal', { postId: null })"
                 class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
@@ -34,7 +42,7 @@
     >
         <x-slot:header>
             <div data-role="datatable-heading" role="columnheader" class="min-w-0">Titel</div>
-            <div data-role="datatable-heading" role="columnheader" class="hidden min-w-0 md:block">Layout</div>
+            <div data-role="datatable-heading" role="columnheader" class="hidden min-w-0 md:block">Kategorie</div>
             <div data-role="datatable-heading" role="columnheader" class="hidden min-w-0 md:block">Bilder</div>
             <div data-role="datatable-heading" role="columnheader" class="min-w-0">Status</div>
             <div data-role="datatable-heading" role="columnheader" class="text-right">Aktion</div>
@@ -42,12 +50,6 @@
 
         @forelse($posts as $post)
             @php
-                $layoutLabels = [
-                    'image_top' => 'Bild oben',
-                    'image_bottom' => 'Bild unten',
-                    'image_left' => 'Bild links',
-                    'image_right' => 'Bild rechts',
-                ];
                 $imageCount = count($post->newsImages());
             @endphp
 
@@ -67,8 +69,17 @@
                     </div>
                 </div>
 
-                <div data-role="datatable-cell" data-label="Layout" role="cell" class="hidden min-w-0 text-gray-700 md:block">
-                    <span class="block truncate">{{ $layoutLabels[$post->layout ?? 'image_top'] ?? str_replace('_', ' ', $post->layout ?? 'image_top') }}</span>
+                <div data-role="datatable-cell" data-label="Kategorie" role="cell" class="hidden min-w-0 text-gray-700 md:block">
+                    @if($post->newsCategory)
+                        <span
+                            class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+                            style="background-color: {{ $post->newsCategory->color }};"
+                        >
+                            {{ $post->newsCategory->name }}
+                        </span>
+                    @else
+                        <span class="text-xs text-gray-400">Keine</span>
+                    @endif
                 </div>
 
                 <div data-role="datatable-cell" data-label="Bilder" role="cell" class="hidden min-w-0 text-gray-700 md:block">
@@ -136,4 +147,5 @@
     </x-ui.datatables.table-wrapper>
 
     <livewire:admin.cms.web-content.news.news-edit-create />
+    <livewire:admin.cms.web-content.news.news-category-manager />
 </div>

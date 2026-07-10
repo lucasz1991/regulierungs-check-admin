@@ -19,6 +19,8 @@ class Post extends Model
         'cover_image',
         'user_id',
         'category_id',
+        'news_category_id',
+        'pagebuilder_project_id',
         'published',
         'published_at',
         'layout',
@@ -64,6 +66,10 @@ class Post extends Model
                     self::deleteImageViaMediaController($image['path']);
                 }
             }
+
+            if ($post->pagebuilder_project_id) {
+                optional($post->pagebuilderProject)->delete();
+            }
         });
     }
 
@@ -101,6 +107,16 @@ class Post extends Model
     public function category()
     {
         return $this->belongsTo(BlogCategory::class, 'category_id');
+    }
+
+    public function newsCategory()
+    {
+        return $this->belongsTo(NewsCategory::class, 'news_category_id');
+    }
+
+    public function pagebuilderProject()
+    {
+        return $this->belongsTo(PagebuilderProject::class, 'pagebuilder_project_id');
     }
 
 

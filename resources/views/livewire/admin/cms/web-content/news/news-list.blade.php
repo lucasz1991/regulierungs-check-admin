@@ -1,5 +1,7 @@
 <div>
-    @php($newsPreviewBaseUrl = rtrim((string) config('news-preview.base_url', 'https://www.regulierungs-check.de'), '/'))
+    @php
+        $newsPreviewBaseUrl = rtrim((string) config('news-preview.base_url', 'https://www.regulierungs-check.de'), '/');
+    @endphp
 
     <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>

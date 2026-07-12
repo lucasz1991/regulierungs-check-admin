@@ -1,4 +1,6 @@
 <div>
+    @php($newsPreviewBaseUrl = rtrim((string) config('news-preview.base_url', 'https://www.regulierungs-check.de'), '/'))
+
     <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-xl font-bold text-gray-900">News verwalten</h1>
@@ -6,6 +8,19 @@
         </div>
 
         <div class="flex flex-col gap-3 md:flex-row md:items-center">
+            <a
+                href="{{ $newsPreviewBaseUrl }}/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center justify-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-800 shadow-sm transition hover:border-teal-300 hover:bg-teal-100"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                User-Vorschau
+            </a>
+
             <label class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
                 <span>
                     <span class="block text-sm font-semibold text-gray-900">User-Bereich sichtbar</span>
@@ -116,6 +131,15 @@
                             x-cloak
                             class="absolute right-0 z-50 mt-2 w-44 rounded-lg border border-gray-200 bg-white py-1 text-left text-sm shadow-lg"
                         >
+                            <a
+                                href="{{ $newsPreviewBaseUrl }}/news/{{ rawurlencode($post->slug) }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                @click="open = false"
+                                class="block w-full px-4 py-2 text-left text-teal-700 hover:bg-teal-50 hover:text-teal-900"
+                            >
+                                Auf User-Seite ansehen
+                            </a>
                             <button
                                 type="button"
                                 @click="open = false; Livewire.dispatch('open-news-modal', { postId: {{ $post->id }} })"

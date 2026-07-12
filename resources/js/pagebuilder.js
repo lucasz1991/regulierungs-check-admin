@@ -8,7 +8,7 @@ import { fsLightboxComponent } from "@grapesjs/studio-sdk-plugins";
 import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
-import { appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
+import { addNewsDefaultLayoutBlock, appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 window.initGrapesJs = async function() {
     if (!document.getElementById("studio-editor") && document.getElementById('studio-editor').getAttribute('data-project') != null) {
@@ -65,6 +65,7 @@ window.initGrapesJs = async function() {
                 block: { category: 'Extra', label: 'My Dialog' }
               }),
               editor => {
+                addNewsDefaultLayoutBlock(editor);
                 addCustomBlocks(editor);
               } 
             ],

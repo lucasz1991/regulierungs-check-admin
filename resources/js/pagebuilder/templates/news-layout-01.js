@@ -65,7 +65,7 @@ const newsLayoutCardPreview = [
 export const newsHeroPlaceholder = toSvgDataUri(newsHeroIllustration);
 export const newsLayoutPreview = toSvgDataUri(newsLayoutCardPreview);
 
-const newsLayoutHtml = [
+export const newsLayoutHtml = [
     '<main class="rc-news-template" data-template="news-layout-01">',
     '  <section class="rc-news-hero">',
     '    <img class="rc-news-hero__image" src="' + newsHeroPlaceholder + '" alt="Titelbild der News – bitte im Page Builder austauschen">',
@@ -216,6 +216,31 @@ const newsLayoutHtml = [
     '}',
     '</style>'
 ].join('\n');
+
+export const addNewsDefaultLayoutBlock = (editor) => {
+    const blockManager = editor.Blocks;
+    const blockId = 'news-default-layout';
+
+    if (blockManager.get(blockId)) {
+        return blockManager.get(blockId);
+    }
+
+    return blockManager.add(blockId, {
+        label: 'News Default Layout',
+        category: {
+            id: 'News',
+            label: 'News',
+            open: true
+        },
+        media: '<img src="' + newsLayoutPreview + '" alt="Vorschau des News Default Layouts" style="display:block;width:100%;height:100%;object-fit:cover;">',
+        content: newsLayoutHtml,
+        select: true,
+        resetId: true,
+        attributes: {
+            title: 'News Default Layout einfügen'
+        }
+    }, { at: 0 });
+};
 
 export const newsLayoutTemplate = {
     id: 'regulierungs-check-news-layout-01',

@@ -3,10 +3,11 @@
 return [
     /*
     | The secret must be identical in the admin and base applications in
-    | production. APP_KEY is only accepted as a convenience in local/tests.
+    | production. If it is omitted, both apps may safely fall back to their
+    | shared APP_KEY so the preview does not depend on a separate deployment.
     */
     'shared_secret' => env('NEWS_PREVIEW_SHARED_SECRET'),
-    'allow_app_key_fallback' => env('APP_ENV', 'production') === 'local',
+    'allow_app_key_fallback' => env('NEWS_PREVIEW_ALLOW_APP_KEY_FALLBACK', true),
 
     'cookie_name' => 'rc_news_preview',
     'cookie_domain' => env('NEWS_PREVIEW_COOKIE_DOMAIN', '.regulierungs-check.de'),

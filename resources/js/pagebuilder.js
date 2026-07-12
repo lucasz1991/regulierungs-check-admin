@@ -8,6 +8,7 @@ import { fsLightboxComponent } from "@grapesjs/studio-sdk-plugins";
 import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
+import { appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 window.initGrapesJs = async function() {
     if (!document.getElementById("studio-editor") && document.getElementById('studio-editor').getAttribute('data-project') != null) {
@@ -97,6 +98,15 @@ window.initGrapesJs = async function() {
                           label: 'Elements',
                           children: { type: 'panelLayers', style: { height: '100%' } },
                         },
+                        {
+                          id: 'templates',
+                          label: 'Vorlagen',
+                          children: {
+                            type: 'panelTemplates',
+                            content: { itemsPerRow: 1 },
+                            style: { height: '100%' }
+                          },
+                        },
                       ],
                     },
                   },
@@ -155,6 +165,19 @@ window.initGrapesJs = async function() {
                 styles: [
                     './../css/components/tailwind.min.css',
                 ],
+            },
+            templates: {
+                onLoad: async ({ fetchCommunityTemplates }) => {
+                    let communityTemplates = [];
+
+                    try {
+                        communityTemplates = await fetchCommunityTemplates();
+                    } catch (error) {
+                        console.warn('Community-Vorlagen konnten nicht geladen werden.', error);
+                    }
+
+                    return appendNewsLayoutTemplate(communityTemplates);
+                },
             },
             assets: {
                 storageType: 'self',

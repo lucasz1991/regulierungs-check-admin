@@ -5,7 +5,7 @@ const toSvgDataUri = (svg) => {
 };
 
 const newsLayoutCardPreview = [
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" role="img" aria-label="Vorschau des News-Inhaltslayouts">',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 460" role="img" aria-label="Vorschau des News-Inhaltslayouts" focusable="false" style="display:block;width:100%;height:auto;pointer-events:none">',
     '<rect width="720" height="460" rx="22" fill="#fff"/>',
     '<rect x="36" y="34" width="648" height="10" rx="5" fill="#1d2d3c" opacity=".88"/>',
     '<rect x="36" y="56" width="590" height="7" rx="3.5" fill="#51606d" opacity=".5"/>',
@@ -146,7 +146,7 @@ export const addNewsDefaultLayoutBlock = (editor) => {
             label: 'News',
             open: true
         },
-        media: '<img src="' + newsLayoutPreview + '" alt="Vorschau des News Default Layouts" style="display:block;width:100%;height:100%;object-fit:cover;">',
+        media: newsLayoutCardPreview,
         content: newsLayoutHtml,
         select: true,
         resetId: true,

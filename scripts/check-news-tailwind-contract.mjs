@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
-import { newsLayoutHtml } from '../resources/js/pagebuilder/templates/news-layout-01.js';
+import {
+    addNewsDefaultLayoutBlock,
+    newsLayoutHtml,
+    newsLayoutPreview,
+    newsLayoutTemplate,
+} from '../resources/js/pagebuilder/templates/news-layout-01.js';
 
 const pageBuilderTemplateGlob = './resources/js/pagebuilder/templates/**/*.{js,ts,jsx,tsx}';
 const tailwindConfigSource = await readFile(
@@ -35,7 +40,33 @@ assert.doesNotMatch(
     'rc-news custom CSS selectors must not be added to the Tailwind safelist.'
 );
 
+let registeredBlock;
+const editorStub = {
+    Blocks: {
+        get: () => undefined,
+        add: (id, config, options) => {
+            registeredBlock = { id, config, options };
+            return config;
+        },
+    },
+};
+
+addNewsDefaultLayoutBlock(editorStub);
+
+assert.equal(registeredBlock.id, 'news-default-layout');
+assert.equal(registeredBlock.config.content, newsLayoutHtml);
+assert.equal(registeredBlock.options.at, 0);
+assert.match(registeredBlock.config.media, /^<svg\b/);
+assert.doesNotMatch(
+    registeredBlock.config.media,
+    /<img\b/i,
+    'The draggable block preview must not contain a native draggable image.'
+);
+assert.match(registeredBlock.config.media, /pointer-events:none/);
+assert.match(newsLayoutPreview, /^data:image\/svg\+xml/);
+assert.equal(newsLayoutTemplate.data.pages[0].component, newsLayoutHtml);
+
 console.log(
     `News Tailwind contract verified: ${customClassNames.length} custom classes, `
-    + `${tailwindClassNames.length} scanned utility/icon classes, PageBuilder template glob active.`
+    + `${tailwindClassNames.length} scanned utility/icon classes, PageBuilder block insertion verified.`
 );

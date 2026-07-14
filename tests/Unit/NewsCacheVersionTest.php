@@ -42,7 +42,7 @@ class NewsCacheVersionTest extends TestCase
             $table->string('key');
             $table->longText('value')->nullable();
             $table->timestamps();
-            $table->unique(['type', 'key']);
+            $table->unique(['key', 'type', 'value']);
         });
 
         Schema::connection(self::CONNECTION)->create('news_categories', function (Blueprint $table): void {
@@ -107,6 +107,31 @@ class NewsCacheVersionTest extends TestCase
         $this->assertNotSame($first, $second);
         $this->assertSame(1, DB::table('settings')->count());
         $this->assertSame($second, $this->generation());
+    }
+
+    public function test_bump_and_reader_contract_select_the_latest_legacy_duplicate(): void
+    {
+        DB::table('settings')->insert([
+            [
+                'type' => NewsCacheVersion::SETTING_TYPE,
+                'key' => NewsCacheVersion::SETTING_KEY,
+                'value' => 'legacy-first',
+                'created_at' => now()->subMinute(),
+                'updated_at' => now()->subMinute(),
+            ],
+            [
+                'type' => NewsCacheVersion::SETTING_TYPE,
+                'key' => NewsCacheVersion::SETTING_KEY,
+                'value' => 'legacy-second',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $version = NewsCacheVersion::bump();
+
+        $this->assertSame(2, DB::table('settings')->count());
+        $this->assertSame($version, $this->generation());
     }
 
     public function test_news_create_update_and_delete_each_bump_the_generation(): void
@@ -226,6 +251,8 @@ class NewsCacheVersionTest extends TestCase
         $value = DB::table('settings')
             ->where('type', NewsCacheVersion::SETTING_TYPE)
             ->where('key', NewsCacheVersion::SETTING_KEY)
+            ->latest('updated_at')
+            ->latest('id')
             ->value('value');
 
         return $value === null ? null : (string) $value;

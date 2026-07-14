@@ -19,16 +19,33 @@ final class NewsCacheVersion
     {
         $version = (string) Str::uuid();
 
-        DB::table('settings')->updateOrInsert(
-            [
+        DB::transaction(function () use ($version): void {
+            $settingId = DB::table('settings')
+                ->where('type', self::SETTING_TYPE)
+                ->where('key', self::SETTING_KEY)
+                ->latest('id')
+                ->lockForUpdate()
+                ->value('id');
+
+            if ($settingId !== null) {
+                DB::table('settings')
+                    ->where('id', $settingId)
+                    ->update([
+                        'value' => $version,
+                        'updated_at' => now(),
+                    ]);
+
+                return;
+            }
+
+            DB::table('settings')->insert([
                 'type' => self::SETTING_TYPE,
                 'key' => self::SETTING_KEY,
-            ],
-            [
                 'value' => $version,
+                'created_at' => now(),
                 'updated_at' => now(),
-            ]
-        );
+            ]);
+        });
 
         return $version;
     }

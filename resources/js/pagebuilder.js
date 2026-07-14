@@ -11,12 +11,45 @@ import addCustomBlocks from './components/grapesjs-blocks';
 import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon';
 import { addNewsDefaultLayoutBlock, appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
-window.initGrapesJs = async function() {
+let grapesJsInitializationPromise = null;
+let grapesJsEditorElement = null;
+
+window.initGrapesJs = async function({ force = false } = {}) {
     const editorElement = document.getElementById('studio-editor');
 
     if (!editorElement) {
         return null;
     }
+
+    if (!force && grapesJsInitializationPromise && grapesJsEditorElement === editorElement) {
+        return grapesJsInitializationPromise;
+    }
+
+    if (!force && window.editor && grapesJsEditorElement === editorElement) {
+        return window.editor;
+    }
+
+    grapesJsEditorElement = editorElement;
+    const initialization = initializeGrapesJsEditor(editorElement);
+    grapesJsInitializationPromise = initialization;
+
+    try {
+        return await initialization;
+    } catch (error) {
+        if (grapesJsEditorElement === editorElement) {
+            window.editor = null;
+            grapesJsEditorElement = null;
+        }
+
+        throw error;
+    } finally {
+        if (grapesJsInitializationPromise === initialization) {
+            grapesJsInitializationPromise = null;
+        }
+    }
+};
+
+async function initializeGrapesJsEditor(editorElement) {
 
     const selectedProject = editorElement.getAttribute('data-project');
 
@@ -55,6 +88,7 @@ window.initGrapesJs = async function() {
             },
             plugins: [
               rteTinyMce.init({
+                licenseKey,
                 enableOnClick: true,
                 loadConfig: ({ component, config }) => {
                   const demoRte = component.get('demorte');
@@ -75,18 +109,23 @@ window.initGrapesJs = async function() {
                 }
               }),
               iconifyComponent?.init({
+                licenseKey,
                 block: { category: 'Extra', label: 'Iconify' }
               }),
               fsLightboxComponent?.init({
+                licenseKey,
                 block: { category: 'Extra', label: 'FS Lightbox' }
               }),
               lightGalleryComponent?.init({
+                licenseKey,
                 block: { category: 'Extra', label: 'Light Gallery' }
               }),
               swiperComponent?.init({
+                licenseKey,
                 block: false
               }),
               dialogComponent.init({
+                licenseKey,
                 block: { category: 'Extra', label: 'My Dialog' }
               }),
               editor => {

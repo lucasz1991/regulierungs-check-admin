@@ -12,10 +12,15 @@ class PagebuilderBootstrapContractTest extends TestCase
 
         $this->assertStringContainsString('async function initializePagebuilder', $app);
         $this->assertStringContainsString('await loadPagebuilderModule', $app);
+        $this->assertStringContainsString('window.initGrapesJs({ force })', $app);
         $this->assertStringContainsString("dispatchPagebuilderEvent('ready'", $app);
         $this->assertStringContainsString("dispatchPagebuilderEvent('error'", $app);
         $this->assertStringContainsString(
             "document.addEventListener('livewire:navigated', initializePagebuilderFromDom)",
+            $app
+        );
+        $this->assertStringNotContainsString(
+            "document.addEventListener('livewire:load', initializePagebuilderFromDom)",
             $app
         );
     }
@@ -49,6 +54,18 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertStringContainsString('onEditor: (editor)', $pagebuilder);
         $this->assertStringContainsString('onReady: (editor)', $pagebuilder);
         $this->assertStringContainsString('const editor = await editorReady', $pagebuilder);
+        $this->assertStringContainsString('let grapesJsInitializationPromise = null', $pagebuilder);
+        $this->assertStringContainsString('let grapesJsEditorElement = null', $pagebuilder);
+        $this->assertStringContainsString(
+            'grapesJsInitializationPromise && grapesJsEditorElement === editorElement',
+            $pagebuilder
+        );
+        $this->assertStringContainsString(
+            'window.editor && grapesJsEditorElement === editorElement',
+            $pagebuilder
+        );
+        $this->assertStringContainsString('rteTinyMce.init({', $pagebuilder);
+        $this->assertMatchesRegularExpression('/rteTinyMce\.init\(\{\s+licenseKey,/', $pagebuilder);
         $this->assertStringContainsString("'/build/css/tailwind.min.css'", $pagebuilder);
         $this->assertStringContainsString("'/adminresources/fontawesome6/css/all.min.css'", $pagebuilder);
     }

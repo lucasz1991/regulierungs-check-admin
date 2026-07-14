@@ -337,7 +337,7 @@ async function initializePagebuilder({ force = false, retryModule = false } = {}
             throw new Error('Das PageBuilder-Modul stellt keine Initialisierungsfunktion bereit.');
         }
 
-        const editor = await window.initGrapesJs();
+        const editor = await window.initGrapesJs({ force });
 
         if (!editor) {
             throw new Error('Der PageBuilder konnte nicht initialisiert werden.');
@@ -385,7 +385,6 @@ window.addEventListener('pagebuilder:retry', () => {
 });
 
 document.addEventListener('DOMContentLoaded', initializePagebuilderFromDom);
-document.addEventListener('livewire:load', initializePagebuilderFromDom);
 document.addEventListener('livewire:navigated', initializePagebuilderFromDom);
 
 if (document.readyState !== 'loading') {

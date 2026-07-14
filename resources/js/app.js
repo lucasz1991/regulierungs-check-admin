@@ -285,6 +285,19 @@ let pagebuilderInitializationElement = null;
 
 function dispatchPagebuilderEvent(name, detail = {}) {
     window.dispatchEvent(new CustomEvent(`pagebuilder:${name}`, { detail }));
+
+    const editorElement = detail.editorElement;
+
+    if (!editorElement || !['loading', 'ready', 'error'].includes(name)) {
+        return;
+    }
+
+    const wrapper = editorElement.parentElement;
+    const loadingOverlay = wrapper?.querySelector('[role="status"]');
+    const errorOverlay = wrapper?.querySelector('[role="alert"]');
+
+    loadingOverlay?.style.setProperty('display', name === 'loading' ? 'flex' : 'none', 'important');
+    errorOverlay?.style.setProperty('display', name === 'error' ? 'flex' : 'none', 'important');
 }
 
 function loadPagebuilderModule({ retry = false } = {}) {

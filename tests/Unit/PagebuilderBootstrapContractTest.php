@@ -15,6 +15,8 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertStringContainsString('window.initGrapesJs({ force })', $app);
         $this->assertStringContainsString("dispatchPagebuilderEvent('ready'", $app);
         $this->assertStringContainsString("dispatchPagebuilderEvent('error'", $app);
+        $this->assertStringContainsString("style.setProperty('display', name === 'loading' ? 'flex' : 'none', 'important')", $app);
+        $this->assertStringContainsString("style.setProperty('display', name === 'error' ? 'flex' : 'none', 'important')", $app);
         $this->assertStringContainsString(
             "document.addEventListener('livewire:navigated', initializePagebuilderFromDom)",
             $app

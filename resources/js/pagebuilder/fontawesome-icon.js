@@ -63,15 +63,21 @@ const styleClassNames = new Set(
     styleOptions.flatMap(({ id }) => id.split(/\s+/)).filter(Boolean)
 );
 
+const legacyStyleAliases = {
+    'fa-thin': 'fat',
+    'fa-light': 'fal',
+    'fa-regular': 'far',
+    'fa-solid': 'fas',
+    'fa-duotone': 'fad',
+    'fa-brands': 'fab',
+};
+
+const legacyStyleClassNames = new Set(Object.values(legacyStyleAliases));
+
 const nonIconClassNames = new Set([
     ...styleClassNames,
     'fa',
-    'fas',
-    'far',
-    'fal',
-    'fat',
-    'fad',
-    'fab',
+    ...legacyStyleClassNames,
     'fa-classic',
     'fa-fw',
     'fa-inverse',
@@ -101,11 +107,27 @@ const findIconClass = (classNames) => classNames.find((className) => {
 });
 
 const findStyle = (classNames) => {
-    const matched = styleOptions.find(({ id }) => {
+    const matched = [...styleOptions].sort((left, right) => {
+        return right.id.split(/\s+/).length - left.id.split(/\s+/).length;
+    }).find(({ id }) => {
         return id.split(/\s+/).every((className) => classNames.includes(className));
     });
 
-    return matched?.id || 'fa-solid';
+    if (matched) {
+        return matched.id;
+    }
+
+    const legacyMatch = Object.entries(legacyStyleAliases).find(([, alias]) => {
+        return classNames.includes(alias);
+    });
+
+    return legacyMatch?.[0] || 'fa-solid';
+};
+
+const legacyAliasForStyle = (style) => {
+    const styleClass = style.split(/\s+/).find((className) => legacyStyleAliases[className]);
+
+    return legacyStyleAliases[styleClass] || '';
 };
 
 export default function addFontAwesomeIconBlock(editor) {
@@ -202,6 +224,7 @@ export default function addFontAwesomeIconBlock(editor) {
                     const icon = String(this.get('faIcon') || 'fa-star').trim().split(/\s+/)[0];
                     const managedClassNames = new Set([
                         ...styleClassNames,
+                        ...legacyStyleClassNames,
                         ...String(this._managedFaStyle || '').split(/\s+/),
                         this._managedFaIcon,
                     ]);
@@ -213,8 +236,9 @@ export default function addFontAwesomeIconBlock(editor) {
                         ...new Set([
                             ...preservedClassNames,
                             ...style.split(/\s+/).filter(Boolean),
+                            legacyAliasForStyle(style),
                             icon,
-                        ]),
+                        ].filter(Boolean)),
                     ]);
 
                     this._managedFaStyle = style;

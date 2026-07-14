@@ -1,6 +1,6 @@
 import '@grapesjs/studio-sdk/dist/style.css';
 import '@grapesjs/studio-sdk/style';
-import { createStudioEditor, StudioCommands } from '@grapesjs/studio-sdk';
+import { createStudioEditor } from '@grapesjs/studio-sdk';
 import { rteTinyMce } from '@grapesjs/studio-sdk-plugins';
 import { iconifyComponent } from "@grapesjs/studio-sdk-plugins";
 import { lightGalleryComponent } from "@grapesjs/studio-sdk-plugins";
@@ -34,12 +34,24 @@ window.initGrapesJs = async function() {
         window.editor = null;
     }
     try {
-        window.editor = await createStudioEditor({
+        let resolveEditorReady;
+        const editorReady = new Promise((resolve) => {
+            resolveEditorReady = resolve;
+        });
+
+        await createStudioEditor({
             root: '#studio-editor',
             licenseKey: licenseKey,
             theme: 'light',
             settingsMenu: {
                 theme: false,
+            },
+            onEditor: (editor) => {
+                window.editor = editor;
+            },
+            onReady: (editor) => {
+                window.editor = editor;
+                resolveEditorReady(editor);
             },
             plugins: [
               rteTinyMce.init({
@@ -273,9 +285,9 @@ window.initGrapesJs = async function() {
                 id: "1MZssHHwuOi2kNaH"
             }
         });
-        window.editor.runCommand(StudioCommands.setStateTheme, { theme: 'light' });
+        const editor = await editorReady;
         console.log("GrapesJS Studio erfolgreich initialisiert!");
-        return window.editor;
+        return editor;
     } catch (error) {
         console.error("Fehler beim Initialisieren von GrapesJS Studio:", error);
         throw error;

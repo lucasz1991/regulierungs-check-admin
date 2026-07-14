@@ -43,10 +43,11 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertStringContainsString('settingsMenu: {', $pagebuilder);
         $this->assertStringContainsString('theme: false', $pagebuilder);
         $this->assertStringNotContainsString('settingsMenu: false', $pagebuilder);
-        $this->assertStringContainsString(
-            "window.editor.runCommand(StudioCommands.setStateTheme, { theme: 'light' })",
-            $pagebuilder
-        );
+        $this->assertStringNotContainsString('StudioCommands', $pagebuilder);
+        $this->assertStringNotContainsString('window.editor.runCommand', $pagebuilder);
+        $this->assertStringContainsString('onEditor: (editor)', $pagebuilder);
+        $this->assertStringContainsString('onReady: (editor)', $pagebuilder);
+        $this->assertStringContainsString('const editor = await editorReady', $pagebuilder);
         $this->assertStringContainsString("'/build/css/tailwind.min.css'", $pagebuilder);
         $this->assertStringContainsString("'/adminresources/fontawesome6/css/all.min.css'", $pagebuilder);
     }

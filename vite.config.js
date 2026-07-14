@@ -28,7 +28,7 @@ export default defineConfig({
                         return 'icons/' + css.name;
                     }
                 },
-                entryFileNames: 'js/' + `[name]` + `.js`,
+                entryFileNames: 'js/' + `[name]` + `-[hash].js`,
             },
         },
     },
@@ -56,8 +56,11 @@ export default defineConfig({
                     dest: ''
                 },
                 {
-                    src: 'resources/js',
-                    dest: ''
+                    // Only legacy page initializers are served without bundling.
+                    // Copying all of resources/js collides with Vite's app entry and
+                    // previously produced an unhashed app2.js with stale chunk URLs.
+                    src: 'resources/js/pages',
+                    dest: 'js'
                 },
             ]
         }),

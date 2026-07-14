@@ -279,6 +279,115 @@ if (document.readyState !== 'loading') {
     initAdminLayout();
 }
 
-if (document.getElementById('studio-editor')) {
-    import('./pagebuilder.js');
+let pagebuilderModulePromise = null;
+let pagebuilderInitializationPromise = null;
+let pagebuilderInitializationElement = null;
+
+function dispatchPagebuilderEvent(name, detail = {}) {
+    window.dispatchEvent(new CustomEvent(`pagebuilder:${name}`, { detail }));
+}
+
+function loadPagebuilderModule({ retry = false } = {}) {
+    if (retry) {
+        pagebuilderModulePromise = null;
+    }
+
+    if (!pagebuilderModulePromise) {
+        pagebuilderModulePromise = import('./pagebuilder.js').catch((error) => {
+            pagebuilderModulePromise = null;
+            throw error;
+        });
+    }
+
+    return pagebuilderModulePromise;
+}
+
+async function initializePagebuilder({ force = false, retryModule = false } = {}) {
+    const editorElement = document.getElementById('studio-editor');
+
+    if (!editorElement) {
+        return null;
+    }
+
+    if (pagebuilderInitializationPromise && pagebuilderInitializationElement === editorElement) {
+        return pagebuilderInitializationPromise;
+    }
+
+    if (
+        !force
+        && editorElement.dataset.pagebuilderState === 'ready'
+        && pagebuilderInitializationElement === editorElement
+        && window.editor
+    ) {
+        return window.editor;
+    }
+
+    pagebuilderInitializationElement = editorElement;
+    editorElement.dataset.pagebuilderState = 'loading';
+    dispatchPagebuilderEvent('loading', { editorElement });
+
+    const initialization = (async () => {
+        await loadPagebuilderModule({ retry: retryModule });
+
+        if (!editorElement.isConnected || document.getElementById('studio-editor') !== editorElement) {
+            return null;
+        }
+
+        if (typeof window.initGrapesJs !== 'function') {
+            throw new Error('Das PageBuilder-Modul stellt keine Initialisierungsfunktion bereit.');
+        }
+
+        const editor = await window.initGrapesJs();
+
+        if (!editor) {
+            throw new Error('Der PageBuilder konnte nicht initialisiert werden.');
+        }
+
+        editorElement.dataset.pagebuilderState = 'ready';
+        dispatchPagebuilderEvent('ready', { editor, editorElement });
+
+        return editor;
+    })();
+
+    pagebuilderInitializationPromise = initialization;
+
+    try {
+        return await initialization;
+    } catch (error) {
+        if (editorElement.isConnected) {
+            editorElement.dataset.pagebuilderState = 'error';
+        }
+
+        console.error('PageBuilder konnte nicht geladen werden.', error);
+        dispatchPagebuilderEvent('error', {
+            editorElement,
+            error,
+            message: error instanceof Error
+                ? error.message
+                : 'Der PageBuilder konnte nicht geladen werden.',
+        });
+
+        return null;
+    } finally {
+        if (pagebuilderInitializationPromise === initialization) {
+            pagebuilderInitializationPromise = null;
+        }
+    }
+}
+
+function initializePagebuilderFromDom() {
+    void initializePagebuilder();
+}
+
+window.initializePagebuilder = initializePagebuilder;
+window.addEventListener('pagebuilder:retry', () => {
+    void initializePagebuilder({ force: true, retryModule: true });
+});
+
+document.addEventListener('DOMContentLoaded', initializePagebuilderFromDom);
+document.addEventListener('livewire:load', initializePagebuilderFromDom);
+document.addEventListener('livewire:navigated', initializePagebuilderFromDom);
+
+if (document.readyState !== 'loading') {
+    initializePagebuilderFromDom();
 }

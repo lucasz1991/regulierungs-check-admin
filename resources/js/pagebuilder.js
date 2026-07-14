@@ -1,6 +1,6 @@
 import '@grapesjs/studio-sdk/dist/style.css';
 import '@grapesjs/studio-sdk/style';
-import { createStudioEditor } from '@grapesjs/studio-sdk';
+import { createStudioEditor, StudioCommands } from '@grapesjs/studio-sdk';
 import { rteTinyMce } from '@grapesjs/studio-sdk-plugins';
 import { iconifyComponent } from "@grapesjs/studio-sdk-plugins";
 import { lightGalleryComponent } from "@grapesjs/studio-sdk-plugins";
@@ -8,17 +8,26 @@ import { fsLightboxComponent } from "@grapesjs/studio-sdk-plugins";
 import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
+import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon';
 import { addNewsDefaultLayoutBlock, appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 window.initGrapesJs = async function() {
-    if (!document.getElementById("studio-editor") && document.getElementById('studio-editor').getAttribute('data-project') != null) {
-        return;
-    }
-    var selectedProject = document.getElementById('studio-editor').getAttribute('data-project');
-    var licenseKey = document.getElementById('studio-editor').getAttribute('data-license');
-    var apiUrl = document.getElementById('studio-editor').getAttribute('data-api-url');
+    const editorElement = document.getElementById('studio-editor');
 
-    console.log("Initialisiere GrapesJS Studio mit Lizenz:", licenseKey, "und Projekt-ID:", selectedProject + "API URL:", apiUrl);
+    if (!editorElement) {
+        return null;
+    }
+
+    const selectedProject = editorElement.getAttribute('data-project');
+
+    if (!selectedProject) {
+        throw new Error('Dem PageBuilder fehlt eine Projekt-ID.');
+    }
+
+    const licenseKey = editorElement.getAttribute('data-license');
+    const apiUrl = editorElement.getAttribute('data-api-url');
+
+    console.info('Initialisiere GrapesJS Studio.', { projectId: selectedProject, apiUrl });
     if (window.editor) {
         console.log("Bestehenden GrapesJS Editor zerstören...");
         window.editor.destroy();
@@ -28,6 +37,10 @@ window.initGrapesJs = async function() {
         window.editor = await createStudioEditor({
             root: '#studio-editor',
             licenseKey: licenseKey,
+            theme: 'light',
+            settingsMenu: {
+                theme: false,
+            },
             plugins: [
               rteTinyMce.init({
                 enableOnClick: true,
@@ -65,6 +78,7 @@ window.initGrapesJs = async function() {
                 block: { category: 'Extra', label: 'My Dialog' }
               }),
               editor => {
+                addFontAwesomeIconBlock(editor);
                 addNewsDefaultLayoutBlock(editor);
                 addCustomBlocks(editor);
               } 
@@ -164,7 +178,8 @@ window.initGrapesJs = async function() {
             },
             canvas: {
                 styles: [
-                    './../css/components/tailwind.min.css',
+                    '/build/css/tailwind.min.css',
+                    '/adminresources/fontawesome6/css/all.min.css',
                 ],
             },
             templates: {
@@ -258,9 +273,11 @@ window.initGrapesJs = async function() {
                 id: "1MZssHHwuOi2kNaH"
             }
         });
+        window.editor.runCommand(StudioCommands.setStateTheme, { theme: 'light' });
         console.log("GrapesJS Studio erfolgreich initialisiert!");
         return window.editor;
     } catch (error) {
         console.error("Fehler beim Initialisieren von GrapesJS Studio:", error);
+        throw error;
     }
 }

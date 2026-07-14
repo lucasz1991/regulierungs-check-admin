@@ -30,24 +30,57 @@
         </div>
     @endif
     @if($grapejsLicenseKey)
-        <div 
-            x-effect="setTimeout(() => {initGrapesJs();}, 300)"
-            id="studio-editor"
-            data-project="{{ $project->id }}"
-            data-license="{{ $grapejsLicenseKey }}"
-            data-api-url="{{ $baseApiUrl }}"
-
-            style="height: 80vh"
-            wire:ignore
+        <div
+            class="relative min-h-[80vh]"
+            x-data="{
+                state: 'loading',
+                message: 'Der PageBuilder konnte nicht geladen werden.',
+                retry() {
+                    this.state = 'loading';
+                    window.dispatchEvent(new CustomEvent('pagebuilder:retry'));
+                }
+            }"
+            x-init="state = $refs.editor.dataset.pagebuilderState || 'loading'"
+            @pagebuilder:loading.window="state = 'loading'"
+            @pagebuilder:ready.window="state = 'ready'"
+            @pagebuilder:error.window="state = 'error'; message = $event.detail.message || message"
         >
-            <div x-cloak class="flex items-center gap-2">
-                Editor konnte nicht geladen werden. Bitte lade die Seite neu.
-                <button 
-                    @click="window.location.reload()"
-                    class="px-3 py-1 bg-blue-500 text-white text-sm font-semibold rounded hover:bg-blue-600 transition">
-                    Neu laden
+            <div
+                id="studio-editor"
+                x-ref="editor"
+                data-project="{{ $project->id }}"
+                data-license="{{ $grapejsLicenseKey }}"
+                data-api-url="{{ $baseApiUrl }}"
+                data-pagebuilder-state="loading"
+                style="height: 80vh"
+                wire:ignore
+            ></div>
+
+            <div
+                x-cloak
+                x-show="state === 'loading'"
+                class="absolute inset-0 z-20 flex items-center justify-center gap-3 bg-white text-sm font-medium text-gray-600"
+                role="status"
+            >
+                <span class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" aria-hidden="true"></span>
+                PageBuilder wird geladen …
+            </div>
+
+            <div
+                x-cloak
+                x-show="state === 'error'"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+                role="alert"
+            >
+                <p class="max-w-xl text-sm font-medium text-red-700" x-text="message"></p>
+                <button
+                    type="button"
+                    @click="retry()"
+                    class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                    Erneut versuchen
                 </button>
-            </div>        
+            </div>
         </div>
     @else
         <p class="text-red-600">Hier könnte der Pagebuilder-Inhalt erscheinen. Speichere dein licenseKey von GrapesJS Studio.</p>

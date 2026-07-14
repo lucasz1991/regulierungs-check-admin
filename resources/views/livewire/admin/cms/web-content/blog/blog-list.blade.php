@@ -1,8 +1,33 @@
 <div>
-    <h1 class="text-xl font-bold mb-4">Blogbeiträge verwalten</h1>
-    <button onclick="Livewire.dispatch('open-blog-modal', { postId: null })">
-                            Erstellen
-                        </button>
+    <div class="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-gray-900">Blogbeitr&auml;ge verwalten</h1>
+            <p class="text-sm text-gray-500">{{ $posts->count() }} Beitr&auml;ge. Die Inhalte bleiben auch bei deaktiviertem User-Bereich bearbeitbar.</p>
+        </div>
+
+        <div class="flex flex-col gap-3 md:flex-row md:items-center">
+            <label class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <span>
+                    <span class="block text-sm font-semibold text-gray-900">User-Bereich sichtbar</span>
+                    <span class="block text-xs text-gray-500">{{ $blogEnabled ? 'Blog ist online sichtbar' : 'Blog bleibt für User ausgeblendet' }}</span>
+                </span>
+                <span class="relative inline-flex cursor-pointer items-center">
+                    <input type="checkbox" wire:model.live="blogEnabled" class="peer sr-only">
+                    <span class="h-6 w-11 rounded-full bg-gray-300 transition peer-checked:bg-green-500"></span>
+                    <span class="absolute left-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+                </span>
+            </label>
+
+            <button
+                type="button"
+                onclick="Livewire.dispatch('open-blog-modal', { postId: null })"
+                class="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
+            >
+                Blogbeitrag erstellen
+            </button>
+        </div>
+    </div>
+
     <table class="w-full table-auto text-left border border-gray-300">
         <thead>
             <tr class="bg-gray-100">

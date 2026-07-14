@@ -35,6 +35,10 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertStringContainsString('@pagebuilder:ready.window', $view);
         $this->assertStringContainsString('@pagebuilder:error.window', $view);
         $this->assertStringContainsString("new CustomEvent('pagebuilder:retry')", $view);
+        $this->assertStringContainsString('x-show.important="state === \'loading\'"', $view);
+        $this->assertStringContainsString('x-show.important="state === \'error\'"', $view);
+        $this->assertStringNotContainsString('x-show="state === \'loading\'"', $view);
+        $this->assertStringNotContainsString('x-show="state === \'error\'"', $view);
     }
 
     public function test_pagebuilder_has_a_safe_root_guard_and_valid_canvas_stylesheets(): void

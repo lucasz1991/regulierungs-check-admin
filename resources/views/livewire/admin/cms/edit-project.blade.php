@@ -58,7 +58,7 @@
 
             <div
                 x-cloak
-                x-show="state === 'loading'"
+                x-show.important="state === 'loading'"
                 class="absolute inset-0 z-20 flex items-center justify-center gap-3 bg-white text-sm font-medium text-gray-600"
                 role="status"
             >
@@ -68,7 +68,7 @@
 
             <div
                 x-cloak
-                x-show="state === 'error'"
+                x-show.important="state === 'error'"
                 class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white px-6 text-center"
                 role="alert"
             >

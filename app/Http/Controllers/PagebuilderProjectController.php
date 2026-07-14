@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\PagebuilderProject;
+use App\Models\Post;
+use App\Support\NewsCacheVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -33,6 +35,11 @@ class PagebuilderProjectController extends Controller
 
             Log::info('Projekt gespeichert', ['project_id' => $project->id, 'last_edited_by' => $project->last_edited_by]);
             $project->updateProjekt();
+
+            if (Post::where('type', 'news')->where('pagebuilder_project_id', $project->id)->exists()) {
+                NewsCacheVersion::bump();
+            }
+
             return response()->json([
                 'message' => 'Projekt gespeichert',
                 'project' => $project

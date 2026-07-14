@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
 use App\Models\NewsCategory;
+use App\Support\NewsCacheVersion;
 use Illuminate\Support\Str;
 use Livewire\Component;
 
@@ -66,6 +67,7 @@ class NewsCategoryManager extends Component
             $data['slug'] = Str::slug($this->name);
             NewsCategory::create($data);
         }
+        NewsCacheVersion::bump();
 
         $this->resetForm();
         $this->dispatch('refresh-news')->to('admin.cms.web-content.news.news-list');
@@ -74,6 +76,7 @@ class NewsCategoryManager extends Component
     public function delete(int $id): void
     {
         NewsCategory::findOrFail($id)->delete();
+        NewsCacheVersion::bump();
 
         if ($this->categoryId === $id) {
             $this->resetForm();

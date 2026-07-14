@@ -6,6 +6,7 @@ use App\Http\Controllers\MediaController;
 use App\Models\NewsCategory;
 use App\Models\PagebuilderProject;
 use App\Models\Post;
+use App\Support\NewsCacheVersion;
 use Illuminate\Http\Request;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -158,6 +159,7 @@ class NewsEditCreate extends Component
         }
 
         $this->ensurePagebuilderProject($post);
+        NewsCacheVersion::bump();
 
         $this->resetForm();
         $this->show = false;

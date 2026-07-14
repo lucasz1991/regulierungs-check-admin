@@ -93,6 +93,37 @@ export default defineConfig({
                 }
             },
         },
+        {
+            name: 'sync-news-pagebuilder-tailwind-to-base',
+            async closeBundle() {
+                const sourcePath = path.resolve(
+                    __dirname,
+                    'public/build/css/tailwind.min.css'
+                );
+                const basePublicPath = path.resolve(
+                    __dirname,
+                    '../regulierungs-check-base/public/adminresources/css'
+                );
+
+                // Admin and Base are deployed independently. Keep the committed
+                // Base asset in sync during local combined builds, but do not make
+                // an Admin-only deployment depend on the sibling repository.
+                if (
+                    ! await fs.pathExists(sourcePath)
+                    || ! await fs.pathExists(basePublicPath)
+                ) {
+                    return;
+                }
+
+                const targetPath = path.join(
+                    basePublicPath,
+                    'pagebuilder-tailwind.min.css'
+                );
+
+                await fs.copy(sourcePath, targetPath, { overwrite: true });
+                console.log(`News PageBuilder Tailwind synced to ${targetPath}`);
+            },
+        },
     ],
     resolve: {
         alias: {

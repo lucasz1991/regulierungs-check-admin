@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Cms\WebContent\News;
 
 use App\Models\Post;
 use App\Models\Setting;
+use App\Support\NewsCacheVersion;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -32,6 +33,7 @@ class NewsList extends Component
     public function delete(int $id): void
     {
         Post::where('type', 'news')->findOrFail($id)->delete();
+        NewsCacheVersion::bump();
         $this->resetPage();
     }
 
@@ -44,6 +46,7 @@ class NewsList extends Component
                 'updated_at' => now(),
             ]
         );
+        NewsCacheVersion::bump();
 
         $this->newsEnabled = (bool) $value;
         $this->dispatch('showAlert', $this->newsEnabled ? 'News-Bereich ist jetzt sichtbar.' : 'News-Bereich ist jetzt ausgeblendet.', 'success');

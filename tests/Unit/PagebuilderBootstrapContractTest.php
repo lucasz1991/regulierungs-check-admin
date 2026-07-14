@@ -74,6 +74,8 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertMatchesRegularExpression('/rteTinyMce\.init\(\{\s+licenseKey,/', $pagebuilder);
         $this->assertStringContainsString("'/build/css/tailwind.min.css'", $pagebuilder);
         $this->assertStringContainsString("'/adminresources/fontawesome6/css/all.min.css'", $pagebuilder);
+        $this->assertStringContainsString("file.mimeType === 'text/css'", $pagebuilder);
+        $this->assertStringContainsString("body.append('css', cssdata)", $pagebuilder);
     }
 
     public function test_vite_build_uses_a_hashed_entry_without_copying_over_it(): void

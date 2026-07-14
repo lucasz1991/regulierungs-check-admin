@@ -22,6 +22,7 @@ class PagebuilderProjectController extends Controller
                 'id' => 'required',
                 'data' => 'required|json',
                 'html' => '',
+                'css' => 'nullable|string',
             ]);
             
             $project = PagebuilderProject::updateOrCreate(
@@ -35,6 +36,15 @@ class PagebuilderProjectController extends Controller
 
             Log::info('Projekt gespeichert', ['project_id' => $project->id, 'last_edited_by' => $project->last_edited_by]);
             $project->updateProjekt();
+
+            if (array_key_exists('css', $validated)) {
+                // Studio exports generated component styles as a separate
+                // style.css file. Persist that exact file after the legacy
+                // data converter so it is available on public pages.
+                $project->updateQuietly([
+                    'css' => (string) ($validated['css'] ?? ''),
+                ]);
+            }
 
             if (Post::where('type', 'news')->where('pagebuilder_project_id', $project->id)->exists()) {
                 NewsCacheVersion::bump();

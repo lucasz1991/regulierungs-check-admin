@@ -231,19 +231,32 @@ class NewsCacheVersionTest extends TestCase
         $this->assertSame(422, $invalidResponse->getStatusCode());
         $this->assertNull($this->generation());
 
-        $validResponse = $controller->save($this->pagebuilderRequest('{"styles":[]}'));
+        $validResponse = $controller->save($this->pagebuilderRequest(
+            '{"styles":[]}',
+            '.saved-pagebuilder-style { color: rgb(8 64 88); }'
+        ));
 
         $this->assertSame(200, $validResponse->getStatusCode());
         $this->assertTrue(Str::isUuid((string) $this->generation()));
+        $this->assertSame(
+            '.saved-pagebuilder-style { color: rgb(8 64 88); }',
+            (string) DB::table('pagebuilder_projects')->where('id', 10)->value('css')
+        );
     }
 
-    private function pagebuilderRequest(string $data): Request
+    private function pagebuilderRequest(string $data, ?string $css = null): Request
     {
-        return Request::create('/admin/pagebuilder/save', 'POST', [
+        $payload = [
             'id' => 10,
             'data' => $data,
             'html' => '<body><section>Inhalt</section></body>',
-        ]);
+        ];
+
+        if ($css !== null) {
+            $payload['css'] = $css;
+        }
+
+        return Request::create('/admin/pagebuilder/save', 'POST', $payload);
     }
 
     private function generation(): ?string

@@ -283,11 +283,20 @@ async function initializeGrapesJsEditor(editorElement) {
                 type: 'self',
                 onSave: async ({ project, editor }) => {
                     var files = await editor.runCommand('studio:projectFiles');
-                    var htmldata = files.find(file => file.mimeType === 'text/html').content;
+                    var htmlFile = files.find(file => file.mimeType === 'text/html');
+                    var cssFile = files.find(file => file.mimeType === 'text/css');
+
+                    if (!htmlFile) {
+                        throw new Error('Der PageBuilder hat keine HTML-Datei erzeugt.');
+                    }
+
+                    var htmldata = htmlFile.content;
+                    var cssdata = cssFile?.content ?? editor.getCss({ keepUnusedStyles: true }) ?? '';
                     var body = new FormData();
                     body.append('id', selectedProject);
                     body.append('data', JSON.stringify(project));
                     body.append('html', htmldata);
+                    body.append('css', cssdata);
                     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     var response = await fetch('/admin/pagebuilder/save', {
                         method: 'POST',

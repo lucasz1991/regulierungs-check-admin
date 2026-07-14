@@ -45,6 +45,7 @@ class PagebuilderBootstrapContractTest extends TestCase
         $this->assertStringNotContainsString('settingsMenu: false', $pagebuilder);
         $this->assertStringNotContainsString('StudioCommands', $pagebuilder);
         $this->assertStringNotContainsString('window.editor.runCommand', $pagebuilder);
+        $this->assertStringNotContainsString('window.editor = await createStudioEditor', $pagebuilder);
         $this->assertStringContainsString('onEditor: (editor)', $pagebuilder);
         $this->assertStringContainsString('onReady: (editor)', $pagebuilder);
         $this->assertStringContainsString('const editor = await editorReady', $pagebuilder);

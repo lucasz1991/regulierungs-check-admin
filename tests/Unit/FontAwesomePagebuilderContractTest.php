@@ -33,12 +33,12 @@ class FontAwesomePagebuilderContractTest extends TestCase
 
         $this->assertStringContainsString('data-template-version="2"', $template);
         $this->assertStringContainsString('data-template-scope="content"', $template);
-        $this->assertStringContainsString('fa-light fa-clipboard-list', $template);
-        $this->assertStringContainsString('fa-solid fa-check', $template);
-        $this->assertStringContainsString('fa-regular fa-clock', $template);
-        $this->assertStringContainsString('fa-light fa-folder-open', $template);
-        $this->assertStringContainsString('fa-light fa-share-nodes', $template);
-        $this->assertStringContainsString('fa-light fa-lightbulb', $template);
+        $this->assertStringContainsString('fa-light fal fa-clipboard-list', $template);
+        $this->assertStringContainsString('fa-solid fas fa-check', $template);
+        $this->assertStringContainsString('fa-regular far fa-clock', $template);
+        $this->assertStringContainsString('fa-light fal fa-folder-open', $template);
+        $this->assertStringContainsString('fa-light fal fa-share-nodes', $template);
+        $this->assertStringContainsString('fa-light fal fa-lightbulb', $template);
         $this->assertStringNotContainsString('>▣<', $template);
         $this->assertStringNotContainsString('>◷<', $template);
         $this->assertStringNotContainsString('>□<', $template);

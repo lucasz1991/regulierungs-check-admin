@@ -21,30 +21,40 @@ const allowedFontAwesomeClasses = new Set([
     'fa-share-alt',
     'fa-lightbulb',
 ]);
+const requiredContainerClasses = new Set(['container', 'mx-auto', 'px-3']);
 
 assert.doesNotMatch(newsLayoutHtml, /\brc-news-/);
 assert.doesNotMatch(newsLayoutHtml, /<style\b/i);
 assert.match(newsLayoutHtml, /\sstyle="[^"]+"/);
 assert.match(newsLayoutHtml, /data-template-version="2"/);
 assert.match(newsLayoutHtml, /data-template-scope="content"/);
+assert.match(newsLayoutHtml, /class="container mx-auto px-3"/);
 
 const tagsWithClasses = [
     ...newsLayoutHtml.matchAll(/<([a-z][\w-]*)\b[^>]*\bclass="([^"]+)"[^>]*>/gi),
 ];
 
-assert.ok(tagsWithClasses.length > 0, 'Font-Awesome-Icons müssen erhalten bleiben.');
+assert.ok(tagsWithClasses.length > 0, 'Font-Awesome icons must remain present.');
 
 for (const [, tagName, classValue] of tagsWithClasses) {
-    assert.equal(
-        tagName.toLowerCase(),
-        'i',
-        `Nur Font-Awesome-Icons dürfen Klassen verwenden: <${tagName}>`
-    );
+    const classNames = classValue.trim().split(/\s+/);
 
-    for (const className of classValue.trim().split(/\s+/)) {
+    if (tagName.toLowerCase() === 'div') {
+        assert.deepEqual(
+            new Set(classNames),
+            requiredContainerClasses,
+            'The only layout classes must be exactly container mx-auto px-3.'
+        );
+
+        continue;
+    }
+
+    assert.equal(tagName.toLowerCase(), 'i', `Unexpected class on <${tagName}>.`);
+
+    for (const className of classNames) {
         assert.ok(
             allowedFontAwesomeClasses.has(className),
-            `Unerlaubte News-Template-Klasse: ${className}`
+            `Disallowed news template class: ${className}`
         );
     }
 }
@@ -55,6 +65,7 @@ const editorStub = {
         get: () => undefined,
         add: (id, config, options) => {
             registeredBlock = { id, config, options };
+
             return config;
         },
     },
@@ -69,13 +80,13 @@ assert.match(registeredBlock.config.media, /^<svg\b/);
 assert.doesNotMatch(
     registeredBlock.config.media,
     /<img\b/i,
-    'Die Blockvorschau darf kein ziehbares Bild enthalten.'
+    'The block preview must not insert a draggable image.'
 );
 assert.match(registeredBlock.config.media, /pointer-events:none/);
 assert.match(newsLayoutPreview, /^data:image\/svg\+xml/);
 assert.equal(newsLayoutTemplate.data.pages[0].component, newsLayoutHtml);
 
 console.log(
-    `News editor-style contract verified: ${tagsWithClasses.length} Font-Awesome-Icons, `
-    + 'keine eigenen oder Tailwind-Klassen, kein eingebetteter Style-Block.'
+    'News editor-style contract verified: shared container shell, '
+    + 'no custom layout classes and no embedded style block.'
 );

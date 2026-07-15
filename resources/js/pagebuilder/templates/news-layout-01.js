@@ -40,12 +40,13 @@ const newsLayoutCardPreview = [
 
 export const newsLayoutPreview = toSvgDataUri(newsLayoutCardPreview);
 
-// Die Vorlage nutzt bewusst keine Layout- oder Tailwind-Klassen. Alle
-// Standardwerte liegen als vom Studio editierbare Inline-Styles vor. Einzige
-// Klassen sind die notwendigen Font-Awesome-Klassen der Icon-Komponenten.
+// Alle gestalterischen Standardwerte liegen als vom Studio editierbare
+// Inline-Styles vor. Die einzige Layout-Ausnahme ist die vom Nutzer gewuenschte
+// gemeinsame Seitenhuelle `container mx-auto px-3`; weitere Klassen gehoeren
+// ausschliesslich zu den Font-Awesome-Icon-Komponenten.
 export const newsLayoutHtml = [
     '<section data-template="news-layout-01" data-template-version="2" data-template-scope="content" style="box-sizing:border-box;width:100%;margin:0;background:#ffffff;color:#142536;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif">',
-    '  <div data-news-role="content" style="box-sizing:border-box;width:min(920px,100%);margin:0 auto;padding:0 clamp(16px,3vw,24px)">',
+    '  <div class="container mx-auto px-3" data-news-role="content" style="box-sizing:border-box;width:100%;max-width:1320px;margin:0 auto;padding-left:12px;padding-right:12px">',
     '    <section data-news-role="intro" style="padding:clamp(26px,4vw,36px) 0 clamp(20px,3vw,24px)">',
     '      <p style="margin:0;font-size:clamp(17px,2vw,20px);font-weight:540;line-height:1.6">Der Bundesgerichtshof hat mit einem aktuellen Urteil die Rechte von Versicherungsnehmern erneut gestärkt. Versicherer müssen künftig transparenter kommunizieren und dürfen Leistungen nicht ohne klare Begründung ablehnen.</p>',
     '    </section>',

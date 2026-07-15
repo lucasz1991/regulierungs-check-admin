@@ -8,7 +8,6 @@ use App\Support\NewsCacheVersion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class PagebuilderProjectController extends Controller
@@ -36,7 +35,7 @@ class PagebuilderProjectController extends Controller
                     'html' => 'Ein leerer Editor-Autosave wurde verworfen, damit vorhandener Inhalt nicht überschrieben wird.',
                 ]);
             }
-            
+
             $project = $existingProject;
             $project->fill([
                 'data' => $validated['data'],
@@ -60,7 +59,7 @@ class PagebuilderProjectController extends Controller
 
             return response()->json([
                 'message' => 'Projekt gespeichert',
-                'project' => $project
+                'project' => $project,
             ], 200);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validierungsfehler beim Speichern', ['errors' => $e->errors()]);
@@ -115,14 +114,13 @@ class PagebuilderProjectController extends Controller
         return ! $this->hasMeaningfulContent($body);
     }
 
-
     public function load($id)
     {
         Log::info('Projektladeanfrage', ['user_id' => Auth::id(), 'project_id' => $id]);
 
         $project = PagebuilderProject::findOrFail($id);
 
-        if (!$project) {
+        if (! $project) {
             Log::warning('Projekt nicht gefunden, neues wird erstellt', ['user_id' => Auth::id(), 'project_id' => $id]);
 
             // Standard-JSON für neue Projekte
@@ -135,7 +133,7 @@ class PagebuilderProjectController extends Controller
             $project = PagebuilderProject::create([
                 'name' => $projectName,
                 'data' => $defaultData,
-                'status' => 0, 
+                'status' => 0,
                 'order_id' => $maxOrderIdIterated,
             ]);
 
@@ -146,6 +144,4 @@ class PagebuilderProjectController extends Controller
 
         return response(json_decode($project->data, true), 200, ['Content-Type' => 'application/json']);
     }
-
-
 }

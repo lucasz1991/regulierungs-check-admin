@@ -331,8 +331,7 @@ class NewsCacheVersionTest extends TestCase
         string $data,
         ?string $css = null,
         string $html = '<body><section>Inhalt</section></body>'
-    ): Request
-    {
+    ): Request {
         $payload = [
             'id' => 10,
             'data' => $data,

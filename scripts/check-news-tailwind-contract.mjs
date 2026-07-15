@@ -29,6 +29,7 @@ assert.match(newsLayoutHtml, /\sstyle="[^"]+"/);
 assert.match(newsLayoutHtml, /data-template-version="2"/);
 assert.match(newsLayoutHtml, /data-template-scope="content"/);
 assert.match(newsLayoutHtml, /class="container mx-auto px-3"/);
+assert.match(newsLayoutHtml, /data-news-container="true"/);
 
 const tagsWithClasses = [
     ...newsLayoutHtml.matchAll(/<([a-z][\w-]*)\b[^>]*\bclass="([^"]+)"[^>]*>/gi),

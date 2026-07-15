@@ -13,7 +13,6 @@ const styleOptions = [
 ];
 
 const iconOptions = [
-    { id: '', label: 'Eigene Icon-Klasse' },
     { id: 'fa-star', label: 'Stern' },
     { id: 'fa-check', label: 'Haken' },
     { id: 'fa-check-circle', label: 'Haken im Kreis' },
@@ -114,21 +113,36 @@ const findStyle = (classNames) => {
 
 const legacyAliasForStyle = (style) => legacyStyleAliases[style] || '';
 
+const normalizeStyleForIcon = (icon, requestedStyle = 'fa-light') => {
+    const option = iconOptions.find(({ id }) => id === icon);
+
+    if (option?.style) {
+        return option.style;
+    }
+
+    if (option && requestedStyle === 'fa-brands') {
+        return 'fa-light';
+    }
+
+    return requestedStyle || 'fa-light';
+};
+
 const previewClasses = (option, selectedStyle = 'fa-light') => {
-    const style = option.style || (selectedStyle === 'fa-brands' ? 'fa-light' : selectedStyle);
+    const style = normalizeStyleForIcon(option.id, selectedStyle);
 
     return [style, legacyAliasForStyle(style), option.id].filter(Boolean).join(' ');
 };
 
 const registerIconPickerTrait = (editor) => {
-    const traitManager = editor.TraitManager;
+    const traits = editor.Traits;
 
-    if (!traitManager || traitManager.getTypes?.()[PICKER_TRAIT_TYPE]) {
+    if (!traits || traits.getType(PICKER_TRAIT_TYPE)) {
         return;
     }
 
-    traitManager.addType(PICKER_TRAIT_TYPE, {
+    traits.addType(PICKER_TRAIT_TYPE, {
         noLabel: true,
+        eventCapture: [],
         createInput({ component }) {
             const root = document.createElement('div');
             const preview = document.createElement('div');

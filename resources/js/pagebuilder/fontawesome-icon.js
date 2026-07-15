@@ -148,6 +148,7 @@ const registerIconPickerTrait = (editor) => {
             const preview = document.createElement('div');
             const search = document.createElement('input');
             const grid = document.createElement('div');
+            const emptyState = document.createElement('p');
             const buttons = [];
 
             root.setAttribute('data-fontawesome-icon-picker', '');
@@ -157,7 +158,12 @@ const registerIconPickerTrait = (editor) => {
             search.placeholder = 'Icon suchen …';
             search.setAttribute('aria-label', 'Font-Awesome-Icon suchen');
             search.style.cssText = 'box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff;color:#142536;font:inherit';
+            grid.setAttribute('role', 'listbox');
+            grid.setAttribute('aria-label', 'Verfuegbare Font-Awesome-Icons');
             grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;max-height:300px;overflow:auto;padding:2px';
+            emptyState.textContent = 'Kein passendes Icon gefunden.';
+            emptyState.hidden = true;
+            emptyState.style.cssText = 'margin:0;padding:8px 2px;color:#64748b;font-size:12px';
 
             const previewIcon = document.createElement('i');
             const previewLabel = document.createElement('span');
@@ -175,16 +181,18 @@ const registerIconPickerTrait = (editor) => {
                 previewIcon.className = previewClasses(selectedOption, selectedStyle);
                 previewLabel.textContent = selectedOption.label || selectedIcon;
 
-                for (const { button, option } of buttons) {
+                for (const { button, icon, option } of buttons) {
                     const selected = option.id === selectedIcon;
+                    icon.className = previewClasses(option, selectedStyle);
                     button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    button.setAttribute('aria-selected', selected ? 'true' : 'false');
                     button.style.borderColor = selected ? '#0c968e' : '#d8dee6';
                     button.style.background = selected ? '#eaf7f6' : '#ffffff';
                     button.style.color = selected ? '#087f86' : '#334155';
                 }
             };
 
-            for (const option of iconOptions.filter(({ id }) => id !== '')) {
+            for (const option of iconOptions) {
                 const button = document.createElement('button');
                 const icon = document.createElement('i');
                 const label = document.createElement('span');
@@ -192,6 +200,7 @@ const registerIconPickerTrait = (editor) => {
                 button.type = 'button';
                 button.title = option.label;
                 button.setAttribute('aria-label', option.label);
+                button.setAttribute('role', 'option');
                 button.dataset.search = `${option.label} ${option.id}`.toLocaleLowerCase('de');
                 button.style.cssText = 'display:grid;min-height:62px;place-items:center;gap:4px;border:1px solid #d8dee6;border-radius:9px;padding:7px 4px;background:#fff;color:#334155;cursor:pointer';
                 icon.className = previewClasses(option);
@@ -201,27 +210,37 @@ const registerIconPickerTrait = (editor) => {
                 label.style.cssText = 'display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;line-height:1.2;text-align:center';
                 button.append(icon, label);
                 button.addEventListener('click', () => {
+                    const selectedStyle = normalizeStyleForIcon(
+                        option.id,
+                        component.get('faStyle') || 'fa-light'
+                    );
+
                     component.set({
-                        faStyle: option.style || (component.get('faStyle') === 'fa-brands' ? 'fa-light' : component.get('faStyle')),
+                        faStyle: selectedStyle,
                         faIconPreset: option.id,
                         faIcon: option.id,
                     });
                     updateSelection();
                 });
-                buttons.push({ button, option });
+                buttons.push({ button, icon, option });
                 grid.append(button);
             }
 
             search.addEventListener('input', () => {
                 const query = search.value.trim().toLocaleLowerCase('de');
+                let visibleCount = 0;
 
                 for (const { button } of buttons) {
                     button.hidden = query !== '' && !button.dataset.search.includes(query);
+                    visibleCount += button.hidden ? 0 : 1;
                 }
+
+                emptyState.hidden = visibleCount !== 0;
             });
 
             root.__updateFontAwesomePicker = updateSelection;
-            root.append(preview, search, grid);
+            this.listenTo(component, 'change:faStyle change:faIcon', updateSelection);
+            root.append(preview, search, grid, emptyState);
             updateSelection();
 
             return root;
@@ -280,15 +299,8 @@ export default function addFontAwesomeIconBlock(editor) {
                         },
                         {
                             type: PICKER_TRAIT_TYPE,
-                            name: 'faIconPreset',
-                            label: false,
-                            changeProp: true,
-                        },
-                        {
-                            type: 'text',
                             name: 'faIcon',
-                            label: 'Eigene Icon-Klasse',
-                            placeholder: 'fa-star',
+                            label: false,
                             changeProp: true,
                         },
                         {
@@ -312,23 +324,19 @@ export default function addFontAwesomeIconBlock(editor) {
                     this._managedFaStyle = initialStyle;
                     this._managedFaIcon = initialIcon;
                     this.on('change:faStyle change:faIcon', this.syncFontAwesomeClasses);
-                    this.on('change:faIconPreset', this.applyIconPreset);
                     this.syncFontAwesomeClasses();
                 },
-                applyIconPreset() {
-                    const preset = this.get('faIconPreset');
-                    const option = iconOptions.find(({ id }) => id === preset);
-
-                    if (option) {
-                        this.set({
-                            faIcon: option.id,
-                            ...(option.style ? { faStyle: option.style } : {}),
-                        });
-                    }
-                },
                 syncFontAwesomeClasses() {
-                    const style = String(this.get('faStyle') || 'fa-light').trim();
                     const icon = String(this.get('faIcon') || 'fa-star').trim().split(/\s+/)[0];
+                    const requestedStyle = String(this.get('faStyle') || 'fa-light').trim();
+                    const style = normalizeStyleForIcon(icon, requestedStyle);
+
+                    if (requestedStyle !== style) {
+                        this.set('faStyle', style);
+
+                        return;
+                    }
+
                     const managedClassNames = new Set([
                         ...styleClassNames,
                         ...legacyStyleClassNames,
@@ -350,6 +358,10 @@ export default function addFontAwesomeIconBlock(editor) {
 
                     this._managedFaStyle = style;
                     this._managedFaIcon = icon;
+
+                    if (this.get('faIconPreset') !== icon) {
+                        this.set('faIconPreset', icon, { silent: true });
+                    }
                 },
             },
         });

@@ -117,7 +117,7 @@ export default defineConfig({
 
                 const targetPath = path.join(
                     basePublicPath,
-                    'pagebuilder-tailwind.min.css'
+                    'tailwind.min.css'
                 );
 
                 await fs.copy(sourcePath, targetPath, { overwrite: true });

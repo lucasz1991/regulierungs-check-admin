@@ -76,6 +76,7 @@ class FontAwesomePagebuilderContractTest extends TestCase
         $this->assertStringContainsString('data-template-scope="content"', $template);
         $this->assertStringContainsString('class="container mx-auto px-3"', $template);
         $this->assertStringContainsString('data-news-container="true"', $template);
+        $this->assertStringNotContainsString('max-width:1320px', $template);
         $this->assertStringContainsString('fa-light fal fa-clipboard-list', $template);
         $this->assertStringContainsString('fa-solid fas fa-check', $template);
         $this->assertStringContainsString('fa-regular far fa-clock', $template);

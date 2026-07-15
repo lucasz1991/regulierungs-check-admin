@@ -4,7 +4,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build && node -e \"const fs=require('fs');const from='public/build/.vite/manifest.json';const to='public/build/manifest.json';if(fs.existsSync(from)){fs.renameSync(from,to);}fs.rmSync('public/build/.vite',{recursive:true,force:true});\"",
-        "check:news-tailwind-contract": "node scripts/check-news-tailwind-contract.mjs"
+        "check:news-template-contract": "node scripts/check-news-tailwind-contract.mjs",
+        "check:news-tailwind-contract": "npm run check:news-template-contract"
     },
     "devDependencies": {
         "@alpinejs/focus": "^3.10.5",

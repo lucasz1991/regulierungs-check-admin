@@ -19,8 +19,17 @@ class FontAwesomePagebuilderContractTest extends TestCase
         $this->assertStringContainsString("name: 'faStyle'", $component);
         $this->assertStringContainsString("name: 'faIconPreset'", $component);
         $this->assertStringContainsString("name: 'faIcon'", $component);
-        $this->assertStringContainsString("{ id: 'fa-thin', label: 'Thin (Pro)' }", $component);
+        $this->assertStringContainsString("const PICKER_TRAIT_TYPE = 'fontawesome-icon-picker'", $component);
+        $this->assertStringContainsString('traitManager.addType(PICKER_TRAIT_TYPE', $component);
+        $this->assertStringContainsString("root.setAttribute('data-fontawesome-icon-picker'", $component);
+        $this->assertStringContainsString("search.placeholder = 'Icon suchen …'", $component);
+        $this->assertStringContainsString('updateSelection', $component);
+        $this->assertStringContainsString("{ id: 'fa-light', label: 'Light (Pro)' }", $component);
         $this->assertStringContainsString("{ id: 'fa-duotone', label: 'Duotone (Pro)' }", $component);
+        $this->assertStringNotContainsString("{ id: 'fa-thin'", $component);
+        $this->assertStringNotContainsString("{ id: 'fa-sharp", $component);
+        $this->assertStringContainsString("{ id: 'fa-share-alt', label: 'Teilen' }", $component);
+        $this->assertStringContainsString('<i class="fa-light fal fa-star"', $component);
         $this->assertStringContainsString("import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon'", $pagebuilder);
         $this->assertStringContainsString('addFontAwesomeIconBlock(editor)', $pagebuilder);
     }
@@ -37,8 +46,11 @@ class FontAwesomePagebuilderContractTest extends TestCase
         $this->assertStringContainsString('fa-solid fas fa-check', $template);
         $this->assertStringContainsString('fa-regular far fa-clock', $template);
         $this->assertStringContainsString('fa-light fal fa-folder-open', $template);
-        $this->assertStringContainsString('fa-light fal fa-share-nodes', $template);
+        $this->assertStringContainsString('fa-light fal fa-share-alt', $template);
         $this->assertStringContainsString('fa-light fal fa-lightbulb', $template);
+        $this->assertStringNotContainsString('rc-news-', $template);
+        $this->assertStringNotContainsString('<style', $template);
+        $this->assertStringContainsString('style="box-sizing:border-box', $template);
         $this->assertStringNotContainsString('>▣<', $template);
         $this->assertStringNotContainsString('>◷<', $template);
         $this->assertStringNotContainsString('>□<', $template);

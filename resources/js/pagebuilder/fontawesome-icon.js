@@ -1,62 +1,60 @@
 const COMPONENT_TYPE = 'fontawesome-icon';
 const BLOCK_ID = 'fontawesome-icon';
+const PICKER_TRAIT_TYPE = 'fontawesome-icon-picker';
 
+// Das lokal vorhandene Paket ist Font Awesome Pro 5.15.3. Nur tatsächlich
+// enthaltene Stile werden angeboten, damit jede Vorschau sichtbar bleibt.
 const styleOptions = [
-    { id: 'fa-thin', label: 'Thin (Pro)' },
     { id: 'fa-light', label: 'Light (Pro)' },
     { id: 'fa-regular', label: 'Regular' },
     { id: 'fa-solid', label: 'Solid' },
     { id: 'fa-duotone', label: 'Duotone (Pro)' },
-    { id: 'fa-sharp fa-thin', label: 'Sharp Thin (Pro)' },
-    { id: 'fa-sharp fa-light', label: 'Sharp Light (Pro)' },
-    { id: 'fa-sharp fa-regular', label: 'Sharp Regular (Pro)' },
-    { id: 'fa-sharp fa-solid', label: 'Sharp Solid (Pro)' },
     { id: 'fa-brands', label: 'Brands' },
 ];
 
 const iconOptions = [
-    { id: '', label: 'Eigene Icon-Klasse verwenden' },
+    { id: '', label: 'Eigene Icon-Klasse' },
     { id: 'fa-star', label: 'Stern' },
     { id: 'fa-check', label: 'Haken' },
-    { id: 'fa-circle-check', label: 'Haken im Kreis' },
-    { id: 'fa-xmark', label: 'Schließen' },
-    { id: 'fa-circle-info', label: 'Information' },
-    { id: 'fa-circle-exclamation', label: 'Hinweis' },
-    { id: 'fa-triangle-exclamation', label: 'Warnung' },
+    { id: 'fa-check-circle', label: 'Haken im Kreis' },
+    { id: 'fa-times', label: 'Schließen' },
+    { id: 'fa-info-circle', label: 'Information' },
+    { id: 'fa-exclamation-circle', label: 'Hinweis' },
+    { id: 'fa-exclamation-triangle', label: 'Warnung' },
     { id: 'fa-lightbulb', label: 'Glühbirne' },
     { id: 'fa-clipboard-list', label: 'Checkliste' },
-    { id: 'fa-list-check', label: 'Aufgabenliste' },
+    { id: 'fa-tasks', label: 'Aufgabenliste' },
     { id: 'fa-clock', label: 'Uhr' },
-    { id: 'fa-calendar-days', label: 'Kalender' },
+    { id: 'fa-calendar-alt', label: 'Kalender' },
     { id: 'fa-folder-open', label: 'Ordner' },
-    { id: 'fa-share-nodes', label: 'Teilen' },
+    { id: 'fa-share-alt', label: 'Teilen' },
     { id: 'fa-link', label: 'Link' },
     { id: 'fa-arrow-right', label: 'Pfeil rechts' },
     { id: 'fa-arrow-left', label: 'Pfeil links' },
     { id: 'fa-chevron-right', label: 'Chevron rechts' },
     { id: 'fa-chevron-left', label: 'Chevron links' },
-    { id: 'fa-magnifying-glass', label: 'Suche' },
+    { id: 'fa-search', label: 'Suche' },
     { id: 'fa-user', label: 'Benutzer' },
     { id: 'fa-users', label: 'Benutzergruppe' },
     { id: 'fa-envelope', label: 'E-Mail' },
     { id: 'fa-phone', label: 'Telefon' },
-    { id: 'fa-location-dot', label: 'Standort' },
-    { id: 'fa-house', label: 'Haus' },
-    { id: 'fa-building-shield', label: 'Versicherung' },
-    { id: 'fa-scale-balanced', label: 'Recht' },
+    { id: 'fa-map-marker-alt', label: 'Standort' },
+    { id: 'fa-home', label: 'Haus' },
+    { id: 'fa-building', label: 'Gebäude' },
+    { id: 'fa-balance-scale', label: 'Recht' },
     { id: 'fa-gavel', label: 'Urteil' },
     { id: 'fa-car', label: 'Auto' },
-    { id: 'fa-shield-halved', label: 'Schutz' },
-    { id: 'fa-file-lines', label: 'Dokument' },
+    { id: 'fa-shield-alt', label: 'Schutz' },
+    { id: 'fa-file-alt', label: 'Dokument' },
     { id: 'fa-download', label: 'Download' },
     { id: 'fa-upload', label: 'Upload' },
     { id: 'fa-pen', label: 'Bearbeiten' },
     { id: 'fa-trash', label: 'Löschen' },
     { id: 'fa-bars', label: 'Menü' },
-    { id: 'fa-facebook', label: 'Facebook' },
-    { id: 'fa-instagram', label: 'Instagram' },
-    { id: 'fa-linkedin', label: 'LinkedIn' },
-    { id: 'fa-x-twitter', label: 'X / Twitter' },
+    { id: 'fa-facebook', label: 'Facebook', style: 'fa-brands' },
+    { id: 'fa-instagram', label: 'Instagram', style: 'fa-brands' },
+    { id: 'fa-linkedin', label: 'LinkedIn', style: 'fa-brands' },
+    { id: 'fa-twitter', label: 'Twitter', style: 'fa-brands' },
 ];
 
 const styleClassNames = new Set(
@@ -64,7 +62,6 @@ const styleClassNames = new Set(
 );
 
 const legacyStyleAliases = {
-    'fa-thin': 'fat',
     'fa-light': 'fal',
     'fa-regular': 'far',
     'fa-solid': 'fas',
@@ -85,19 +82,14 @@ const nonIconClassNames = new Set([
     'fa-pull-left',
     'fa-pull-right',
     'fa-spin',
-    'fa-spin-pulse',
     'fa-pulse',
-    'fa-beat',
-    'fa-beat-fade',
-    'fa-bounce',
-    'fa-fade',
-    'fa-flip',
-    'fa-shake',
     'fa-xs',
     'fa-sm',
     'fa-lg',
-    'fa-xl',
-    'fa-2xl',
+    'fa-2x',
+    'fa-3x',
+    'fa-4x',
+    'fa-5x',
 ]);
 
 const findIconClass = (classNames) => classNames.find((className) => {
@@ -107,11 +99,7 @@ const findIconClass = (classNames) => classNames.find((className) => {
 });
 
 const findStyle = (classNames) => {
-    const matched = [...styleOptions].sort((left, right) => {
-        return right.id.split(/\s+/).length - left.id.split(/\s+/).length;
-    }).find(({ id }) => {
-        return id.split(/\s+/).every((className) => classNames.includes(className));
-    });
+    const matched = styleOptions.find(({ id }) => classNames.includes(id));
 
     if (matched) {
         return matched.id;
@@ -121,17 +109,119 @@ const findStyle = (classNames) => {
         return classNames.includes(alias);
     });
 
-    return legacyMatch?.[0] || 'fa-solid';
+    return legacyMatch?.[0] || 'fa-light';
 };
 
-const legacyAliasForStyle = (style) => {
-    const styleClass = style.split(/\s+/).find((className) => legacyStyleAliases[className]);
+const legacyAliasForStyle = (style) => legacyStyleAliases[style] || '';
 
-    return legacyStyleAliases[styleClass] || '';
+const previewClasses = (option, selectedStyle = 'fa-light') => {
+    const style = option.style || (selectedStyle === 'fa-brands' ? 'fa-light' : selectedStyle);
+
+    return [style, legacyAliasForStyle(style), option.id].filter(Boolean).join(' ');
+};
+
+const registerIconPickerTrait = (editor) => {
+    const traitManager = editor.TraitManager;
+
+    if (!traitManager || traitManager.getTypes?.()[PICKER_TRAIT_TYPE]) {
+        return;
+    }
+
+    traitManager.addType(PICKER_TRAIT_TYPE, {
+        noLabel: true,
+        createInput({ component }) {
+            const root = document.createElement('div');
+            const preview = document.createElement('div');
+            const search = document.createElement('input');
+            const grid = document.createElement('div');
+            const buttons = [];
+
+            root.setAttribute('data-fontawesome-icon-picker', '');
+            root.style.cssText = 'display:grid;gap:10px;width:100%';
+            preview.style.cssText = 'display:flex;min-height:52px;align-items:center;gap:12px;border:1px solid #d8dee6;border-radius:10px;padding:10px 12px;background:#fff;color:#142536';
+            search.type = 'search';
+            search.placeholder = 'Icon suchen …';
+            search.setAttribute('aria-label', 'Font-Awesome-Icon suchen');
+            search.style.cssText = 'box-sizing:border-box;width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px 10px;background:#fff;color:#142536;font:inherit';
+            grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:7px;max-height:300px;overflow:auto;padding:2px';
+
+            const previewIcon = document.createElement('i');
+            const previewLabel = document.createElement('span');
+            previewIcon.setAttribute('aria-hidden', 'true');
+            previewIcon.style.cssText = 'display:inline-grid;width:34px;height:34px;place-items:center;border-radius:8px;background:#eef8f7;color:#087f86;font-size:20px';
+            previewLabel.style.cssText = 'font-size:12px;font-weight:700';
+            preview.append(previewIcon, previewLabel);
+
+            const updateSelection = () => {
+                const selectedIcon = component.get('faIcon') || 'fa-star';
+                const selectedStyle = component.get('faStyle') || 'fa-light';
+                const selectedOption = iconOptions.find(({ id }) => id === selectedIcon)
+                    || { id: selectedIcon, label: selectedIcon };
+
+                previewIcon.className = previewClasses(selectedOption, selectedStyle);
+                previewLabel.textContent = selectedOption.label || selectedIcon;
+
+                for (const { button, option } of buttons) {
+                    const selected = option.id === selectedIcon;
+                    button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+                    button.style.borderColor = selected ? '#0c968e' : '#d8dee6';
+                    button.style.background = selected ? '#eaf7f6' : '#ffffff';
+                    button.style.color = selected ? '#087f86' : '#334155';
+                }
+            };
+
+            for (const option of iconOptions.filter(({ id }) => id !== '')) {
+                const button = document.createElement('button');
+                const icon = document.createElement('i');
+                const label = document.createElement('span');
+
+                button.type = 'button';
+                button.title = option.label;
+                button.setAttribute('aria-label', option.label);
+                button.dataset.search = `${option.label} ${option.id}`.toLocaleLowerCase('de');
+                button.style.cssText = 'display:grid;min-height:62px;place-items:center;gap:4px;border:1px solid #d8dee6;border-radius:9px;padding:7px 4px;background:#fff;color:#334155;cursor:pointer';
+                icon.className = previewClasses(option);
+                icon.setAttribute('aria-hidden', 'true');
+                icon.style.fontSize = '19px';
+                label.textContent = option.label;
+                label.style.cssText = 'display:block;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;line-height:1.2;text-align:center';
+                button.append(icon, label);
+                button.addEventListener('click', () => {
+                    component.set({
+                        faStyle: option.style || (component.get('faStyle') === 'fa-brands' ? 'fa-light' : component.get('faStyle')),
+                        faIconPreset: option.id,
+                        faIcon: option.id,
+                    });
+                    updateSelection();
+                });
+                buttons.push({ button, option });
+                grid.append(button);
+            }
+
+            search.addEventListener('input', () => {
+                const query = search.value.trim().toLocaleLowerCase('de');
+
+                for (const { button } of buttons) {
+                    button.hidden = query !== '' && !button.dataset.search.includes(query);
+                }
+            });
+
+            root.__updateFontAwesomePicker = updateSelection;
+            root.append(preview, search, grid);
+            updateSelection();
+
+            return root;
+        },
+        onUpdate({ elInput }) {
+            elInput?.__updateFontAwesomePicker?.();
+        },
+    });
 };
 
 export default function addFontAwesomeIconBlock(editor) {
     const { Components, Blocks } = editor;
+
+    registerIconPickerTrait(editor);
 
     if (!Components.getType(COMPONENT_TYPE)) {
         Components.addType(COMPONENT_TYPE, {
@@ -160,7 +250,7 @@ export default function addFontAwesomeIconBlock(editor) {
                     name: 'Font Awesome Icon',
                     droppable: false,
                     components: [],
-                    faStyle: 'fa-solid',
+                    faStyle: 'fa-light',
                     faIcon: 'fa-star',
                     faIconPreset: 'fa-star',
                     attributes: {
@@ -175,16 +265,15 @@ export default function addFontAwesomeIconBlock(editor) {
                             options: styleOptions,
                         },
                         {
-                            type: 'select',
+                            type: PICKER_TRAIT_TYPE,
                             name: 'faIconPreset',
-                            label: 'Icon auswählen',
+                            label: false,
                             changeProp: true,
-                            options: iconOptions,
                         },
                         {
                             type: 'text',
                             name: 'faIcon',
-                            label: 'Icon-Klasse',
+                            label: 'Eigene Icon-Klasse',
                             placeholder: 'fa-star',
                             changeProp: true,
                         },
@@ -214,13 +303,17 @@ export default function addFontAwesomeIconBlock(editor) {
                 },
                 applyIconPreset() {
                     const preset = this.get('faIconPreset');
+                    const option = iconOptions.find(({ id }) => id === preset);
 
-                    if (preset) {
-                        this.set('faIcon', preset);
+                    if (option) {
+                        this.set({
+                            faIcon: option.id,
+                            ...(option.style ? { faStyle: option.style } : {}),
+                        });
                     }
                 },
                 syncFontAwesomeClasses() {
-                    const style = String(this.get('faStyle') || 'fa-solid').trim();
+                    const style = String(this.get('faStyle') || 'fa-light').trim();
                     const icon = String(this.get('faIcon') || 'fa-star').trim().split(/\s+/)[0];
                     const managedClassNames = new Set([
                         ...styleClassNames,
@@ -235,7 +328,7 @@ export default function addFontAwesomeIconBlock(editor) {
                     this.setClass([
                         ...new Set([
                             ...preservedClassNames,
-                            ...style.split(/\s+/).filter(Boolean),
+                            style,
                             legacyAliasForStyle(style),
                             icon,
                         ].filter(Boolean)),
@@ -253,24 +346,30 @@ export default function addFontAwesomeIconBlock(editor) {
     }
 
     return Blocks.add(BLOCK_ID, {
-        label: 'Font Awesome Icon',
+        label: 'Font Awesome Icons',
         category: {
             id: 'Basic',
             label: 'Basic',
             open: true,
         },
-        media: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2.4 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9L12 2.4Z"/></svg>',
+        media: '<span style="display:grid;place-items:center;gap:6px"><i class="fa-light fal fa-star" aria-hidden="true" style="font-size:30px"></i><small>Icon wählen</small></span>',
         content: {
             type: COMPONENT_TYPE,
-            faStyle: 'fa-solid',
+            faStyle: 'fa-light',
             faIcon: 'fa-star',
             faIconPreset: 'fa-star',
         },
         select: true,
         attributes: {
-            title: 'Font Awesome Icon einfügen',
+            title: 'Font-Awesome-Icon mit Vorschau einfügen',
         },
     }, { at: 0 });
 }
 
-export { BLOCK_ID, COMPONENT_TYPE, iconOptions, styleOptions };
+export {
+    BLOCK_ID,
+    COMPONENT_TYPE,
+    PICKER_TRAIT_TYPE,
+    iconOptions,
+    styleOptions,
+};

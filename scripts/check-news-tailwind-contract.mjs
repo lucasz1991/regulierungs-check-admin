@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 
 import {
     addNewsDefaultLayoutBlock,
@@ -8,37 +7,47 @@ import {
     newsLayoutTemplate,
 } from '../resources/js/pagebuilder/templates/news-layout-01.js';
 
-const pageBuilderTemplateGlob = './resources/js/pagebuilder/templates/**/*.{js,ts,jsx,tsx}';
-const tailwindConfigSource = await readFile(
-    new URL('../tailwind.config.js', import.meta.url),
-    'utf8'
-);
+const allowedFontAwesomeClasses = new Set([
+    'fa-light',
+    'fal',
+    'fa-solid',
+    'fas',
+    'fa-regular',
+    'far',
+    'fa-clipboard-list',
+    'fa-check',
+    'fa-clock',
+    'fa-folder-open',
+    'fa-share-alt',
+    'fa-lightbulb',
+]);
 
-assert.ok(
-    tailwindConfigSource.includes(`'${pageBuilderTemplateGlob}'`)
-        || tailwindConfigSource.includes(`"${pageBuilderTemplateGlob}"`),
-    `Tailwind content is missing ${pageBuilderTemplateGlob}`
-);
+assert.doesNotMatch(newsLayoutHtml, /\brc-news-/);
+assert.doesNotMatch(newsLayoutHtml, /<style\b/i);
+assert.match(newsLayoutHtml, /\sstyle="[^"]+"/);
+assert.match(newsLayoutHtml, /data-template-version="2"/);
+assert.match(newsLayoutHtml, /data-template-scope="content"/);
 
-const classNames = [
-    ...newsLayoutHtml.matchAll(/\bclass=["']([^"']+)["']/g),
-].flatMap((match) => match[1].trim().split(/\s+/).filter(Boolean));
+const tagsWithClasses = [
+    ...newsLayoutHtml.matchAll(/<([a-z][\w-]*)\b[^>]*\bclass="([^"]+)"[^>]*>/gi),
+];
 
-assert.ok(classNames.length > 0, 'The News layout must expose its CSS class contract.');
+assert.ok(tagsWithClasses.length > 0, 'Font-Awesome-Icons müssen erhalten bleiben.');
 
-const customClassNames = [...new Set(
-    classNames.filter((className) => className.startsWith('rc-news-'))
-)];
-const tailwindClassNames = [...new Set(
-    classNames.filter((className) => !className.startsWith('rc-news-'))
-)];
-const safelistBody = tailwindConfigSource.match(/safelist\s*:\s*\[([\s\S]*?)\]\s*,?/)?.[1] ?? '';
+for (const [, tagName, classValue] of tagsWithClasses) {
+    assert.equal(
+        tagName.toLowerCase(),
+        'i',
+        `Nur Font-Awesome-Icons dürfen Klassen verwenden: <${tagName}>`
+    );
 
-assert.doesNotMatch(
-    safelistBody,
-    /rc-news-/,
-    'rc-news custom CSS selectors must not be added to the Tailwind safelist.'
-);
+    for (const className of classValue.trim().split(/\s+/)) {
+        assert.ok(
+            allowedFontAwesomeClasses.has(className),
+            `Unerlaubte News-Template-Klasse: ${className}`
+        );
+    }
+}
 
 let registeredBlock;
 const editorStub = {
@@ -60,13 +69,13 @@ assert.match(registeredBlock.config.media, /^<svg\b/);
 assert.doesNotMatch(
     registeredBlock.config.media,
     /<img\b/i,
-    'The draggable block preview must not contain a native draggable image.'
+    'Die Blockvorschau darf kein ziehbares Bild enthalten.'
 );
 assert.match(registeredBlock.config.media, /pointer-events:none/);
 assert.match(newsLayoutPreview, /^data:image\/svg\+xml/);
 assert.equal(newsLayoutTemplate.data.pages[0].component, newsLayoutHtml);
 
 console.log(
-    `News Tailwind contract verified: ${customClassNames.length} custom classes, `
-    + `${tailwindClassNames.length} scanned utility/icon classes, PageBuilder block insertion verified.`
+    `News editor-style contract verified: ${tagsWithClasses.length} Font-Awesome-Icons, `
+    + 'keine eigenen oder Tailwind-Klassen, kein eingebetteter Style-Block.'
 );

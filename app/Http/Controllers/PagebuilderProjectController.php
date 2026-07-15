@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class PagebuilderProjectController extends Controller
 {
@@ -19,20 +20,30 @@ class PagebuilderProjectController extends Controller
     {
         try {
             $validated = $request->validate([
-                'id' => 'required',
+                'id' => 'required|integer|exists:pagebuilder_projects,id',
                 'data' => 'required|json',
-                'html' => '',
+                'html' => 'required|string',
                 'css' => 'nullable|string',
+                'allow_empty' => 'sometimes|boolean',
             ]);
+
+            $existingProject = PagebuilderProject::findOrFail($validated['id']);
+
+            if (! ($validated['allow_empty'] ?? false)
+                && $this->hasMeaningfulContent((string) $existingProject->cleaned_html)
+                && $this->isEmptyEditorExport($validated['data'], $validated['html'])) {
+                throw ValidationException::withMessages([
+                    'html' => 'Ein leerer Editor-Autosave wurde verworfen, damit vorhandener Inhalt nicht überschrieben wird.',
+                ]);
+            }
             
-            $project = PagebuilderProject::updateOrCreate(
-                ['id' => $validated['id']],
-                [
-                    'data' => "{$validated['data']}",
-                    'html' => $validated['html'],
-                    'last_edited_by' => Auth::id(),
-                ]
-            );
+            $project = $existingProject;
+            $project->fill([
+                'data' => $validated['data'],
+                'html' => $validated['html'],
+                'last_edited_by' => Auth::id(),
+            ]);
+            $project->saveQuietly();
 
             Log::info('Projekt gespeichert', ['project_id' => $project->id, 'last_edited_by' => $project->last_edited_by]);
             // Seiten, Module und News verwenden denselben Cleaner. Der
@@ -66,6 +77,42 @@ class PagebuilderProjectController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function hasMeaningfulContent(string $html): bool
+    {
+        if (trim(strip_tags($html)) !== '') {
+            return true;
+        }
+
+        return preg_match(
+            '/<(?:img|picture|video|audio|iframe|svg|canvas|form|input|button)\b/i',
+            $html
+        ) === 1;
+    }
+
+    private function isEmptyEditorExport(string $data, string $html): bool
+    {
+        $project = json_decode($data, true);
+        $pages = is_array($project) ? ($project['pages'] ?? []) : [];
+
+        foreach ($pages as $page) {
+            foreach (($page['frames'] ?? []) as $frame) {
+                $components = $frame['component']['components'] ?? [];
+
+                if (is_array($components) && $components !== []) {
+                    return false;
+                }
+            }
+        }
+
+        $body = $html;
+
+        if (preg_match('/<body\b[^>]*>(.*?)<\/body>/is', $html, $matches)) {
+            $body = $matches[1];
+        }
+
+        return ! $this->hasMeaningfulContent($body);
     }
 
 

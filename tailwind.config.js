@@ -10,8 +10,8 @@ export default {
         './vendor/laravel/jetstream/**/*.blade.php',
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
-        // Scan static Tailwind utilities in PageBuilder template strings.
-        // rc-news-* uses embedded custom CSS; safelisting those selectors would generate no Tailwind rules.
+        // Keep future PageBuilder templates discoverable by Tailwind. The News
+        // default layout itself deliberately uses editor styles, not utilities.
         './resources/js/pagebuilder/templates/**/*.{js,ts,jsx,tsx}',
     ],
     important: true,

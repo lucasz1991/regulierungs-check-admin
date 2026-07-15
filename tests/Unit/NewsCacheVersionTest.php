@@ -244,12 +244,99 @@ class NewsCacheVersionTest extends TestCase
         );
     }
 
-    private function pagebuilderRequest(string $data, ?string $css = null): Request
+    public function test_pagebuilder_save_cleans_and_stores_html_css_and_js_separately(): void
+    {
+        DB::table('pagebuilder_projects')->insert([
+            'id' => 10,
+            'name' => 'Cleaner contract',
+            'data' => '{"styles":[]}',
+            'html' => '<body></body>',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $html = <<<'HTML'
+            <!DOCTYPE html>
+            <html>
+                <head><style>.head-editor-style { display: grid; }</style></head>
+                <body id="editor-body">
+                    <section style="color: #142536">Cleaned content marker</section>
+                    <style>.embedded-editor-style { padding: 12px; }</style>
+                    <script>window.pagebuilderCleanerMarker = true;</script>
+                </body>
+            </html>
+            HTML;
+
+        $css = <<<'CSS'
+            #studio-editor-style { color: #084058; }
+            .unsafe { background: url("javascript:alert(1)"); }
+            </style><script>window.cssInjection = true;</script><style>
+            CSS;
+
+        $response = (new PagebuilderProjectController)->save(
+            $this->pagebuilderRequest('{"styles":[]}', $css, $html)
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+
+        $project = DB::table('pagebuilder_projects')->where('id', 10)->first();
+
+        $this->assertStringContainsString('Cleaned content marker', $project->cleaned_html);
+        $this->assertStringContainsString('style="color: #142536"', $project->cleaned_html);
+        $this->assertStringNotContainsString('<html', $project->cleaned_html);
+        $this->assertStringNotContainsString('<body', $project->cleaned_html);
+        $this->assertStringNotContainsString('<style', $project->cleaned_html);
+        $this->assertStringNotContainsString('<script', $project->cleaned_html);
+        $this->assertStringContainsString('window.pagebuilderCleanerMarker = true;', $project->js);
+        $this->assertStringContainsString('#studio-editor-style', $project->css);
+        $this->assertStringContainsString('.head-editor-style', $project->css);
+        $this->assertStringContainsString('.embedded-editor-style', $project->css);
+        $this->assertStringNotContainsString('<style', $project->css);
+        $this->assertStringNotContainsString('<script', $project->css);
+        $this->assertStringNotContainsString('javascript:', $project->css);
+        $this->assertStringNotContainsString('window.cssInjection', $project->css);
+    }
+
+    public function test_empty_editor_autosave_cannot_overwrite_existing_content(): void
+    {
+        DB::table('pagebuilder_projects')->insert([
+            'id' => 10,
+            'name' => 'Protected content',
+            'data' => '{"styles":[]}',
+            'html' => '<body><p>Existing raw content</p></body>',
+            'cleaned_html' => '<div><p>Existing cleaned content</p></div>',
+            'css' => '#existing { color: #084058; }',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $emptyData = '{"styles":[],"pages":[{"frames":[{"component":{"components":[]}}]}]}';
+        $emptyHtml = '<!DOCTYPE html><html><head></head><body id="itix"></body></html>';
+        $response = (new PagebuilderProjectController)->save(
+            $this->pagebuilderRequest($emptyData, '', $emptyHtml)
+        );
+
+        $this->assertSame(422, $response->getStatusCode());
+        $this->assertSame(
+            '<div><p>Existing cleaned content</p></div>',
+            DB::table('pagebuilder_projects')->where('id', 10)->value('cleaned_html')
+        );
+        $this->assertSame(
+            '#existing { color: #084058; }',
+            DB::table('pagebuilder_projects')->where('id', 10)->value('css')
+        );
+    }
+
+    private function pagebuilderRequest(
+        string $data,
+        ?string $css = null,
+        string $html = '<body><section>Inhalt</section></body>'
+    ): Request
     {
         $payload = [
             'id' => 10,
             'data' => $data,
-            'html' => '<body><section>Inhalt</section></body>',
+            'html' => $html,
         ];
 
         if ($css !== null) {

@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use RuntimeException;
 use Tests\TestCase;
 
@@ -77,7 +78,7 @@ class NewsEditCreateValidationTest extends TestCase
     public function test_required_title_uses_the_german_error_message(): void
     {
         $this->assertValidationMessage(
-            new NewsEditCreate(),
+            new NewsEditCreate,
             'title',
             'Bitte gib einen Titel ein.'
         );
@@ -85,7 +86,7 @@ class NewsEditCreateValidationTest extends TestCase
 
     public function test_title_length_errors_use_the_german_error_messages(): void
     {
-        $tooShort = new NewsEditCreate();
+        $tooShort = new NewsEditCreate;
         $tooShort->title = 'ab';
 
         $this->assertValidationMessage(
@@ -94,7 +95,7 @@ class NewsEditCreateValidationTest extends TestCase
             'Der Titel muss mindestens 3 Zeichen lang sein.'
         );
 
-        $tooLong = new NewsEditCreate();
+        $tooLong = new NewsEditCreate;
         $tooLong->title = str_repeat('a', 256);
 
         $this->assertValidationMessage(
@@ -161,7 +162,7 @@ class NewsEditCreateValidationTest extends TestCase
             ], JSON_THROW_ON_ERROR),
         ]);
 
-        $component = new NewsEditCreate();
+        $component = new NewsEditCreate;
         $component->loadPost($postId);
         $component->images[0]['path'] = 'uploads/news/manipuliert.jpg';
 
@@ -201,7 +202,7 @@ class NewsEditCreateValidationTest extends TestCase
             ], JSON_THROW_ON_ERROR),
         ]);
 
-        $component = new NewsEditCreate();
+        $component = new NewsEditCreate;
         $component->loadPost($postId);
         $component->images[0]['alt'] = ['kein', 'text'];
 
@@ -275,9 +276,18 @@ class NewsEditCreateValidationTest extends TestCase
         $this->assertSame(0, DB::table('posts')->count());
     }
 
+    public function test_news_modal_renders_accessible_dialog_semantics(): void
+    {
+        Livewire::test(NewsEditCreate::class)
+            ->assertSeeHtml('role="dialog"')
+            ->assertSeeHtml('aria-modal="true"')
+            ->assertSeeHtml('aria-labelledby="news-edit-create-modal-title"')
+            ->assertSeeHtml('id="news-edit-create-modal-title"');
+    }
+
     private function validComponent(): NewsEditCreate
     {
-        $component = new NewsEditCreate();
+        $component = new NewsEditCreate;
         $component->title = 'Gültige Test-News';
 
         return $component;

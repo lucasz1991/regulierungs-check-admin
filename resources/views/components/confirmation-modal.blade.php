@@ -1,6 +1,11 @@
 @props(['id' => null, 'maxWidth' => null])
 
-<x-modal :id="$id" :maxWidth="$maxWidth" {{ $attributes }}>
+@php
+    $dialogId = $id ?? md5($attributes->wire('model'));
+    $titleId = "{$dialogId}-title";
+@endphp
+
+<x-modal :id="$dialogId" :maxWidth="$maxWidth" :labelledBy="$titleId" {{ $attributes }}>
     <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         <div class="sm:flex sm:items-start">
             <div class="mx-auto shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -10,7 +15,7 @@
             </div>
 
             <div class="mt-3 text-center sm:mt-0 sm:ms-4 sm:text-start">
-                <h3 class="text-lg font-medium text-gray-900">
+                <h3 id="{{ $titleId }}" class="text-lg font-medium text-gray-900">
                     {{ $title }}
                 </h3>
 

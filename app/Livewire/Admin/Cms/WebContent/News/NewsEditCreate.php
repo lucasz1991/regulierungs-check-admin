@@ -8,8 +8,8 @@ use App\Models\PagebuilderProject;
 use App\Models\Post;
 use App\Support\NewsCacheVersion;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -21,17 +21,27 @@ class NewsEditCreate extends Component
     use WithFileUploads;
 
     public bool $show = false;
+
     public ?int $postId = null;
+
     public ?Post $post = null;
 
     public bool $isDirty = false;
+
     public string $title = '';
+
     public string $type = 'news';
+
     public ?string $excerpt = null;
+
     public $news_category_id = null;
+
     public bool $published = false;
+
     public ?string $published_at = null;
+
     public array $images = [];
+
     public array $imageFiles = [];
 
     protected $listeners = [
@@ -88,7 +98,7 @@ class NewsEditCreate extends Component
 
     public function removeImage(int $index): void
     {
-        if (!isset($this->images[$index])) {
+        if (! isset($this->images[$index])) {
             return;
         }
 
@@ -100,7 +110,7 @@ class NewsEditCreate extends Component
 
     public function removeImageFile(int $index): void
     {
-        if (!isset($this->imageFiles[$index])) {
+        if (! isset($this->imageFiles[$index])) {
             return;
         }
 
@@ -112,7 +122,7 @@ class NewsEditCreate extends Component
 
     public function moveImageUp(int $index): void
     {
-        if ($index <= 0 || !isset($this->images[$index], $this->images[$index - 1])) {
+        if ($index <= 0 || ! isset($this->images[$index], $this->images[$index - 1])) {
             return;
         }
 
@@ -122,7 +132,7 @@ class NewsEditCreate extends Component
 
     public function moveImageDown(int $index): void
     {
-        if (!isset($this->images[$index], $this->images[$index + 1])) {
+        if (! isset($this->images[$index], $this->images[$index + 1])) {
             return;
         }
 
@@ -343,7 +353,7 @@ class NewsEditCreate extends Component
         $this->images = [...$this->images, ...$uploadedImages];
 
         $images = collect($this->images)
-            ->filter(fn ($image) => is_array($image) && !empty($image['path']))
+            ->filter(fn ($image) => is_array($image) && ! empty($image['path']))
             ->values()
             ->map(fn ($image, $index) => [
                 'path' => ltrim((string) $image['path'], '/'),
@@ -429,12 +439,12 @@ class NewsEditCreate extends Component
 
         $this->images = collect($this->images)
             ->map(function (mixed $image): mixed {
-                if (!is_array($image)) {
+                if (! is_array($image)) {
                     return $image;
                 }
 
                 foreach (['alt', 'caption'] as $field) {
-                    if (!array_key_exists($field, $image) || !is_string($image[$field])) {
+                    if (! array_key_exists($field, $image) || ! is_string($image[$field])) {
                         continue;
                     }
 
@@ -449,7 +459,7 @@ class NewsEditCreate extends Component
 
     public function openPagebuilder(): void
     {
-        if (!$this->postId || $this->isDirty) {
+        if (! $this->postId || $this->isDirty) {
             return;
         }
 
@@ -492,7 +502,7 @@ class NewsEditCreate extends Component
             'folder' => 'uploads/news',
         ], [], ['file' => $file]);
 
-        $response = (new MediaController())->store($request);
+        $response = (new MediaController)->store($request);
 
         if (method_exists($response, 'getData')) {
             $payload = $response->getData(true);
@@ -518,13 +528,13 @@ class NewsEditCreate extends Component
 
     protected function normalizeUploadedImagePath(mixed $path): string
     {
-        if (!is_string($path) || trim($path) === '') {
+        if (! is_string($path) || trim($path) === '') {
             throw new RuntimeException('Die Upload-Antwort enthält keinen gültigen Bildpfad.');
         }
 
         $path = ltrim(str_replace('\\', '/', trim($path)), '/');
 
-        if (!$this->isDeletableNewsUploadPath($path)) {
+        if (! $this->isDeletableNewsUploadPath($path)) {
             throw new RuntimeException('Die Upload-Antwort enthält einen ungültigen Bildpfad.');
         }
 
@@ -551,7 +561,7 @@ class NewsEditCreate extends Component
                 'visibility' => 'public',
             ]);
 
-            (new MediaController())->destroy($request);
+            (new MediaController)->destroy($request);
         } catch (\Throwable $exception) {
             report($exception);
         }

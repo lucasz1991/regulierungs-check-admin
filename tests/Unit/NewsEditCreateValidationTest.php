@@ -3,6 +3,8 @@
 namespace Tests\Unit;
 
 use App\Livewire\Admin\Cms\WebContent\News\NewsEditCreate;
+use App\Models\PagebuilderProject;
+use App\Models\Post;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -58,7 +60,9 @@ class NewsEditCreateValidationTest extends TestCase
             $table->string('title');
             $table->string('slug')->nullable();
             $table->text('excerpt')->nullable();
+            $table->longText('body')->nullable();
             $table->string('cover_image')->nullable();
+            $table->unsignedBigInteger('user_id')->nullable();
             $table->unsignedBigInteger('news_category_id')->nullable();
             $table->boolean('published')->default(false);
             $table->dateTime('published_at')->nullable();
@@ -187,6 +191,27 @@ class NewsEditCreateValidationTest extends TestCase
         );
     }
 
+    public function test_image_content_with_an_unsafe_extension_is_rejected(): void
+    {
+        $component = $this->validComponent();
+        $jpeg = UploadedFile::fake()->image('bild.jpg');
+        $component->imageFiles = [
+            new UploadedFile(
+                $jpeg->getRealPath(),
+                'bild.html',
+                'image/jpeg',
+                UPLOAD_ERR_OK,
+                true
+            ),
+        ];
+
+        $this->assertValidationMessage(
+            $component,
+            'imageFiles.0',
+            'Bild 1 muss die Dateiendung JPG, JPEG, PNG, GIF oder WebP haben.'
+        );
+    }
+
     public function test_non_string_image_metadata_is_not_normalized_past_validation(): void
     {
         $postId = $this->insertPost([
@@ -238,6 +263,16 @@ class NewsEditCreateValidationTest extends TestCase
             );
         }
 
+        try {
+            $component->normalizePathForTest('uploads/news/test-bild.html');
+            $this->fail('A non-image path extension unexpectedly passed.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Die Upload-Antwort enthält einen ungültigen Bildpfad.',
+                $exception->getMessage()
+            );
+        }
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Der hochgeladene Bildpfad ist zu lang.');
         $component->normalizePathForTest('uploads/news/'.str_repeat('a', 240).'.jpg');
@@ -257,6 +292,11 @@ class NewsEditCreateValidationTest extends TestCase
             protected function deleteImageViaMediaController(string $path): void
             {
                 $this->deletedPaths[] = $path;
+            }
+
+            protected function ensurePagebuilderProject(Post $post): PagebuilderProject
+            {
+                throw new RuntimeException('Erzwungener Fehler nach dem News-INSERT.');
             }
         };
 

@@ -213,6 +213,7 @@ class NewsEditCreate extends Component
                 'required',
                 'image',
                 'mimes:jpg,jpeg,png,gif,webp',
+                'extensions:jpg,jpeg,png,gif,webp',
                 'max:4096',
             ],
         ];
@@ -250,6 +251,7 @@ class NewsEditCreate extends Component
             'imageFiles.*.required' => 'Bitte wähle für Bild :position eine Datei aus.',
             'imageFiles.*.image' => 'Datei :position muss ein gültiges Bild sein.',
             'imageFiles.*.mimes' => 'Bild :position muss eine JPG-, PNG-, GIF- oder WebP-Datei sein.',
+            'imageFiles.*.extensions' => 'Bild :position muss die Dateiendung JPG, JPEG, PNG, GIF oder WebP haben.',
             'imageFiles.*.max' => 'Bild :position darf höchstens 4 MB groß sein.',
         ];
     }
@@ -548,7 +550,7 @@ class NewsEditCreate extends Component
     protected function isDeletableNewsUploadPath(string $path): bool
     {
         return preg_match(
-            '/\Auploads\/news\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+            '/\Auploads\/news\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:jpe?g|png|gif|webp)\z/',
             $path
         ) === 1;
     }

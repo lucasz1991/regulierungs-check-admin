@@ -1,4 +1,4 @@
-@props(['id', 'maxWidth'])
+@props(['id', 'maxWidth', 'labelledBy' => null])
 
 @php
 $id = $id ?? md5($attributes->wire('model'));
@@ -32,6 +32,9 @@ $maxWidth = [
     </div>
 
     <div x-show="show" class="mb-6 bg-white rounded-lg shadow-xl transform transition-all sm:w-full {{ $maxWidth }} sm:mx-auto"
+                    role="dialog"
+                    aria-modal="true"
+                    @if($labelledBy) aria-labelledby="{{ $labelledBy }}" @endif
                     x-trap.inert.noscroll="show"
                     x-transition:enter="ease-out duration-300"
                     x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"

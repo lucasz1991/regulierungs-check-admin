@@ -8,6 +8,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 use Tests\TestCase;
 
 class NewsEditCreateValidationTest extends TestCase
@@ -183,6 +184,95 @@ class NewsEditCreateValidationTest extends TestCase
             'imageFiles.0',
             'Datei 1 muss ein gültiges Bild sein.'
         );
+    }
+
+    public function test_non_string_image_metadata_is_not_normalized_past_validation(): void
+    {
+        $postId = $this->insertPost([
+            'title' => 'News mit Bild',
+            'slug' => 'news-mit-bild',
+            'images' => json_encode([
+                [
+                    'path' => 'uploads/news/original.jpg',
+                    'alt' => 'Original',
+                    'caption' => null,
+                    'sort' => 0,
+                ],
+            ], JSON_THROW_ON_ERROR),
+        ]);
+
+        $component = new NewsEditCreate();
+        $component->loadPost($postId);
+        $component->images[0]['alt'] = ['kein', 'text'];
+
+        $this->assertValidationMessage(
+            $component,
+            'images.0.alt',
+            'Der Alternativtext von Bild 1 muss aus Text bestehen.'
+        );
+    }
+
+    public function test_uploaded_image_paths_are_normalized_and_restricted(): void
+    {
+        $component = new class extends NewsEditCreate
+        {
+            public function normalizePathForTest(mixed $path): string
+            {
+                return $this->normalizeUploadedImagePath($path);
+            }
+        };
+
+        $this->assertSame(
+            'uploads/news/test-bild.webp',
+            $component->normalizePathForTest('/uploads/news/test-bild.webp')
+        );
+
+        try {
+            $component->normalizePathForTest('uploads/anderer-ordner/test-bild.webp');
+            $this->fail('A path outside the news upload directory unexpectedly passed.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame(
+                'Die Upload-Antwort enthält einen ungültigen Bildpfad.',
+                $exception->getMessage()
+            );
+        }
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Der hochgeladene Bildpfad ist zu lang.');
+        $component->normalizePathForTest('uploads/news/'.str_repeat('a', 240).'.jpg');
+    }
+
+    public function test_uploaded_images_are_cleaned_up_when_persistence_fails(): void
+    {
+        $component = new class extends NewsEditCreate
+        {
+            public array $deletedPaths = [];
+
+            protected function uploadImageViaMediaController($file): string
+            {
+                return 'uploads/news/test-bild.jpg';
+            }
+
+            protected function deleteImageViaMediaController(string $path): void
+            {
+                $this->deletedPaths[] = $path;
+            }
+        };
+
+        $component->title = 'Gültige Test-News';
+        $component->imageFiles = [
+            UploadedFile::fake()->image('test-bild.jpg'),
+        ];
+
+        $component->save();
+
+        $this->assertSame(['uploads/news/test-bild.jpg'], $component->deletedPaths);
+        $this->assertSame([], $component->images);
+        $this->assertSame(
+            ['Die News konnte nicht gespeichert werden. Bitte versuche es erneut.'],
+            $component->getErrorBag()->get('save')
+        );
+        $this->assertSame(0, DB::table('posts')->count());
     }
 
     private function validComponent(): NewsEditCreate

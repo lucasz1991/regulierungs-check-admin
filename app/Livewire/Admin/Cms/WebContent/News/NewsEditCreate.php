@@ -501,11 +501,12 @@ class NewsEditCreate extends Component
             try {
                 return $this->normalizeUploadedImagePath($path);
             } catch (Throwable $exception) {
-                if (
-                    is_string($path)
-                    && $this->isDeletableNewsUploadPath(ltrim(str_replace('\\', '/', trim($path)), '/'))
-                ) {
-                    $this->deleteImageViaMediaController($path);
+                $deletablePath = is_string($path)
+                    ? ltrim(str_replace('\\', '/', trim($path)), '/')
+                    : '';
+
+                if ($this->isDeletableNewsUploadPath($deletablePath)) {
+                    $this->deleteImageViaMediaController($deletablePath);
                 }
 
                 throw $exception;

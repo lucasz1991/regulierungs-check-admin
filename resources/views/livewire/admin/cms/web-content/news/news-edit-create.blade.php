@@ -9,7 +9,7 @@
     }
 @endphp
 
-<x-dialog-modal wire:model="show" :maxWidth="'4xl'">
+<x-dialog-modal id="news-edit-create-modal" wire:model="show" :maxWidth="'4xl'">
     <x-slot name="title">
         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div class="min-w-0">
@@ -322,7 +322,7 @@
                                             @enderror
                                         </div>
 
-                                        <div class="flex items-center gap-2 sm:col-start-2 xl:col-start-auto xl:flex-col xl:items-stretch">
+                                        <div class="flex flex-col gap-2 sm:col-start-2 sm:flex-row sm:items-center xl:col-start-auto xl:flex-col xl:items-stretch">
                                             <button
                                                 type="button"
                                                 wire:click="moveImageUp({{ $index }})"

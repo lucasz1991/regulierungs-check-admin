@@ -106,6 +106,64 @@ assert.match(pagebuilderSource, /studio:sidebarLeft:toggle/);
 assert.match(pagebuilderSource, /sidebarLeftToggleState/);
 assert.match(pagebuilderSource, /id: 'sidebar-left-toggle'/);
 
+// Beide Sidebars starten eingeklappt, die rechte folgt der Auswahl und ein
+// Klick ausserhalb schliesst die linke wieder.
+assert.match(pagebuilderSource, /setupEditorChrome\(editor\)/);
+assert.match(
+    pagebuilderSource,
+    /runCommand\(SIDEBAR_LEFT_SET, \{ visible: false \}\)/,
+    'The left sidebar must start collapsed.'
+);
+assert.match(
+    pagebuilderSource,
+    /runCommand\(SIDEBAR_RIGHT_SET, \{ visible: false \}\)/,
+    'The right sidebar must start collapsed.'
+);
+assert.match(
+    pagebuilderSource,
+    /editor\.on\('component:toggled', syncRightSidebar\)/,
+    'The right sidebar must follow the canvas selection.'
+);
+assert.match(
+    pagebuilderSource,
+    /visible: editor\.getSelectedAll\(\)\.length > 0/,
+    'The right sidebar must be hidden while nothing is selected.'
+);
+assert.match(
+    pagebuilderSource,
+    /addEventListener\('pointerdown', closeLeftSidebarOnOutsideClick, true\)/,
+    'Clicks outside the left sidebar must collapse it.'
+);
+assert.match(
+    pagebuilderSource,
+    /canvas:frame:load/,
+    'Canvas clicks live in an iframe and need their own listener.'
+);
+assert.match(pagebuilderSource, /className: SIDEBAR_LEFT_CLASS/);
+assert.match(pagebuilderSource, /className: SIDEBAR_RIGHT_CLASS/);
+assert.match(pagebuilderSource, /className: SIDEBAR_LEFT_TOGGLE_CLASS/);
+
+// Der Aufraeumpfad muss existieren, sonst haengen Listener am zerstoerten Editor.
+assert.match(pagebuilderSource, /releaseEditorChrome\?\.\(\);\s*\n\s*window\.editor\.destroy\(\)/);
+
+// Farben gehoeren in customTheme, nicht in die Layout-Zeile.
+assert.match(pagebuilderSource, /customTheme: editorTheme/);
+assert.doesNotMatch(
+    pagebuilderSource,
+    /type: 'row',[\s\S]{0,80}colors: \{/,
+    'Layout rows ignore `colors`; the SDK only reads `customTheme`.'
+);
+
+// Das eigene Chrome-Stylesheet muss nach den SDK-Styles geladen werden.
+const sdkStyleIndex = pagebuilderSource.indexOf("@grapesjs/studio-sdk/style");
+const ownStyleIndex = pagebuilderSource.indexOf("../css/pagebuilder-ui.css");
+assert.ok(ownStyleIndex > sdkStyleIndex && sdkStyleIndex > -1, 'Own chrome CSS must be imported after the SDK styles.');
+
+const chromeCss = readSource('../resources/css/pagebuilder-ui.css');
+assert.match(chromeCss, /\.rc-sidebar-left\b/);
+assert.match(chromeCss, /\.rc-sidebar-right\b/);
+assert.match(chromeCss, /prefers-reduced-motion/);
+
 assert.match(newsLayoutPreview, /^data:image\/svg\+xml/);
 assert.equal(newsLayoutTemplate.data.pages[0].component, newsLayoutHtml);
 assert.match(newsLayoutTemplate.media, /^data:image\/svg\+xml/);

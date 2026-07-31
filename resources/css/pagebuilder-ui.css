@@ -1,0 +1,220 @@
+/*
+ * PageBuilder-Chrome (Toolbar, Sidebars, Panels).
+ *
+ * Wird von resources/js/pagebuilder.js NACH den Studio-SDK-Styles importiert
+ * und landet dadurch im Chunk public/build/css/pagebuilder.min.css.
+ *
+ * Nur die Editor-Huelle wird gestaltet. Der Canvas laeuft in einem iframe und
+ * bleibt von hier aus unberuehrt, damit der Seiteninhalt so aussieht wie im
+ * Frontend.
+ *
+ * Die Farben spiegeln die Admin-Marke aus tailwind.config.js
+ * (primary #084058 / #0b5879, secondary #0c968e).
+ */
+
+#studio-editor {
+    --rc-pb-surface: #ffffff;
+    --rc-pb-surface-muted: #f6f8fa;
+    --rc-pb-border: #dfe6ec;
+    --rc-pb-border-strong: #c9d6e0;
+    --rc-pb-text: #1f2d3a;
+    --rc-pb-text-muted: #6b7b8a;
+    --rc-pb-brand: #084058;
+    --rc-pb-brand-light: #0b5879;
+    --rc-pb-accent: #0c968e;
+
+    /* Ruhiges Ausgleiten statt linearem Ruck. */
+    --rc-pb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --rc-pb-duration: 240ms;
+
+    --rc-pb-shadow-sm: 0 1px 2px rgba(15, 34, 48, 0.06);
+    --rc-pb-shadow-md: 0 6px 16px -6px rgba(15, 34, 48, 0.18), 0 2px 6px -2px rgba(15, 34, 48, 0.08);
+    --rc-pb-shadow-lg: 0 24px 48px -24px rgba(15, 34, 48, 0.32), 0 8px 20px -12px rgba(15, 34, 48, 0.16);
+
+    --gs-scrollbar-track-color: transparent;
+    --gs-scrollbar-thumb-color: rgba(31, 45, 58, 0.18);
+
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--rc-pb-border);
+    border-radius: 14px;
+    background: var(--rc-pb-surface);
+    box-shadow: var(--rc-pb-shadow-lg);
+    color: var(--rc-pb-text);
+}
+
+/* ---------------------------------------------------------------- Sidebars */
+
+/*
+ * Das SDK blendet die Sidebars ueber einen negativen Aussenabstand aus und
+ * ruft danach editor.refresh(). Hier wird ausschliesslich das Timing dieser
+ * Bewegung verfeinert - die Mechanik bleibt beim SDK.
+ */
+#studio-editor .gs-utl-transition-spacing,
+#studio-editor .rc-sidebar-left,
+#studio-editor .rc-sidebar-right {
+    transition-duration: var(--rc-pb-duration);
+    transition-timing-function: var(--rc-pb-ease);
+    transition-property: margin, opacity;
+}
+
+#studio-editor .rc-sidebar-left,
+#studio-editor .rc-sidebar-right {
+    background: var(--rc-pb-surface-muted);
+}
+
+#studio-editor .rc-sidebar-left {
+    box-shadow: 1px 0 0 var(--rc-pb-border);
+}
+
+#studio-editor .rc-sidebar-right {
+    box-shadow: -1px 0 0 var(--rc-pb-border);
+}
+
+/* Eingeklappt: nicht nur verschoben, sondern auch nicht mehr fokussierbar. */
+#studio-editor .rc-sidebar-left[style*="margin-left: -"],
+#studio-editor .rc-sidebar-right[style*="margin-right: -"] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* ----------------------------------------------------------------- Topbar */
+
+#studio-editor .gs-cmp-editor-topbar {
+    background: linear-gradient(180deg, #ffffff 0%, var(--rc-pb-surface-muted) 100%);
+    box-shadow: inset 0 -1px 0 var(--rc-pb-border);
+    backdrop-filter: saturate(140%) blur(6px);
+}
+
+#studio-editor .gs-cmp-topbar-left,
+#studio-editor .gs-cmp-topbar-right {
+    gap: 6px;
+}
+
+/* ---------------------------------------------------------------- Buttons */
+
+#studio-editor .gs-cmp-button {
+    border-radius: 9px;
+    transition:
+        background-color 160ms var(--rc-pb-ease),
+        border-color 160ms var(--rc-pb-ease),
+        color 160ms var(--rc-pb-ease),
+        box-shadow 160ms var(--rc-pb-ease),
+        transform 160ms var(--rc-pb-ease);
+}
+
+#studio-editor .gs-cmp-button:hover {
+    box-shadow: var(--rc-pb-shadow-sm);
+}
+
+#studio-editor .gs-cmp-button:active {
+    transform: translateY(1px);
+}
+
+#studio-editor .gs-cmp-button:focus-visible {
+    outline: 2px solid var(--rc-pb-brand-light);
+    outline-offset: 2px;
+}
+
+/* Der Sidebar-Umschalter ist der haeufigste Griff - er bekommt mehr Gewicht. */
+#studio-editor .rc-sidebar-left-toggle .gs-cmp-button,
+#studio-editor .rc-sidebar-left-toggle button {
+    border-radius: 9px;
+}
+
+#studio-editor .rc-sidebar-left-toggle button[aria-pressed='true'],
+#studio-editor .rc-sidebar-left-toggle .gs-utl-bg-current {
+    background: rgba(8, 64, 88, 0.08);
+}
+
+/* ------------------------------------------------------------------- Tabs */
+
+#studio-editor .gs-cmp-tabs {
+    padding: 4px;
+    gap: 2px;
+}
+
+#studio-editor .gs-cmp-tabs button {
+    border-radius: 8px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition:
+        background-color 160ms var(--rc-pb-ease),
+        color 160ms var(--rc-pb-ease);
+}
+
+/* ----------------------------------------------------------------- Panels */
+
+#studio-editor .gs-layout-panel,
+#studio-editor .gs-panel-blocks,
+#studio-editor .gs-panel-layers,
+#studio-editor .gs-panel-templates,
+#studio-editor .gs-panel-styles,
+#studio-editor .gs-panel-properties {
+    scrollbar-width: thin;
+}
+
+/* Bloecke und Vorlagen als anfassbare Karten. */
+#studio-editor .gs-block-manager [draggable='true'],
+#studio-editor .gs-panel-blocks [draggable='true'] {
+    border: 1px solid transparent;
+    border-radius: 11px;
+    background: var(--rc-pb-surface);
+    box-shadow: var(--rc-pb-shadow-sm);
+    transition:
+        border-color 180ms var(--rc-pb-ease),
+        box-shadow 180ms var(--rc-pb-ease),
+        transform 180ms var(--rc-pb-ease);
+}
+
+#studio-editor .gs-block-manager [draggable='true']:hover,
+#studio-editor .gs-panel-blocks [draggable='true']:hover {
+    border-color: var(--rc-pb-accent);
+    box-shadow: var(--rc-pb-shadow-md);
+    transform: translateY(-2px);
+}
+
+#studio-editor .gs-block-manager [draggable='true']:active,
+#studio-editor .gs-panel-blocks [draggable='true']:active {
+    transform: translateY(0);
+    box-shadow: var(--rc-pb-shadow-sm);
+}
+
+/* Ebenen-Eintraege ruhiger und mit klarerer Trefferflaeche. */
+#studio-editor .gs-cmp-layer-item {
+    border-radius: 8px;
+    transition: background-color 140ms var(--rc-pb-ease);
+}
+
+/* ------------------------------------------------------------- Scrollbars */
+
+#studio-editor *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+#studio-editor *::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+}
+
+#studio-editor *::-webkit-scrollbar-thumb:hover {
+    --gs-scrollbar-thumb-color: rgba(31, 45, 58, 0.32);
+}
+
+/* --------------------------------------------------------- Barrierefreiheit */
+
+@media (prefers-reduced-motion: reduce) {
+    #studio-editor,
+    #studio-editor * {
+        transition-duration: 1ms !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+    }
+
+    #studio-editor .gs-block-manager [draggable='true']:hover,
+    #studio-editor .gs-panel-blocks [draggable='true']:hover {
+        transform: none;
+    }
+}

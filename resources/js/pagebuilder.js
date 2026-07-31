@@ -1,5 +1,7 @@
 import '@grapesjs/studio-sdk/dist/style.css';
 import '@grapesjs/studio-sdk/style';
+// Nach den SDK-Styles importiert, damit die eigenen Regeln gewinnen.
+import '../css/pagebuilder-ui.css';
 import { createStudioEditor } from '@grapesjs/studio-sdk';
 import { rteTinyMce } from '@grapesjs/studio-sdk-plugins';
 import { iconifyComponent } from "@grapesjs/studio-sdk-plugins";
@@ -16,6 +18,12 @@ let grapesJsEditorElement = null;
 
 const SIDEBAR_LEFT_TOGGLE = 'studio:sidebarLeft:toggle';
 const SIDEBAR_LEFT_GET = 'studio:sidebarLeft:get';
+const SIDEBAR_LEFT_SET = 'studio:sidebarLeft:set';
+const SIDEBAR_RIGHT_SET = 'studio:sidebarRight:set';
+
+const SIDEBAR_LEFT_CLASS = 'rc-sidebar-left';
+const SIDEBAR_RIGHT_CLASS = 'rc-sidebar-right';
+const SIDEBAR_LEFT_TOGGLE_CLASS = 'rc-sidebar-left-toggle';
 
 // Zustand des Umschalters fuer die linke Sidebar (Blocks, Elements, Vorlagen).
 const sidebarLeftToggleState = (isOpen) => ({
@@ -28,6 +36,112 @@ const sidebarLeftToggleState = (isOpen) => ({
 
 const isSidebarLeftOpen = (editor) => {
     return editor.runCommand(SIDEBAR_LEFT_GET)?.visible !== false;
+};
+
+// Aufraeumen der Dokument-Listener, wenn der Editor neu aufgebaut wird.
+let releaseEditorChrome = null;
+
+/**
+ * Beide Sidebars starten eingeklappt. Die linke oeffnet nur auf Wunsch und
+ * schliesst wieder, sobald ausserhalb geklickt wird. Die rechte folgt der
+ * Auswahl im Canvas, weil ihre Panels ohne markiertes Element leer sind.
+ */
+const setupEditorChrome = (editor) => {
+    releaseEditorChrome?.();
+
+    editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+    editor.runCommand(SIDEBAR_RIGHT_SET, { visible: false });
+
+    const syncRightSidebar = () => {
+        editor.runCommand(SIDEBAR_RIGHT_SET, {
+            visible: editor.getSelectedAll().length > 0,
+        });
+    };
+
+    const closeLeftSidebarOnOutsideClick = (event) => {
+        if (!isSidebarLeftOpen(editor)) {
+            return;
+        }
+
+        // Klicks im Canvas stammen aus dem iframe und treffen hier nie zu -
+        // genau das ist gewollt, sie sollen die Sidebar schliessen.
+        const insideSidebar = event.target?.closest?.(
+            `.${SIDEBAR_LEFT_CLASS}, .${SIDEBAR_LEFT_TOGGLE_CLASS}`
+        );
+
+        if (insideSidebar) {
+            return;
+        }
+
+        editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+    };
+
+    const closeLeftSidebarOnEscape = (event) => {
+        if (event.key === 'Escape' && isSidebarLeftOpen(editor)) {
+            editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+        }
+    };
+
+    // Der Canvas ist ein eigenes Dokument, dessen Events das Hauptdokument
+    // nicht erreichen. Nach jedem Frame-Wechsel neu verdrahten.
+    const canvasDocuments = new Set();
+    const observeCanvasDocument = () => {
+        const canvasDocument = editor.Canvas?.getDocument?.();
+
+        if (!canvasDocument || canvasDocuments.has(canvasDocument)) {
+            return;
+        }
+
+        canvasDocuments.add(canvasDocument);
+        canvasDocument.addEventListener('pointerdown', closeLeftSidebarOnOutsideClick, true);
+    };
+
+    document.addEventListener('pointerdown', closeLeftSidebarOnOutsideClick, true);
+    document.addEventListener('keydown', closeLeftSidebarOnEscape);
+    editor.on('component:toggled', syncRightSidebar);
+    editor.on('canvas:frame:load', observeCanvasDocument);
+    observeCanvasDocument();
+
+    releaseEditorChrome = () => {
+        document.removeEventListener('pointerdown', closeLeftSidebarOnOutsideClick, true);
+        document.removeEventListener('keydown', closeLeftSidebarOnEscape);
+        canvasDocuments.forEach((canvasDocument) => {
+            canvasDocument.removeEventListener('pointerdown', closeLeftSidebarOnOutsideClick, true);
+        });
+        canvasDocuments.clear();
+        releaseEditorChrome = null;
+    };
+};
+
+// Farben der Admin-Marke aus tailwind.config.js. Das SDK liest sie
+// ausschliesslich aus `customTheme`, nicht aus der Layout-Konfiguration.
+const editorTheme = {
+    default: {
+        colors: {
+            global: {
+                background1: '#ffffff',
+                background2: '#f6f8fa',
+                background3: '#eef2f6',
+                backgroundHover: '#e6edf3',
+                text: '#1f2d3a',
+                border: '#dfe6ec',
+                focus: '#0b5879',
+                placeholder: '#8b9aa8',
+            },
+            primary: {
+                background1: '#084058',
+                background2: '#0b5879',
+                background3: '#0d648a',
+                backgroundHover: '#0b5879',
+                text: '#ffffff',
+            },
+            component: {
+                background1: '#0c968e',
+                backgroundHover: '#10b3aa',
+                text: '#ffffff',
+            },
+        },
+    },
 };
 
 window.initGrapesJs = async function({ force = false } = {}) {
@@ -79,6 +193,7 @@ async function initializeGrapesJsEditor(editorElement) {
     console.info('Initialisiere GrapesJS Studio.', { projectId: selectedProject, apiUrl });
     if (window.editor) {
         console.log("Bestehenden GrapesJS Editor zerstören...");
+        releaseEditorChrome?.();
         window.editor.destroy();
         window.editor = null;
     }
@@ -92,6 +207,7 @@ async function initializeGrapesJsEditor(editorElement) {
             root: '#studio-editor',
             licenseKey: licenseKey,
             theme: 'light',
+            customTheme: editorTheme,
             settingsMenu: {
                 theme: false,
             },
@@ -100,6 +216,7 @@ async function initializeGrapesJsEditor(editorElement) {
             },
             onReady: (editor) => {
                 window.editor = editor;
+                setupEditorChrome(editor);
                 resolveEditorReady(editor);
             },
             plugins: [
@@ -153,18 +270,12 @@ async function initializeGrapesJsEditor(editorElement) {
               default: {
                 type: 'row',
                 style: { height: '100%' },
-                colors: {
-                  global: {
-                    focus: "rgba(37, 99, 235, 1)"
-                  },
-                  primary: {
-                    background1: "rgba(101, 118, 95, 1)",
-                    backgroundHover: "rgba(64, 84, 57, 1)"
-                  }
-                },
+                // Farben stehen in `customTheme`. Das SDK wertet sie
+                // ausschliesslich dort aus, nicht in der Layout-Zeile.
                 children: [
                   {
                     type: 'sidebarLeft',
+                    className: SIDEBAR_LEFT_CLASS,
                     children: {
                       type: 'tabs',
                       value: 'blocks',
@@ -201,7 +312,8 @@ async function initializeGrapesJsEditor(editorElement) {
                             type: 'button',
                             size: 's',
                             variant: 'outline',
-                            ...sidebarLeftToggleState(true),
+                            className: SIDEBAR_LEFT_TOGGLE_CLASS,
+                            ...sidebarLeftToggleState(false),
                             onClick: ({ editor, setState }) => {
                               editor.runCommand(SIDEBAR_LEFT_TOGGLE);
                               setState(sidebarLeftToggleState(isSidebarLeftOpen(editor)));
@@ -213,6 +325,7 @@ async function initializeGrapesJsEditor(editorElement) {
                   },
                   {
                     type: 'sidebarRight',
+                    className: SIDEBAR_RIGHT_CLASS,
                     children: {
                       type: 'tabs',
                       value: 'styles',

@@ -1,18 +1,23 @@
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <!-- Überschrift mit Projektname -->
-        <h1 class="text-xl font-bold">
-            @if ($project->type === 'page')
-                Seiten Editor: 
-            @else
-                Modul Editor: 
-            @endif
-            <span class="px-2 py-1 text-md font-semibold text-green-700 bg-green-100 rounded">
-                {{ $project->name }}
-            </span>
-        </h1>
+        <div class="min-w-0">
+            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-gray-400">
+                @if ($project->type === 'page')
+                    Seiten Editor
+                @else
+                    Modul Editor
+                @endif
+            </p>
+            <h1 class="mt-1 flex items-center gap-2 text-xl font-bold text-gray-900">
+                <span class="truncate">{{ $project->name }}</span>
+                <span class="inline-flex shrink-0 items-center rounded-full bg-teal-50 px-2.5 py-1 text-xs font-semibold text-teal-800 ring-1 ring-inset ring-teal-200">
+                    {{ $project->type === 'page' ? 'Seite' : 'Modul' }}
+                </span>
+            </h1>
+        </div>
         <!-- Button-Gruppe (Zurück & Bearbeiten) -->
-        <div class="flex space-x-2">
+        <div class="flex shrink-0 space-x-2">
             <x-back-button />
             @if ($project->type !== 'page')
                 <!-- Bearbeiten-Button -->
@@ -59,24 +64,32 @@
             <div
                 x-cloak
                 x-show.important="state === 'loading'"
-                class="absolute inset-0 z-20 flex items-center justify-center gap-3 bg-white text-sm font-medium text-gray-600"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[14px] bg-white/95 backdrop-blur-sm"
                 role="status"
             >
-                <span class="h-5 w-5 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" aria-hidden="true"></span>
-                PageBuilder wird geladen …
+                <span class="h-8 w-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-[#0b5879]" aria-hidden="true"></span>
+                <div class="text-center">
+                    <p class="text-sm font-semibold text-gray-800">PageBuilder wird geladen …</p>
+                    <p class="mt-1 text-xs text-gray-500">Blöcke, Vorlagen und Assets werden vorbereitet.</p>
+                </div>
             </div>
 
             <div
                 x-cloak
                 x-show.important="state === 'error'"
-                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-white px-6 text-center"
+                class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-[14px] bg-white px-6 text-center"
                 role="alert"
             >
+                <span class="flex h-11 w-11 items-center justify-center rounded-full bg-red-50 text-red-600" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                    </svg>
+                </span>
                 <p class="max-w-xl text-sm font-medium text-red-700" x-text="message"></p>
                 <button
                     type="button"
                     @click="retry()"
-                    class="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    class="rounded-lg bg-[#084058] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0b5879] focus:outline-none focus:ring-2 focus:ring-[#0b5879] focus:ring-offset-2"
                 >
                     Erneut versuchen
                 </button>

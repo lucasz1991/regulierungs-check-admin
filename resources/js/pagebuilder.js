@@ -9,10 +9,26 @@ import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
 import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon';
-import { addNewsDefaultLayoutBlock, appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
+import { appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 let grapesJsInitializationPromise = null;
 let grapesJsEditorElement = null;
+
+const SIDEBAR_LEFT_TOGGLE = 'studio:sidebarLeft:toggle';
+const SIDEBAR_LEFT_GET = 'studio:sidebarLeft:get';
+
+// Zustand des Umschalters fuer die linke Sidebar (Blocks, Elements, Vorlagen).
+const sidebarLeftToggleState = (isOpen) => ({
+    icon: isOpen ? 'chevronLeft' : 'chevronRight',
+    tooltip: isOpen
+        ? 'Blöcke, Elemente und Vorlagen einklappen'
+        : 'Blöcke, Elemente und Vorlagen ausklappen',
+    active: !isOpen,
+});
+
+const isSidebarLeftOpen = (editor) => {
+    return editor.runCommand(SIDEBAR_LEFT_GET)?.visible !== false;
+};
 
 window.initGrapesJs = async function({ force = false } = {}) {
     const editorElement = document.getElementById('studio-editor');
@@ -130,9 +146,8 @@ async function initializeGrapesJsEditor(editorElement) {
               }),
               editor => {
                 addFontAwesomeIconBlock(editor);
-                addNewsDefaultLayoutBlock(editor);
                 addCustomBlocks(editor);
-              } 
+              }
             ],
             layout: {
               default: {
@@ -178,7 +193,23 @@ async function initializeGrapesJsEditor(editorElement) {
                   },
                   {
                     type: 'canvasSidebarTop',
-                    sidebarTop: { leftContainer: { buttons: [] } },
+                    sidebarTop: {
+                      leftContainer: {
+                        buttons: [
+                          {
+                            id: 'sidebar-left-toggle',
+                            type: 'button',
+                            size: 's',
+                            variant: 'outline',
+                            ...sidebarLeftToggleState(true),
+                            onClick: ({ editor, setState }) => {
+                              editor.runCommand(SIDEBAR_LEFT_TOGGLE);
+                              setState(sidebarLeftToggleState(isSidebarLeftOpen(editor)));
+                            },
+                          },
+                        ],
+                      },
+                    },
                   },
                   {
                     type: 'sidebarRight',

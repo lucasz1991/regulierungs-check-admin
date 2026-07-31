@@ -63,10 +63,13 @@ export const newsLayoutHtml = [
     '      </ul>',
     '    </section>',
     '',
-    '    <section data-news-role="meta" aria-label="Artikelinformationen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));overflow:hidden;border:1px solid #e5eaee;border-radius:10px">',
-    '      <span style="display:flex;min-height:58px;align-items:center;justify-content:center;gap:9px;padding:10px 16px;color:#344554;font-size:13px;font-weight:600"><i class="fa-regular far fa-clock" aria-hidden="true" style="display:inline-grid;width:25px;height:25px;place-items:center;font-size:20px"></i>5 Min. Lesezeit</span>',
-    '      <span style="display:flex;min-height:58px;align-items:center;justify-content:center;gap:9px;padding:10px 16px;border-left:1px solid #e5eaee;color:#344554;font-size:13px;font-weight:600"><i class="fa-light fal fa-folder-open" aria-hidden="true" style="display:inline-grid;width:25px;height:25px;place-items:center;font-size:20px"></i>Recht &amp; Urteile</span>',
-    '      <a href="#" aria-label="Artikel teilen" style="display:flex;min-height:58px;align-items:center;justify-content:center;gap:9px;padding:10px 16px;border-left:1px solid #e5eaee;color:#344554;font-size:13px;font-weight:600;text-decoration:none"><i class="fa-light fal fa-share-alt" aria-hidden="true" style="display:inline-grid;width:25px;height:25px;place-items:center;font-size:20px"></i>Artikel teilen</a>',
+    // Die drei Meta-Kacheln stehen auf jeder Breite nebeneinander. Deshalb drei
+    // feste Spalten statt `auto-fit`, das auf dem Handy auf eine Spalte fiel.
+    // Innerhalb einer Kachel darf der Text unter das Icon rutschen (flex-wrap).
+    '    <section data-news-role="meta" aria-label="Artikelinformationen" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;overflow:hidden;border:1px solid #e5eaee;border-radius:10px">',
+    '      <span style="display:flex;min-width:0;min-height:clamp(52px,12vw,58px);flex-wrap:wrap;align-items:center;justify-content:center;gap:clamp(4px,1.2vw,9px);padding:clamp(8px,2vw,10px) clamp(6px,2vw,16px);color:#344554;font-size:clamp(11px,2.6vw,13px);font-weight:600;line-height:1.3;text-align:center;overflow-wrap:break-word"><i class="fa-regular far fa-clock" aria-hidden="true" style="display:inline-grid;width:clamp(18px,4.6vw,25px);height:clamp(18px,4.6vw,25px);flex:0 0 auto;place-items:center;font-size:clamp(15px,3.8vw,20px)"></i><span>5 Min. Lesezeit</span></span>',
+    '      <span style="display:flex;min-width:0;min-height:clamp(52px,12vw,58px);flex-wrap:wrap;align-items:center;justify-content:center;gap:clamp(4px,1.2vw,9px);padding:clamp(8px,2vw,10px) clamp(6px,2vw,16px);border-left:1px solid #e5eaee;color:#344554;font-size:clamp(11px,2.6vw,13px);font-weight:600;line-height:1.3;text-align:center;overflow-wrap:break-word"><i class="fa-light fal fa-folder-open" aria-hidden="true" style="display:inline-grid;width:clamp(18px,4.6vw,25px);height:clamp(18px,4.6vw,25px);flex:0 0 auto;place-items:center;font-size:clamp(15px,3.8vw,20px)"></i><span>Recht &amp; Urteile</span></span>',
+    '      <a href="#" aria-label="Artikel teilen" style="display:flex;min-width:0;min-height:clamp(52px,12vw,58px);flex-wrap:wrap;align-items:center;justify-content:center;gap:clamp(4px,1.2vw,9px);padding:clamp(8px,2vw,10px) clamp(6px,2vw,16px);border-left:1px solid #e5eaee;color:#344554;font-size:clamp(11px,2.6vw,13px);font-weight:600;line-height:1.3;text-align:center;text-decoration:none;overflow-wrap:break-word"><i class="fa-light fal fa-share-alt" aria-hidden="true" style="display:inline-grid;width:clamp(18px,4.6vw,25px);height:clamp(18px,4.6vw,25px);flex:0 0 auto;place-items:center;font-size:clamp(15px,3.8vw,20px)"></i><span>Artikel teilen</span></a>',
     '    </section>',
     '',
     '    <article data-news-role="article" style="padding:clamp(28px,5vw,40px) 0 16px">',
@@ -97,31 +100,9 @@ export const newsLayoutHtml = [
     '</section>',
 ].join('\n');
 
-export const addNewsDefaultLayoutBlock = (editor) => {
-    const blockManager = editor.Blocks;
-    const blockId = 'news-default-layout';
-
-    if (blockManager.get(blockId)) {
-        return blockManager.get(blockId);
-    }
-
-    return blockManager.add(blockId, {
-        label: 'News Default Layout',
-        category: {
-            id: 'News',
-            label: 'News',
-            open: true,
-        },
-        media: newsLayoutCardPreview,
-        content: newsLayoutHtml,
-        select: true,
-        resetId: true,
-        attributes: {
-            title: 'News Default Layout einfügen',
-        },
-    }, { at: 0 });
-};
-
+// Das News-Layout wird bewusst nicht mehr als Block registriert. Es steht
+// ausschliesslich unter "Vorlagen" zur Verfuegung, damit die Blockliste nur
+// echte Bausteine enthaelt.
 export const newsLayoutTemplate = {
     id: 'regulierungs-check-news-layout-01',
     name: 'News 01 · Editorial Inhalt',

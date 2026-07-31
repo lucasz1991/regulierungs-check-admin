@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-import {
-    addNewsDefaultLayoutBlock,
+import * as newsLayoutModule from '../resources/js/pagebuilder/templates/news-layout-01.js';
+
+const {
     newsLayoutHtml,
     newsLayoutPreview,
     newsLayoutTemplate,
-} from '../resources/js/pagebuilder/templates/news-layout-01.js';
+} = newsLayoutModule;
+
+const readSource = (relativePath) => readFileSync(
+    fileURLToPath(new URL(relativePath, import.meta.url)),
+    'utf8'
+);
 
 const allowedFontAwesomeClasses = new Set([
     'fa-light',
@@ -61,34 +69,49 @@ for (const [, tagName, classValue] of tagsWithClasses) {
     }
 }
 
-let registeredBlock;
-const editorStub = {
-    Blocks: {
-        get: () => undefined,
-        add: (id, config, options) => {
-            registeredBlock = { id, config, options };
+// Die drei Meta-Kacheln (Lesezeit, Kategorie, Teilen) liegen auf jeder
+// Viewport-Breite nebeneinander - auch auf dem Handy.
+const metaSection = newsLayoutHtml.match(/<section data-news-role="meta"[^>]*>/);
 
-            return config;
-        },
-    },
-};
-
-addNewsDefaultLayoutBlock(editorStub);
-
-assert.equal(registeredBlock.id, 'news-default-layout');
-assert.equal(registeredBlock.config.content, newsLayoutHtml);
-assert.equal(registeredBlock.options.at, 0);
-assert.match(registeredBlock.config.media, /^<svg\b/);
-assert.doesNotMatch(
-    registeredBlock.config.media,
-    /<img\b/i,
-    'The block preview must not insert a draggable image.'
+assert.ok(metaSection, 'The meta section must stay in the template.');
+assert.match(
+    metaSection[0],
+    /grid-template-columns:repeat\(3,minmax\(0,1fr\)\)/,
+    'The meta boxes must keep three columns on every viewport.'
 );
-assert.match(registeredBlock.config.media, /pointer-events:none/);
+assert.doesNotMatch(
+    metaSection[0],
+    /auto-fit|auto-fill/,
+    'auto-fit collapses the meta boxes to a single column on mobile.'
+);
+
+// Das News-Layout darf ausschliesslich als Vorlage angeboten werden.
+assert.equal(
+    newsLayoutModule.addNewsDefaultLayoutBlock,
+    undefined,
+    'The news layout must no longer register a block.'
+);
+
+const pagebuilderSource = readSource('../resources/js/pagebuilder.js');
+
+assert.doesNotMatch(
+    pagebuilderSource,
+    /addNewsDefaultLayoutBlock/,
+    'The news layout must not be registered in the blocks panel.'
+);
+assert.match(pagebuilderSource, /appendNewsLayoutTemplate\(communityTemplates\)/);
+
+// Die linke Sidebar (Blocks, Elements, Vorlagen) muss ein-/ausklappbar sein.
+assert.match(pagebuilderSource, /studio:sidebarLeft:toggle/);
+assert.match(pagebuilderSource, /sidebarLeftToggleState/);
+assert.match(pagebuilderSource, /id: 'sidebar-left-toggle'/);
+
 assert.match(newsLayoutPreview, /^data:image\/svg\+xml/);
 assert.equal(newsLayoutTemplate.data.pages[0].component, newsLayoutHtml);
+assert.match(newsLayoutTemplate.media, /^data:image\/svg\+xml/);
 
 console.log(
     'News editor-style contract verified: shared container shell, '
-    + 'no custom layout classes and no embedded style block.'
+    + 'three-column meta boxes on every viewport, template-only availability '
+    + 'and a collapsible left sidebar.'
 );

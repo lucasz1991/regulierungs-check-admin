@@ -111,8 +111,13 @@ assert.match(pagebuilderSource, /id: 'sidebar-left-toggle'/);
 assert.match(pagebuilderSource, /setupEditorChrome\(editor\)/);
 assert.match(
     pagebuilderSource,
-    /runCommand\(SIDEBAR_LEFT_SET, \{ visible: false \}\)/,
+    /setSidebarLeftOpen\(editor, false\)/,
     'The left sidebar must start collapsed.'
+);
+assert.match(
+    pagebuilderSource,
+    /\[SIDEBAR_LEFT_EVENT\]: \(\{ fromEvent, setState \}\)/,
+    'The toggle button must follow sidebar changes it did not cause.'
 );
 assert.match(
     pagebuilderSource,

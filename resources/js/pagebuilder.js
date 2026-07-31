@@ -25,17 +25,26 @@ const SIDEBAR_LEFT_CLASS = 'rc-sidebar-left';
 const SIDEBAR_RIGHT_CLASS = 'rc-sidebar-right';
 const SIDEBAR_LEFT_TOGGLE_CLASS = 'rc-sidebar-left-toggle';
 
+// Eigenes Event, damit der Umschalt-Button auch dann nachzieht, wenn die
+// Sidebar nicht ueber ihn geschlossen wurde (Klick daneben, Escape).
+const SIDEBAR_LEFT_EVENT = 'rc:sidebar-left';
+
 // Zustand des Umschalters fuer die linke Sidebar (Blocks, Elements, Vorlagen).
 const sidebarLeftToggleState = (isOpen) => ({
     icon: isOpen ? 'chevronLeft' : 'chevronRight',
     tooltip: isOpen
         ? 'Blöcke, Elemente und Vorlagen einklappen'
         : 'Blöcke, Elemente und Vorlagen ausklappen',
-    active: !isOpen,
+    active: isOpen,
 });
 
 const isSidebarLeftOpen = (editor) => {
     return editor.runCommand(SIDEBAR_LEFT_GET)?.visible !== false;
+};
+
+const setSidebarLeftOpen = (editor, visible) => {
+    editor.runCommand(SIDEBAR_LEFT_SET, { visible });
+    editor.trigger(SIDEBAR_LEFT_EVENT, { visible });
 };
 
 // Aufraeumen der Dokument-Listener, wenn der Editor neu aufgebaut wird.
@@ -49,7 +58,7 @@ let releaseEditorChrome = null;
 const setupEditorChrome = (editor) => {
     releaseEditorChrome?.();
 
-    editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+    setSidebarLeftOpen(editor, false);
     editor.runCommand(SIDEBAR_RIGHT_SET, { visible: false });
 
     const syncRightSidebar = () => {
@@ -73,12 +82,12 @@ const setupEditorChrome = (editor) => {
             return;
         }
 
-        editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+        setSidebarLeftOpen(editor, false);
     };
 
     const closeLeftSidebarOnEscape = (event) => {
         if (event.key === 'Escape' && isSidebarLeftOpen(editor)) {
-            editor.runCommand(SIDEBAR_LEFT_SET, { visible: false });
+            setSidebarLeftOpen(editor, false);
         }
     };
 
@@ -314,9 +323,16 @@ async function initializeGrapesJsEditor(editorElement) {
                             variant: 'outline',
                             className: SIDEBAR_LEFT_TOGGLE_CLASS,
                             ...sidebarLeftToggleState(false),
+                            editorEvents: {
+                              [SIDEBAR_LEFT_EVENT]: ({ fromEvent, setState }) => {
+                                setState(sidebarLeftToggleState(!!fromEvent?.visible));
+                              },
+                            },
                             onClick: ({ editor, setState }) => {
                               editor.runCommand(SIDEBAR_LEFT_TOGGLE);
-                              setState(sidebarLeftToggleState(isSidebarLeftOpen(editor)));
+                              const isOpen = isSidebarLeftOpen(editor);
+                              editor.trigger(SIDEBAR_LEFT_EVENT, { visible: isOpen });
+                              setState(sidebarLeftToggleState(isOpen));
                             },
                           },
                         ],

@@ -71,9 +71,20 @@
     box-shadow: -1px 0 0 var(--rc-pb-border);
 }
 
-/* Eingeklappt: nicht nur verschoben, sondern auch nicht mehr fokussierbar. */
+/*
+ * Eingeklappt: nicht nur verschoben, sondern auch nicht mehr fokussierbar.
+ * Das SDK setzt dafuer einen negativen Aussenabstand per Inline-Style. Beide
+ * Schreibweisen abdecken, weil die Serialisierung Engine-abhaengig ist, und
+ * zusaetzlich die SDK-eigenen Klassen als Rueckfallebene mitnehmen.
+ */
 #studio-editor .rc-sidebar-left[style*="margin-left: -"],
-#studio-editor .rc-sidebar-right[style*="margin-right: -"] {
+#studio-editor .rc-sidebar-left[style*="margin-left:-"],
+#studio-editor .gs-sidebar-left[style*="margin-left: -"],
+#studio-editor .gs-sidebar-left[style*="margin-left:-"],
+#studio-editor .rc-sidebar-right[style*="margin-right: -"],
+#studio-editor .rc-sidebar-right[style*="margin-right:-"],
+#studio-editor .gs-sidebar-right[style*="margin-right: -"],
+#studio-editor .gs-sidebar-right[style*="margin-right:-"] {
     opacity: 0;
     pointer-events: none;
 }

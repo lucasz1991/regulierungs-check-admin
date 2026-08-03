@@ -38,14 +38,13 @@
                 </div>
 
                 {{--
-                    wire:key enthaelt das Format: beim Wechsel ersetzt Livewire den
-                    Teilbaum, das <img> startet mit frischem Ladezustand.
-                    wire:ignore haelt den Rest des DOM-Abgleichs davon fern, damit
-                    eine laufende Bildanfrage nicht abgebrochen wird - genau daran
-                    blieb zuvor die Fehlermeldung ueber dem fertigen Bild stehen.
+                    wire:key enthaelt das Format: beim Wechsel baut Livewire den
+                    Teilbaum neu auf und das <img> startet mit frischem Ladezustand.
+
+                    Kein wire:ignore mehr - das hielt den Teilbaum vom Abgleich fern
+                    und verhinderte damit auch den Bildwechsel beim Umschalten.
                 --}}
                 <div
-                    wire:ignore
                     wire:key="social-image-{{ $postId }}-{{ $format }}"
                     x-data="{ loading: true, failed: false }"
                     class="mx-auto w-full"
@@ -57,9 +56,16 @@
                     >
                         <img
                             src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
-                            {{-- Ein erfolgreicher Ladevorgang raeumt einen frueheren Fehler wieder ab. --}}
+                            {{--
+                                Ein abgebrochener Ladevorgang (Livewire tauscht das
+                                Element, der Browser verwirft die Anfrage) feuert
+                                ebenfalls `error`. Deshalb gilt nur als
+                                fehlgeschlagen, was auch wirklich keine Bilddaten
+                                hat - naturalWidth bleibt dann 0. Ein spaeterer
+                                Erfolg raeumt den Fehler wieder ab.
+                            --}}
                             x-on:load="loading = false; failed = false"
-                            x-on:error="loading = false; failed = true"
+                            x-on:error="loading = false; failed = $el.naturalWidth === 0"
                             alt="Vorschau des Social-Media-Bildes"
                             class="h-full w-full object-cover transition-opacity duration-300"
                             :class="loading || failed ? 'opacity-0' : 'opacity-100'"

@@ -14,9 +14,11 @@ use Livewire\Component;
 /**
  * Adminstartseite.
  *
- * Zeigt den Zustand des Bewertungsbetriebs: Eingang, Moderationsstau,
- * Regulierungsdauer und Qualitaet der Anbieter. Alle Kennzahlen kommen aus
- * den echten Bewertungsdaten, es gibt keine Platzhalter.
+ * Massgeblich fuer "oeffentlich sichtbar" ist ClaimRating::publiclyVisible()
+ * - also is_public = true UND status in (rated, published). Das ist dieselbe
+ * Regel, nach der die Base-Installation die Bewertungen ausliefert. Wer nur
+ * auf status = published filtert, sieht einen Bruchteil der tatsaechlich
+ * veroeffentlichten Bewertungen.
  */
 class AdminDashboard extends Component
 {
@@ -38,14 +40,13 @@ class AdminDashboard extends Component
     public array $topInsurances = [];
 
     /** @var list<array<string, mixed>> */
-    public array $moderationQueue = [];
+    public array $latestPublished = [];
 
     public function mount(): void
     {
         $this->loadDashboard();
     }
 
-    /** Kennzahlen neu berechnen, ohne die Seite zu wechseln. */
     public function refreshDashboard(): void
     {
         $this->loadDashboard();
@@ -56,9 +57,9 @@ class AdminDashboard extends Component
     {
         $this->kpis = $this->buildKpis();
         $this->timeline = $this->buildTimeline();
-        $this->statusBreakdown = $this->buildStatusBreakdown();
+        $this->statusBreakdown = $this->buildVisibilityBreakdown();
         $this->topInsurances = $this->buildTopInsurances();
-        $this->moderationQueue = $this->buildModerationQueue();
+        $this->latestPublished = $this->buildLatestPublished();
     }
 
     // ------------------------------------------------------------ Kennzahlen
@@ -66,77 +67,62 @@ class AdminDashboard extends Component
     private function buildKpis(): array
     {
         $now = Carbon::now();
+        $total = ClaimRating::count();
+
         $thisMonth = ClaimRating::whereBetween('created_at', [$now->copy()->startOfMonth(), $now])->count();
         $lastMonth = ClaimRating::whereBetween('created_at', [
             $now->copy()->subMonthNoOverflow()->startOfMonth(),
             $now->copy()->subMonthNoOverflow()->endOfMonth(),
         ])->count();
 
-        $openStatuses = [ClaimRating::STATUS_PENDING_VALIDATION, ClaimRating::STATUS_RATED];
-        $open = ClaimRating::whereIn('status', $openStatuses)->count();
-        $oldestOpen = ClaimRating::whereIn('status', $openStatuses)->min('created_at');
+        $visible = ClaimRating::publiclyVisible()->count();
+        $share = $total > 0 ? (int) round($visible / $total * 100) : 0;
 
-        $avgScore = ClaimRating::where('status', ClaimRating::STATUS_PUBLISHED)
-            ->whereNotNull('rating_score')
-            ->avg('rating_score');
+        $avgScore = ClaimRating::publiclyVisible()->whereNotNull('rating_score')->avg('rating_score');
+
+        $ratedInsurances = ClaimRating::publiclyVisible()
+            ->whereNotNull('insurance_id')
+            ->distinct()
+            ->count('insurance_id');
 
         return [
             'ratings_total' => [
                 'label' => 'Bewertungen gesamt',
-                'value' => ClaimRating::count(),
+                'value' => $total,
                 'suffix' => '',
                 'hint' => $thisMonth.' in diesem Monat',
                 'trend' => $this->trend($thisMonth, $lastMonth),
                 'icon' => 'clipboard',
                 'alert' => false,
             ],
-            'moderation' => [
-                'label' => 'Wartet auf Moderation',
-                'value' => $open,
+            'visible' => [
+                'label' => 'Öffentlich sichtbar',
+                'value' => $visible,
                 'suffix' => '',
-                'hint' => $oldestOpen
-                    ? 'ältester Fall seit '.Carbon::parse($oldestOpen)->diffInDays($now).' Tagen'
-                    : 'nichts offen',
+                'hint' => $share.' % aller Bewertungen',
                 'trend' => null,
-                'icon' => 'inbox',
-                'alert' => $open > 0,
-            ],
-            'avg_duration' => [
-                'label' => 'Ø Regulierungsdauer',
-                'value' => $this->averageRegulationDays(),
-                'suffix' => ' Tage',
-                'hint' => 'aus veröffentlichten Fällen',
-                'trend' => null,
-                'icon' => 'clock',
+                'icon' => 'eye',
                 'alert' => false,
             ],
             'avg_score' => [
                 'label' => 'Ø Bewertung',
                 'value' => $avgScore ? round((float) $avgScore, 2) : 0,
                 'suffix' => ' / 5',
-                'hint' => ClaimRating::where('status', ClaimRating::STATUS_PUBLISHED)->count().' veröffentlicht',
+                'hint' => 'nur sichtbare Bewertungen',
                 'trend' => null,
                 'icon' => 'star',
                 'alert' => false,
             ],
+            'insurances' => [
+                'label' => 'Bewertete Anbieter',
+                'value' => $ratedInsurances,
+                'suffix' => '',
+                'hint' => 'von '.Insurance::count().' insgesamt',
+                'trend' => null,
+                'icon' => 'building',
+                'alert' => false,
+            ],
         ];
-    }
-
-    /**
-     * Die Dauer steckt im JSON-Feld `answers` und laesst sich nicht in SQL
-     * mitteln. Deshalb nur die veroeffentlichten Faelle des Zeitfensters laden
-     * und ausschliesslich die benoetigten Spalten selektieren.
-     */
-    private function averageRegulationDays(): float
-    {
-        $durations = ClaimRating::query()
-            ->where('status', ClaimRating::STATUS_PUBLISHED)
-            ->where('created_at', '>=', Carbon::now()->subMonths(self::MONTHS)->startOfMonth())
-            ->get(['id', 'answers'])
-            ->map(fn (ClaimRating $rating): ?int => $rating->ratingDuration())
-            ->filter(fn (?int $days): bool => $days !== null && $days >= 0);
-
-        return $durations->isEmpty() ? 0.0 : round((float) $durations->avg(), 1);
     }
 
     private function trend(int $current, int $previous): ?array
@@ -152,16 +138,12 @@ class AdminDashboard extends Component
 
     // -------------------------------------------------------------- Diagramme
 
-    /** Eingang und Veroeffentlichungen der letzten zwoelf Monate. */
     private function buildTimeline(): array
     {
         $start = Carbon::now()->subMonths(self::MONTHS - 1)->startOfMonth();
 
         $created = $this->monthlyCounts(ClaimRating::query(), $start);
-        $published = $this->monthlyCounts(
-            ClaimRating::query()->where('status', ClaimRating::STATUS_PUBLISHED),
-            $start
-        );
+        $visible = $this->monthlyCounts(ClaimRating::query()->publiclyVisible(), $start);
 
         $labels = [];
         $eingang = [];
@@ -173,7 +155,7 @@ class AdminDashboard extends Component
 
             $labels[] = $month->translatedFormat('M y');
             $eingang[] = (int) ($created[$key] ?? 0);
-            $veroeffentlicht[] = (int) ($published[$key] ?? 0);
+            $veroeffentlicht[] = (int) ($visible[$key] ?? 0);
         }
 
         return ['labels' => $labels, 'eingang' => $eingang, 'veroeffentlicht' => $veroeffentlicht];
@@ -190,26 +172,39 @@ class AdminDashboard extends Component
             ->all();
     }
 
-    private function buildStatusBreakdown(): array
+    /**
+     * Sichtbarkeit statt Rohstatus. Der Rohstatus allein sagt wenig, weil
+     * sowohl `rated` als auch `published` oeffentlich sind und zusaetzlich
+     * is_public greift.
+     */
+    private function buildVisibilityBreakdown(): array
     {
-        $counts = ClaimRating::query()
+        $visible = ClaimRating::publiclyVisible()->count();
+
+        $hiddenByStatus = ClaimRating::query()
+            ->where(fn ($q) => $q->where('is_public', false)
+                ->orWhereNotIn('status', ClaimRating::publicVisibleStatuses()))
             ->select('status', DB::raw('COUNT(*) as total'))
             ->groupBy('status')
             ->pluck('total', 'status');
 
-        $map = [
-            ClaimRating::STATUS_PUBLISHED => ['Veröffentlicht', '#0c968e'],
-            ClaimRating::STATUS_APPROVED => ['Freigegeben', '#1488b9'],
-            ClaimRating::STATUS_RATED => ['Bewertet', '#f6c238'],
+        $labels = [
             ClaimRating::STATUS_PENDING_VALIDATION => ['In Prüfung', '#f59e0b'],
             ClaimRating::STATUS_PENDING => ['Offen', '#94a3b8'],
+            ClaimRating::STATUS_APPROVED => ['Freigegeben, nicht sichtbar', '#1488b9'],
             ClaimRating::STATUS_REJECTED => ['Abgelehnt', '#ef4444'],
+            ClaimRating::STATUS_RATED => ['Bewertet, nicht sichtbar', '#f6c238'],
+            ClaimRating::STATUS_PUBLISHED => ['Veröffentlicht, nicht sichtbar', '#c084fc'],
         ];
 
         $result = [];
 
-        foreach ($map as $status => [$label, $color]) {
-            $count = (int) ($counts[$status] ?? 0);
+        if ($visible > 0) {
+            $result[] = ['label' => 'Öffentlich sichtbar', 'count' => $visible, 'color' => '#0c968e'];
+        }
+
+        foreach ($labels as $status => [$label, $color]) {
+            $count = (int) ($hiddenByStatus[$status] ?? 0);
 
             if ($count > 0) {
                 $result[] = ['label' => $label, 'count' => $count, 'color' => $color];
@@ -221,13 +216,13 @@ class AdminDashboard extends Component
 
     // --------------------------------------------------------------- Tabellen
 
-    /** Anbieter mit der besten Durchschnittsbewertung. */
     private function buildTopInsurances(): array
     {
         return ClaimRating::query()
+            ->publiclyVisible()
             ->select('insurance_id', DB::raw('COUNT(*) as total'), DB::raw('AVG(rating_score) as avg_score'))
-            ->where('status', ClaimRating::STATUS_PUBLISHED)
             ->whereNotNull('insurance_id')
+            ->whereNotNull('rating_score')
             ->groupBy('insurance_id')
             ->havingRaw('COUNT(*) >= ?', [self::MIN_RATINGS_FOR_RANKING])
             ->orderByDesc('avg_score')
@@ -247,28 +242,20 @@ class AdminDashboard extends Component
             ->all();
     }
 
-    /** Was als naechstes moderiert werden muss - aelteste zuerst. */
-    private function buildModerationQueue(): array
+    /** Zuletzt oeffentlich gewordene Bewertungen. */
+    private function buildLatestPublished(): array
     {
-        $labels = [
-            ClaimRating::STATUS_PENDING_VALIDATION => ['In Prüfung', 'bg-amber-50 text-amber-800 ring-amber-200'],
-            ClaimRating::STATUS_RATED => ['Bewertet', 'bg-yellow-50 text-yellow-800 ring-yellow-200'],
-            ClaimRating::STATUS_APPROVED => ['Freigegeben', 'bg-sky-50 text-sky-800 ring-sky-200'],
-        ];
-
         return ClaimRating::query()
+            ->publiclyVisible()
             ->with(['insurance:id,name'])
-            ->whereIn('status', array_keys($labels))
-            ->orderBy('created_at')
+            ->latest('updated_at')
             ->limit(7)
-            ->get(['id', 'insurance_id', 'status', 'rating_score', 'created_at'])
+            ->get(['id', 'insurance_id', 'status', 'rating_score', 'updated_at'])
             ->map(fn (ClaimRating $rating): array => [
                 'id' => $rating->id,
                 'insurance' => $rating->insurance->name ?? 'Ohne Anbieter',
-                'status' => $labels[$rating->status][0] ?? $rating->status,
-                'badge' => $labels[$rating->status][1] ?? 'bg-gray-50 text-gray-700 ring-gray-200',
                 'score' => $rating->rating_score !== null ? round((float) $rating->rating_score, 1) : null,
-                'wartetSeit' => Carbon::parse($rating->created_at)->diffInDays(Carbon::now()),
+                'seit' => Carbon::parse($rating->updated_at)->diffForHumans(),
             ])
             ->all();
     }

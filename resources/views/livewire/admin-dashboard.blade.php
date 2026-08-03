@@ -58,6 +58,12 @@
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $kpi['label'] }}</p>
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary" aria-hidden="true">
                         @switch($kpi['icon'])
+                            @case('eye')
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                                @break
+                            @case('building')
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" /></svg>
+                                @break
                             @case('inbox')
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 0 1 2.012 1.244l.256.512a2.25 2.25 0 0 0 2.013 1.244h3.218a2.25 2.25 0 0 0 2.013-1.244l.256-.512a2.25 2.25 0 0 1 2.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H6.911a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661Z" /></svg>
                                 @break
@@ -109,8 +115,8 @@
         </div>
 
         <div data-dash="tile" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-            <h2 class="text-sm font-bold text-gray-900">Status der Bewertungen</h2>
-            <p class="mt-0.5 text-xs text-gray-500">Verteilung über alle Einreichungen</p>
+            <h2 class="text-sm font-bold text-gray-900">Sichtbarkeit der Bewertungen</h2>
+            <p class="mt-0.5 text-xs text-gray-500">Öffentlich = is_public und Status rated oder published</p>
 
             @if(count($statusBreakdown) > 0)
                 <div wire:ignore x-ref="statusChart" class="min-h-[240px]"></div>
@@ -135,30 +141,27 @@
     <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <div data-dash="tile" class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
             <div class="border-b border-gray-200 px-5 py-4">
-                <h2 class="text-sm font-bold text-gray-900">Moderationsschlange</h2>
-                <p class="mt-0.5 text-xs text-gray-500">Älteste offene Fälle zuerst</p>
+                <h2 class="text-sm font-bold text-gray-900">Zuletzt öffentlich geworden</h2>
+                <p class="mt-0.5 text-xs text-gray-500">Neueste Änderungen sichtbarer Bewertungen</p>
             </div>
 
-            @forelse($moderationQueue as $item)
+            @forelse($latestPublished as $item)
                 <a
                     href="{{ route('admin.reviews.show', $item['id']) }}"
                     class="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-3 text-sm transition last:border-b-0 hover:bg-gray-50"
                 >
                     <span class="min-w-0">
                         <span class="block truncate font-semibold text-gray-900">{{ $item['insurance'] }}</span>
-                        <span class="mt-0.5 block text-xs text-gray-500">
-                            wartet seit {{ $item['wartetSeit'] }} {{ $item['wartetSeit'] === 1 ? 'Tag' : 'Tagen' }}
-                            @if($item['score'] !== null)
-                                · {{ number_format($item['score'], 1, ',', '.') }} / 5
-                            @endif
+                        <span class="mt-0.5 block text-xs text-gray-500">{{ $item['seit'] }}</span>
+                    </span>
+                    @if($item['score'] !== null)
+                        <span class="shrink-0 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200">
+                            {{ number_format($item['score'], 1, ',', '.') }} / 5
                         </span>
-                    </span>
-                    <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset {{ $item['badge'] }}">
-                        {{ $item['status'] }}
-                    </span>
+                    @endif
                 </a>
             @empty
-                <p class="px-5 py-8 text-center text-sm text-gray-500">Nichts offen — alle Bewertungen sind bearbeitet.</p>
+                <p class="px-5 py-8 text-center text-sm text-gray-500">Noch keine öffentlich sichtbaren Bewertungen.</p>
             @endforelse
         </div>
 

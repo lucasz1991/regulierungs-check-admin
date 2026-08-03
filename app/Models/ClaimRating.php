@@ -27,6 +27,29 @@ class ClaimRating extends Model
     public const STATUS_PUBLISHED          = 'published';
     public const STATUS_PENDING_VALIDATION = 'pending_validation';
 
+    /**
+     * Status, die eine Bewertung oeffentlich sichtbar machen.
+     *
+     * Spiegelt die Definition der Base-Installation. Wichtig: `rated` zaehlt
+     * mit - eine Bewertung ist also nicht erst mit dem Status `published`
+     * oeffentlich. Massgeblich ist zusaetzlich das Flag is_public.
+     */
+    public static function publicVisibleStatuses(): array
+    {
+        return [
+            self::STATUS_RATED,
+            self::STATUS_PUBLISHED,
+        ];
+    }
+
+    /** Genau die Bewertungen, die im Userbereich erscheinen. */
+    public function scopePubliclyVisible($query)
+    {
+        return $query
+            ->where('is_public', true)
+            ->whereIn('status', self::publicVisibleStatuses());
+    }
+
     protected $fillable = [
         'user_id',
         'insurance_subtype_id',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Support\NewsSocialImage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Throwable;
@@ -18,22 +19,32 @@ use Throwable;
 class NewsSocialImageController extends Controller
 {
     /** Vorschau im Modal. */
-    public function preview(Post $post): StreamedResponse
+    public function preview(Request $request, Post $post): StreamedResponse
     {
-        return $this->stream($post, false);
+        return $this->stream($post, $this->format($request), false);
     }
 
     /** Download als Anhang. */
-    public function download(Post $post): StreamedResponse
+    public function download(Request $request, Post $post): StreamedResponse
     {
-        return $this->stream($post, true);
+        return $this->stream($post, $this->format($request), true);
     }
 
-    private function stream(Post $post, bool $asAttachment): StreamedResponse
+    /** Nur bekannte Zuschnitte zulassen, alles andere faellt auf den Standard. */
+    private function format(Request $request): string
+    {
+        $format = $request->query('format');
+
+        return NewsSocialImage::isFormat(is_string($format) ? $format : null)
+            ? (string) $format
+            : NewsSocialImage::DEFAULT_FORMAT;
+    }
+
+    private function stream(Post $post, string $format, bool $asAttachment): StreamedResponse
     {
         abort_unless($post->type === 'news', 404);
 
-        $generator = new NewsSocialImage($post);
+        $generator = new NewsSocialImage($post, $format);
 
         $disposition = $asAttachment
             ? 'attachment; filename="'.$generator->filename().'"'

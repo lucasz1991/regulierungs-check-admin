@@ -21,12 +21,37 @@ use RuntimeException;
  */
 class NewsSocialImage
 {
-    public const WIDTH = 1080;
+    /**
+     * Die drei anbietbaren Zuschnitte.
+     *
+     * `type` skaliert die Typografie: im flachen Link-Format ist deutlich
+     * weniger Hoehe fuer den Textblock da. `lines` begrenzt die Titelzeilen,
+     * `scrim` legt fest, wo die Abdunklung beginnt (Anteil der Hoehe).
+     */
+    public const FORMATS = [
+        'story' => [
+            'label' => 'Story', 'hint' => '9:16', 'width' => 1080, 'height' => 1920,
+            'type' => 1.0, 'lines' => 4, 'scrim' => [0.22, 0.43, 0.78],
+        ],
+        'square' => [
+            'label' => 'Post', 'hint' => '1:1', 'width' => 1080, 'height' => 1080,
+            'type' => 0.94, 'lines' => 3, 'scrim' => [0.26, 0.30, 0.70],
+        ],
+        'landscape' => [
+            'label' => 'Link', 'hint' => '1200×630', 'width' => 1200, 'height' => 630,
+            'type' => 0.62, 'lines' => 2, 'scrim' => [0.30, 0.16, 0.58],
+        ],
+    ];
 
-    public const HEIGHT = 1920;
+    public const DEFAULT_FORMAT = 'story';
 
     /** Faktor fuer das Supersampling. */
     private const SCALE = 2;
+
+    /** Layout-Einheit: Supersampling mal Typo-Skalierung des Formats. */
+    private float $unit;
+
+    private array $spec;
 
     private const NAVY = [10, 32, 53];
 
@@ -38,8 +63,23 @@ class NewsSocialImage
 
     private const FALLBACK_CATEGORY_COLOR = '#0c968e';
 
-    public function __construct(private readonly Post $post)
+    public function __construct(
+        private readonly Post $post,
+        private readonly string $format = self::DEFAULT_FORMAT
+    ) {
+        $this->spec = self::FORMATS[$format] ?? self::FORMATS[self::DEFAULT_FORMAT];
+        $this->unit = self::SCALE * $this->spec['type'];
+    }
+
+    public static function isFormat(?string $format): bool
     {
+        return $format !== null && array_key_exists($format, self::FORMATS);
+    }
+
+    /** Layout-Einheit in Zielpixeln. */
+    private function px(float $base): int
+    {
+        return (int) round($base * $this->unit);
     }
 
     /**
@@ -64,8 +104,8 @@ class NewsSocialImage
         }
 
         $s = self::SCALE;
-        $w = self::WIDTH * $s;
-        $h = self::HEIGHT * $s;
+        $w = $this->spec['width'] * $s;
+        $h = $this->spec['height'] * $s;
 
         $canvas = imagecreatetruecolor($w, $h);
         imagealphablending($canvas, true);
@@ -148,37 +188,76 @@ class NewsSocialImage
 
     private function drawScrims(GdImage $canvas, int $w, int $h, int $s): void
     {
+        [$topEnd, $fadeStart, $solidFrom] = $this->spec['scrim'];
+
         // Oben abdunkeln, damit Logo und Badge auf hellen Fotos lesbar bleiben.
-        $this->verticalGradient($canvas, $w, 0, 420 * $s, self::NAVY, 0.62, 0.0);
+        $this->verticalGradient($canvas, $w, 0, (int) round($h * $topEnd), self::NAVY, 0.62, 0.0);
         // Unten die Flaeche fuer den Textblock.
-        $this->verticalGradient($canvas, $w, 820 * $s, 1500 * $s, self::NAVY, 0.0, 0.96);
-        imagefilledrectangle($canvas, 0, 1500 * $s, $w, $h, $this->color($canvas, self::NAVY));
+        $this->verticalGradient($canvas, $w, (int) round($h * $fadeStart), (int) round($h * $solidFrom), self::NAVY, 0.0, 0.96);
+        imagefilledrectangle($canvas, 0, (int) round($h * $solidFrom), $w, $h, $this->color($canvas, self::NAVY));
     }
 
+    /**
+     * Oben links stehen Icon und Wortmarke nebeneinander, an einer
+     * gemeinsamen Mittelachse ausgerichtet.
+     */
     private function drawLogo(GdImage $canvas, int $s): void
     {
-        $path = public_path('site-images/logo/logo-white-yelllow.png');
+        $left = $this->px(72);
+        $centerY = $this->px(112);
+        $gap = $this->px(20);
 
-        if (! is_file($path)) {
-            return;
-        }
-
-        $logo = @imagecreatefrompng($path);
-
-        if ($logo === false) {
-            return;
-        }
-
-        imagealphablending($logo, true);
-        $targetWidth = 340 * $s;
-        $targetHeight = (int) round($targetWidth * imagesy($logo) / imagesx($logo));
-        imagecopyresampled(
-            $canvas, $logo,
-            72 * $s, 66 * $s, 0, 0,
-            $targetWidth, $targetHeight,
-            imagesx($logo), imagesy($logo)
+        $iconWidth = $this->drawPngByHeight(
+            $canvas,
+            public_path('site-images/logo/logo-icon.png'),
+            $left,
+            $centerY,
+            $this->px(84)
         );
-        imagedestroy($logo);
+
+        $this->drawPngByHeight(
+            $canvas,
+            public_path('site-images/logo/logo-white-yelllow.png'),
+            $left + ($iconWidth > 0 ? $iconWidth + $gap : 0),
+            $centerY,
+            $this->px(92)
+        );
+    }
+
+    /**
+     * Zeichnet ein PNG auf eine Zielhoehe skaliert, vertikal um $centerY
+     * zentriert, und liefert die belegte Breite zurueck.
+     */
+    private function drawPngByHeight(
+        GdImage $canvas,
+        string $path,
+        int $x,
+        int $centerY,
+        int $targetHeight
+    ): int {
+        if (! is_file($path)) {
+            return 0;
+        }
+
+        $source = @imagecreatefrompng($path);
+
+        if ($source === false) {
+            return 0;
+        }
+
+        imagealphablending($source, true);
+
+        $targetWidth = (int) round($targetHeight * imagesx($source) / imagesy($source));
+
+        imagecopyresampled(
+            $canvas, $source,
+            $x, $centerY - (int) round($targetHeight / 2), 0, 0,
+            $targetWidth, $targetHeight,
+            imagesx($source), imagesy($source)
+        );
+        imagedestroy($source);
+
+        return $targetWidth;
     }
 
     private function drawBadge(GdImage $canvas, int $w, int $s): void
@@ -191,15 +270,15 @@ class NewsSocialImage
         }
 
         $font = $this->font('DejaVuSans-Bold.ttf');
-        $size = 30 * $s;
-        $padX = 34 * $s;
-        $height = 84 * $s;
+        $size = $this->px(30);
+        $padX = $this->px(34);
+        $height = $this->px(84);
         $width = (int) round($this->textWidth($font, $size, $label) + 2 * $padX);
-        $x = $w - 72 * $s - $width;
-        $y = 66 * $s;
+        $x = $w - $this->px(72) - $width;
+        $y = $this->px(66);
 
         $this->roundedRect(
-            $canvas, $x, $y, $width, $height, 20 * $s,
+            $canvas, $x, $y, $width, $height, $this->px(20),
             $this->color($canvas, $this->hexToRgb($category->color ?? self::FALLBACK_CATEGORY_COLOR))
         );
 
@@ -227,23 +306,23 @@ class NewsSocialImage
         // damit die Datei in jedem Editor lesbar bleibt.
         $glyph = (string) json_decode('"\uf0c1"');
 
-        $size = 34 * $s;
-        $iconSize = 36 * $s;
-        $padX = 48 * $s;
-        $gap = 24 * $s;
-        $height = 108 * $s;
+        $size = $this->px(34);
+        $iconSize = $this->px(36);
+        $padX = $this->px(48);
+        $gap = $this->px(24);
+        $height = $this->px(108);
 
         $iconWidth = $this->textWidth($iconFont, $iconSize, $glyph);
         $width = (int) round($iconWidth + $gap + $this->textWidth($font, $size, $label) + 2 * $padX);
-        $x = 72 * $s;
-        $y = $h - 96 * $s - $height;
+        $x = $this->px(72);
+        $y = $h - $this->px(96) - $height;
 
         $this->roundedRect($canvas, $x, $y, $width, $height, (int) ($height / 2), $this->color($canvas, [255, 255, 255]));
 
         $capHeight = $this->textHeight($font, $size, 'H');
         $baseline = (int) round($y + ($height + $capHeight) / 2);
 
-        imagettftext($canvas, $iconSize, 0, (int) round($x + $padX), $baseline + (int) round(3 * $s), $this->color($canvas, self::TEAL), $iconFont, $glyph);
+        imagettftext($canvas, $iconSize, 0, (int) round($x + $padX), $baseline + (int) round($this->px(3)), $this->color($canvas, self::TEAL), $iconFont, $glyph);
         imagettftext($canvas, $size, 0, (int) round($x + $padX + $iconWidth + $gap), $baseline, $this->color($canvas, self::DARK_TEXT), $font, $label);
 
         return $y;
@@ -254,18 +333,18 @@ class NewsSocialImage
         $text = trim(strip_tags((string) $this->post->excerpt));
 
         if ($text === '') {
-            return $buttonTop - 40 * $s;
+            return $buttonTop - $this->px(40);
         }
 
         $font = $this->font('DejaVuSans.ttf');
-        $size = 34 * $s;
-        $lead = 50 * $s;
-        $lines = $this->wrapLines($font, $size, $text, $w - 144 * $s, 2);
-        $baseline = $buttonTop - 70 * $s;
+        $size = $this->px(34);
+        $lead = $this->px(50);
+        $lines = $this->wrapLines($font, $size, $text, $w - $this->px(144), 2);
+        $baseline = $buttonTop - $this->px(70);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, 72 * $s, (int) round($top + $i * $lead), $this->color($canvas, self::MUTED), $font, $line);
+            imagettftext($canvas, $size, 0, $this->px(72), (int) round($top + $i * $lead), $this->color($canvas, self::MUTED), $font, $line);
         }
 
         return (int) round($top - $this->textHeight($font, $size, 'Hg'));
@@ -273,9 +352,9 @@ class NewsSocialImage
 
     private function drawAccentRule(GdImage $canvas, int $s, int $excerptTop): int
     {
-        $height = 8 * $s;
-        $y = $excerptTop - 46 * $s;
-        $this->roundedRect($canvas, 72 * $s, $y, 120 * $s, $height, (int) ($height / 2), $this->color($canvas, self::TEAL));
+        $height = $this->px(8);
+        $y = $excerptTop - $this->px(46);
+        $this->roundedRect($canvas, $this->px(72), $y, $this->px(120), $height, (int) ($height / 2), $this->color($canvas, self::TEAL));
 
         return $y;
     }
@@ -289,22 +368,22 @@ class NewsSocialImage
         }
 
         $font = $this->font('DejaVuSans-Bold.ttf');
-        $maxWidth = $w - 144 * $s;
+        $maxWidth = $w - $this->px(144);
 
-        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, 4, 78 * $s, 40 * $s, 2 * $s);
+        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $this->spec['lines'], $this->px(78), $this->px(34), $this->px(2));
         $lead = (int) round($size * 1.34);
-        $baseline = $ruleTop - 52 * $s;
+        $baseline = $ruleTop - $this->px(52);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, 72 * $s, (int) round($top + $i * $lead), $this->color($canvas, [255, 255, 255]), $font, $line);
+            imagettftext($canvas, $size, 0, $this->px(72), (int) round($top + $i * $lead), $this->color($canvas, [255, 255, 255]), $font, $line);
         }
     }
 
     private function downscale(GdImage $canvas, int $w, int $h): string
     {
-        $out = imagecreatetruecolor(self::WIDTH, self::HEIGHT);
-        imagecopyresampled($out, $canvas, 0, 0, 0, 0, self::WIDTH, self::HEIGHT, $w, $h);
+        $out = imagecreatetruecolor($this->spec['width'], $this->spec['height']);
+        imagecopyresampled($out, $canvas, 0, 0, 0, 0, $this->spec['width'], $this->spec['height'], $w, $h);
 
         ob_start();
         imagepng($out, null, 6);

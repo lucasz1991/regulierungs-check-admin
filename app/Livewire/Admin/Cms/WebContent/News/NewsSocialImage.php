@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
 use App\Models\Post;
+use App\Support\NewsSocialImage as SocialImageRenderer;
 use Livewire\Component;
 
 /**
@@ -21,6 +22,9 @@ class NewsSocialImage extends Component
     public ?int $postId = null;
 
     public string $title = '';
+
+    /** Aktiver Zuschnitt; siehe SocialImageRenderer::FORMATS. */
+    public string $format = SocialImageRenderer::DEFAULT_FORMAT;
 
     protected $listeners = [
         'open-news-social-image' => 'openModal',
@@ -43,7 +47,16 @@ class NewsSocialImage extends Component
 
         $this->postId = $post->id;
         $this->title = (string) $post->title;
+        $this->format = SocialImageRenderer::DEFAULT_FORMAT;
         $this->show = true;
+    }
+
+    /** Format wechseln; das Bild wird daraufhin neu angefordert. */
+    public function setFormat(string $format): void
+    {
+        if (SocialImageRenderer::isFormat($format)) {
+            $this->format = $format;
+        }
     }
 
     public function closeModal(): void
@@ -51,10 +64,13 @@ class NewsSocialImage extends Component
         $this->show = false;
         $this->postId = null;
         $this->title = '';
+        $this->format = SocialImageRenderer::DEFAULT_FORMAT;
     }
 
     public function render()
     {
-        return view('livewire.admin.cms.web-content.news.news-social-image');
+        return view('livewire.admin.cms.web-content.news.news-social-image', [
+            'formats' => SocialImageRenderer::FORMATS,
+        ]);
     }
 }

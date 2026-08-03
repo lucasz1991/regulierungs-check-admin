@@ -38,66 +38,63 @@
                 </div>
 
                 {{--
-                    wire:key enthaelt das Format: beim Wechsel baut Livewire den
-                    Teilbaum neu auf und das <img> startet mit frischem Ladezustand.
+                    Das Bild ist von Haus aus sichtbar.
 
-                    Kein wire:ignore mehr - das hielt den Teilbaum vom Abgleich fern
-                    und verhinderte damit auch den Bildwechsel beim Umschalten.
+                    Vorher haing seine Sichtbarkeit an einer Alpine-Bindung
+                    (:class mit opacity-0 als Ausgangszustand). Lief Alpine hier
+                    nicht an oder war das load-Ereignis bereits vorbei, blieb das
+                    fertig geladene Bild dauerhaft unsichtbar. Jetzt ist der
+                    Ausgangszustand "sichtbar"; das Skelett liegt darunter und
+                    wird vom Bild einfach ueberdeckt, sobald es gezeichnet ist.
+                    Ohne JavaScript funktioniert die Vorschau damit ebenfalls.
                 --}}
                 <div
                     wire:key="social-image-{{ $postId }}-{{ $format }}"
-                    x-data="{ loading: true, failed: false }"
+                    x-data="{ failed: false }"
                     class="mx-auto w-full"
-                    style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '260px' : '420px' }};"
+                    style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
                     <div
-                        class="relative overflow-hidden rounded-xl border border-gray-200 bg-gray-50 shadow-inner"
+                        class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 shadow-lg ring-1 ring-black/5"
                         style="aspect-ratio: {{ $formats[$format]['width'] }} / {{ $formats[$format]['height'] }};"
                     >
-                        <img
-                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
-                            {{--
-                                Wichtig: Das Bild kann beim Initialisieren schon
-                                fertig sein - aus dem Cache oder weil Livewire den
-                                Knoten neu einsetzt. Dann feuert `load` nie mehr
-                                und die Vorschau bliebe fuer immer auf opacity-0
-                                stehen, obwohl sie geladen ist. Deshalb hier den
-                                Ist-Zustand direkt abfragen.
-
-                                Ein abgebrochener Ladevorgang feuert ebenfalls
-                                `error`. Als fehlgeschlagen gilt daher nur, was
-                                wirklich keine Bilddaten hat - naturalWidth
-                                bleibt dann 0.
-                            --}}
-                            x-init="if ($el.complete) { loading = false; failed = $el.naturalWidth === 0; }"
-                            x-on:load="loading = false; failed = false"
-                            x-on:error="loading = false; failed = $el.naturalWidth === 0"
-                            alt="Vorschau des Social-Media-Bildes"
-                            class="h-full w-full object-cover transition-opacity duration-300"
-                            :class="loading || failed ? 'opacity-0' : 'opacity-100'"
-                        >
-
-                        <div x-show="loading" class="absolute inset-0 flex items-center justify-center bg-gray-50">
-                            <span class="h-8 w-8 animate-spin rounded-full border-[3px] border-gray-200 border-t-primary" aria-hidden="true"></span>
-                            <span class="sr-only">Bild wird erzeugt</span>
+                        {{-- Skelett liegt unter dem Bild und braucht kein JavaScript. --}}
+                        <div class="absolute inset-0 z-0 flex flex-col items-center justify-center gap-3 text-slate-400">
+                            <span class="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-300 border-t-primary" aria-hidden="true"></span>
+                            <span class="text-xs font-medium">Vorschau wird erzeugt …</span>
                         </div>
 
-                        <div x-show="failed" x-cloak class="absolute inset-0 flex items-center justify-center bg-gray-50 px-4 text-center">
-                            <span class="text-sm font-semibold text-red-700">Vorschau fehlgeschlagen</span>
+                        <img
+                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
+                            x-on:error="failed = true"
+                            x-on:load="failed = false"
+                            alt="Vorschau des Social-Media-Bildes für {{ $title }}"
+                            class="relative z-10 h-full w-full object-cover"
+                        >
+
+                        {{-- Nur bei echtem Ladefehler, liegt ueber allem. --}}
+                        <div
+                            x-show="failed"
+                            x-cloak
+                            class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-white/95 px-6 text-center"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                            </svg>
+                            <span class="text-sm font-semibold text-gray-900">Vorschau konnte nicht geladen werden</span>
+                            <span class="text-xs text-gray-500">Details stehen im Anwendungsprotokoll.</span>
                         </div>
                     </div>
 
-                    {{-- Statuszeile --}}
-                    <p class="mt-3 flex items-center justify-center gap-2 text-xs font-semibold">
-                        <span
-                            class="h-2 w-2 rounded-full"
-                            :class="loading ? 'bg-amber-400 animate-pulse' : (failed ? 'bg-red-500' : 'bg-emerald-500')"
-                            aria-hidden="true"
-                        ></span>
-                        <span
-                            class="text-gray-600"
-                            x-text="loading ? 'Bild wird erzeugt …' : (failed ? 'Fehlgeschlagen' : '{{ $formats[$format]['width'] }} × {{ $formats[$format]['height'] }}')"
-                        ></span>
+                    <div class="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+                        <span class="font-semibold text-gray-700">{{ $formats[$format]['width'] }} × {{ $formats[$format]['height'] }}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>PNG</span>
+                    </div>
+
+                    <p class="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-5 text-amber-900 ring-1 ring-inset ring-amber-200">
+                        Der Button im Bild ist aufgemalt und nicht klickbar. Den Link zur News setzt du wie gewohnt
+                        im Beitragstext oder in der Story-Verlinkung.
                     </p>
                 </div>
             @endif

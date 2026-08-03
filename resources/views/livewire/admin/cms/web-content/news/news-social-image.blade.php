@@ -38,19 +38,20 @@
                 </div>
 
                 {{--
-                    Das Bild ist von Haus aus sichtbar.
+                    Reines HTML, kein JavaScript.
 
-                    Vorher haing seine Sichtbarkeit an einer Alpine-Bindung
-                    (:class mit opacity-0 als Ausgangszustand). Lief Alpine hier
-                    nicht an oder war das load-Ereignis bereits vorbei, blieb das
-                    fertig geladene Bild dauerhaft unsichtbar. Jetzt ist der
-                    Ausgangszustand "sichtbar"; das Skelett liegt darunter und
-                    wird vom Bild einfach ueberdeckt, sobald es gezeichnet ist.
-                    Ohne JavaScript funktioniert die Vorschau damit ebenfalls.
+                    Das Bild ist von Haus aus sichtbar, das Ladeskelett liegt
+                    darunter und wird davon ueberdeckt, sobald es gezeichnet ist.
+
+                    Bewusst ohne Fehler-Overlay: Livewire tauscht beim Abgleich
+                    das src-Attribut, was am <img> ein error-Ereignis ausloest,
+                    obwohl das Bild einwandfrei geladen ist. Das Overlay legte
+                    sich dadurch faelschlich ueber die fertige Vorschau. Ein
+                    tatsaechlicher Fehlschlag ist ohnehin sichtbar - dann bleibt
+                    das Skelett stehen - und steht mit Ursache im Protokoll.
                 --}}
                 <div
                     wire:key="social-image-{{ $postId }}-{{ $format }}"
-                    x-data="{ failed: false }"
                     class="mx-auto w-full"
                     style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
@@ -58,32 +59,15 @@
                         class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 shadow-lg ring-1 ring-black/5"
                         style="aspect-ratio: {{ $formats[$format]['width'] }} / {{ $formats[$format]['height'] }};"
                     >
-                        {{-- Skelett liegt unter dem Bild und braucht kein JavaScript. --}}
-                        <div class="absolute inset-0 z-0 flex flex-col items-center justify-center gap-3 text-slate-400">
+                        <div class="absolute inset-0 z-0 flex items-center justify-center">
                             <span class="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-300 border-t-primary" aria-hidden="true"></span>
-                            <span class="text-xs font-medium">Vorschau wird erzeugt …</span>
                         </div>
 
                         <img
                             src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
-                            x-on:error="failed = true"
-                            x-on:load="failed = false"
                             alt="Vorschau des Social-Media-Bildes für {{ $title }}"
                             class="relative z-10 h-full w-full object-cover"
                         >
-
-                        {{-- Nur bei echtem Ladefehler, liegt ueber allem. --}}
-                        <div
-                            x-show="failed"
-                            x-cloak
-                            class="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-white/95 px-6 text-center"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-red-500" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                            </svg>
-                            <span class="text-sm font-semibold text-gray-900">Vorschau konnte nicht geladen werden</span>
-                            <span class="text-xs text-gray-500">Details stehen im Anwendungsprotokoll.</span>
-                        </div>
                     </div>
 
                     <div class="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -91,11 +75,6 @@
                         <span aria-hidden="true">·</span>
                         <span>PNG</span>
                     </div>
-
-                    <p class="mt-4 rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs leading-5 text-amber-900 ring-1 ring-inset ring-amber-200">
-                        Der Button im Bild ist aufgemalt und nicht klickbar. Den Link zur News setzt du wie gewohnt
-                        im Beitragstext oder in der Story-Verlinkung.
-                    </p>
                 </div>
             @endif
         </x-slot>

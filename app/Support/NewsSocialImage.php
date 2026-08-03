@@ -103,6 +103,15 @@ class NewsSocialImage
             throw new RuntimeException('Die PHP-Erweiterung GD ist nicht verfuegbar.');
         }
 
+        /*
+         * Zweifache Ueberabtastung kostet Speicher: allein die Leinwand belegt
+         * bei 1080x1920 rund 33 MB, dazu Foto und verkleinerte Ausgabe. Mit dem
+         * verbreiteten Limit von 128 MB reisst das ab - und da PHP eine
+         * Speichererschoepfung nicht als Throwable meldet, bricht der Aufruf
+         * ohne verwertbare Fehlermeldung ab. Deshalb hier gezielt anheben.
+         */
+        $this->ensureMemoryLimit(512);
+
         $s = self::SCALE;
         $w = $this->spec['width'] * $s;
         $h = $this->spec['height'] * $s;
@@ -122,9 +131,13 @@ class NewsSocialImage
             $ruleTop = $this->drawAccentRule($canvas, $s, $excerptTop);
             $this->drawTitle($canvas, $w, $s, $ruleTop);
 
+            // downscale() gibt die grosse Leinwand selbst frei, sobald sie
+            // nicht mehr gebraucht wird - siehe dort.
             return $this->downscale($canvas, $w, $h);
         } finally {
-            imagedestroy($canvas);
+            if ($canvas instanceof GdImage) {
+                imagedestroy($canvas);
+            }
         }
     }
 
@@ -205,14 +218,21 @@ class NewsSocialImage
     {
         $left = $this->px(72);
         $centerY = $this->px(112);
-        $gap = $this->px(20);
+        $gap = $this->px(24);
 
+        /*
+         * Die Wortmarke fuellt ihre Bildhoehe vollstaendig aus und enthaelt
+         * zwei Textzeilen, das Icon nutzt nur 91 % seiner Datei. Bei gleicher
+         * Zielhoehe wirkt das Icon deshalb deutlich zu klein. Es bekommt daher
+         * die groessere Zielhoehe, damit die sichtbare Marke die Wortmarke
+         * ueberragt - so wie im Logo auf regulierungs-check.de.
+         */
         $iconWidth = $this->drawPngByHeight(
             $canvas,
             public_path('site-images/logo/logo-icon.png'),
             $left,
             $centerY,
-            $this->px(84)
+            $this->px(132)
         );
 
         $this->drawPngByHeight(
@@ -380,10 +400,21 @@ class NewsSocialImage
         }
     }
 
-    private function downscale(GdImage $canvas, int $w, int $h): string
+    /**
+     * Verkleinert die ueberabgetastete Leinwand auf die Ausgabegroesse.
+     *
+     * Die grosse Leinwand wird sofort nach dem Verkleinern freigegeben - noch
+     * vor dem PNG-Encoding. Das senkt die Speicherspitze um rund 33 MB und
+     * entscheidet auf Servern mit 128 MB Limit darueber, ob der Aufruf
+     * durchlaeuft. Der Aufrufer prueft deshalb auf null.
+     */
+    private function downscale(?GdImage &$canvas, int $w, int $h): string
     {
         $out = imagecreatetruecolor($this->spec['width'], $this->spec['height']);
         imagecopyresampled($out, $canvas, 0, 0, 0, 0, $this->spec['width'], $this->spec['height'], $w, $h);
+
+        imagedestroy($canvas);
+        $canvas = null;
 
         ob_start();
         imagepng($out, null, 6);
@@ -394,6 +425,30 @@ class NewsSocialImage
     }
 
     // ---------------------------------------------------------------- Helfer
+
+    /** Hebt das Speicherlimit auf mindestens $megabytes an, senkt es nie. */
+    private function ensureMemoryLimit(int $megabytes): void
+    {
+        $current = trim((string) ini_get('memory_limit'));
+
+        // -1 bedeutet unbegrenzt, da gibt es nichts zu tun.
+        if ($current === '-1') {
+            return;
+        }
+
+        $unit = strtolower(substr($current, -1));
+        $value = (int) $current;
+        $bytes = match ($unit) {
+            'g' => $value * 1024 * 1024 * 1024,
+            'm' => $value * 1024 * 1024,
+            'k' => $value * 1024,
+            default => $value,
+        };
+
+        if ($bytes > 0 && $bytes < $megabytes * 1024 * 1024) {
+            @ini_set('memory_limit', $megabytes.'M');
+        }
+    }
 
     private function font(string $file): string
     {

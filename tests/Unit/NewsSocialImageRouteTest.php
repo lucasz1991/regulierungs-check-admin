@@ -94,7 +94,10 @@ class NewsSocialImageRouteTest extends TestCase
             $response->assertOk();
             $response->assertHeader('Content-Type', 'image/png');
 
-            $body = $response->streamedContent();
+            // Bewusst kein Stream mehr: das Bild wird vollstaendig erzeugt,
+            // bevor Header rausgehen - nur so kann ein Fehlschlag noch einen
+            // echten Fehlerstatus liefern statt eines leeren 200er-PNG.
+            $body = $response->getContent();
             $size = getimagesizefromstring($body);
 
             $this->assertNotFalse($size, "Format {$format} liefert kein gueltiges Bild.");

@@ -6,7 +6,7 @@ use App\Models\Post;
 use App\Support\NewsSocialImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Http\Response;
 use Throwable;
 
 /**
@@ -19,13 +19,13 @@ use Throwable;
 class NewsSocialImageController extends Controller
 {
     /** Vorschau im Modal. */
-    public function preview(Request $request, Post $post): StreamedResponse
+    public function preview(Request $request, Post $post): Response
     {
         return $this->stream($post, $this->format($request), false);
     }
 
     /** Download als Anhang. */
-    public function download(Request $request, Post $post): StreamedResponse
+    public function download(Request $request, Post $post): Response
     {
         return $this->stream($post, $this->format($request), true);
     }
@@ -40,40 +40,55 @@ class NewsSocialImageController extends Controller
             : NewsSocialImage::DEFAULT_FORMAT;
     }
 
-    private function stream(Post $post, string $format, bool $asAttachment): StreamedResponse
+    /**
+     * Das Bild wird vollstaendig erzeugt, BEVOR der erste Header rausgeht.
+     *
+     * Vorher lief das als Stream: die Kopfzeilen mit Status 200 und
+     * `image/png` waren bereits gesendet, wenn das Rendern scheiterte. Der
+     * Browser bekam damit ein gueltiges Bild mit null Bytes - im Modal genau
+     * das Muster "fertig geladen, aber Vorschau fehlgeschlagen", ohne dass ein
+     * Fehlerstatus moeglich gewesen waere. GD baut das Bild ohnehin komplett
+     * im Speicher auf, ein Stream bringt hier also nichts.
+     *
+     * Gespeichert wird weiterhin nichts: das PNG existiert nur als String.
+     */
+    private function stream(Post $post, string $format, bool $asAttachment): Response
     {
         abort_unless($post->type === 'news', 404);
 
         $generator = new NewsSocialImage($post, $format);
 
-        $disposition = $asAttachment
-            ? 'attachment; filename="'.$generator->filename().'"'
-            : 'inline; filename="'.$generator->filename().'"';
+        try {
+            $png = $generator->render();
+        } catch (Throwable $e) {
+            Log::error('Social-Bild konnte nicht erzeugt werden.', [
+                'post_id' => $post->id,
+                'format' => $format,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile().':'.$e->getLine(),
+            ]);
 
-        return response()->stream(
-            function () use ($generator, $post): void {
-                try {
-                    echo $generator->render();
-                } catch (Throwable $e) {
-                    // Der Header ist zu diesem Zeitpunkt schon raus, ein
-                    // sauberer Fehlerstatus geht nicht mehr. Deshalb
-                    // protokollieren und den Stream leer beenden.
-                    Log::error('Social-Bild konnte nicht erzeugt werden.', [
-                        'post_id' => $post->id,
-                        'message' => $e->getMessage(),
-                    ]);
-                }
-            },
-            200,
-            [
-                'Content-Type' => 'image/png',
-                'Content-Disposition' => $disposition,
-                // Nichts zwischenspeichern: das Bild soll immer den aktuellen
-                // Stand der News zeigen.
-                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
-                'Pragma' => 'no-cache',
-                'X-Content-Type-Options' => 'nosniff',
-            ]
-        );
+            abort(500, 'Das Social-Media-Bild konnte nicht erzeugt werden.');
+        }
+
+        if ($png === '') {
+            Log::error('Social-Bild ist leer geblieben.', ['post_id' => $post->id, 'format' => $format]);
+
+            abort(500, 'Das Social-Media-Bild konnte nicht erzeugt werden.');
+        }
+
+        $disposition = ($asAttachment ? 'attachment' : 'inline')
+            .'; filename="'.$generator->filename().'"';
+
+        return response($png, 200, [
+            'Content-Type' => 'image/png',
+            'Content-Length' => (string) strlen($png),
+            'Content-Disposition' => $disposition,
+            // Nichts zwischenspeichern: das Bild soll immer den aktuellen
+            // Stand der News zeigen.
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 }

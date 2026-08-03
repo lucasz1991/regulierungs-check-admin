@@ -33,8 +33,15 @@ export default function adminDashboard(initialPayload) {
         statusChart: null,
         ApexCharts: null,
         gsap: null,
+        booted: false,
 
         async init() {
+            // Schutz gegen doppelte Initialisierung. Zwei Durchlaeufe wuerden
+            // zwei from()-Tweens auf denselben Elementen erzeugen; der zweite
+            // setzt den Startzustand neu und die Kacheln blieben unsichtbar.
+            if (this.booted) return;
+            this.booted = true;
+
             const [{ default: ApexCharts }, { gsap }] = await Promise.all([
                 import('apexcharts'),
                 import('gsap'),
@@ -71,6 +78,8 @@ export default function adminDashboard(initialPayload) {
         // ------------------------------------------------------------ Charts
 
         renderCharts() {
+            this.destroyCharts();
+
             if (this.$refs.timelineChart) {
                 this.timelineChart = new this.ApexCharts(this.$refs.timelineChart, this.timelineOptions());
                 this.timelineChart.render();
@@ -176,6 +185,11 @@ export default function adminDashboard(initialPayload) {
 
         // --------------------------------------------------------- Animation
 
+        /** Elemente ausschliesslich innerhalb dieser Komponente. */
+        tiles(selector) {
+            return Array.from(this.$el.querySelectorAll(selector));
+        },
+
         animateEntrance() {
             const mm = this.gsap.matchMedia();
 
@@ -189,27 +203,37 @@ export default function adminDashboard(initialPayload) {
 
                     if (reduced) {
                         // Nur der Endzustand, keine Bewegung.
-                        this.gsap.set('[data-dash="head"], [data-dash="tile"]', { autoAlpha: 1, y: 0 });
+                        this.gsap.set(this.tiles('[data-dash="head"], [data-dash="tile"]'), { autoAlpha: 1, y: 0 });
                         this.setCountersToTarget();
 
                         return;
                     }
 
-                    this.gsap.from('[data-dash="head"]', {
-                        autoAlpha: 0,
-                        y: -12,
-                        duration: 0.5,
-                        ease: 'power2.out',
-                    });
+                    /*
+                     * fromTo() statt from(): der Endzustand steht explizit fest.
+                     * clearProps raeumt die Inline-Styles danach weg - sonst
+                     * bliebe bei einem abgebrochenen Tween visibility:hidden
+                     * stehen und der Inhalt waere dauerhaft unsichtbar.
+                     */
+                    this.gsap.fromTo(
+                        this.tiles('[data-dash="head"]'),
+                        { autoAlpha: 0, y: -12 },
+                        { autoAlpha: 1, y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'opacity,visibility,transform' }
+                    );
 
-                    this.gsap.from('[data-dash="tile"]', {
-                        autoAlpha: 0,
-                        y: 18,
-                        duration: 0.55,
-                        ease: 'power3.out',
-                        stagger: { each: 0.06, from: 'start' },
-                        onComplete: () => this.animateCounters(),
-                    });
+                    this.gsap.fromTo(
+                        this.tiles('[data-dash="tile"]'),
+                        { autoAlpha: 0, y: 18 },
+                        {
+                            autoAlpha: 1,
+                            y: 0,
+                            duration: 0.55,
+                            ease: 'power3.out',
+                            stagger: { each: 0.06, from: 'start' },
+                            clearProps: 'opacity,visibility,transform',
+                            onComplete: () => this.animateCounters(),
+                        }
+                    );
                 }
             );
         },

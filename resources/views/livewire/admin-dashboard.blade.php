@@ -14,8 +14,10 @@
 <div
     wire:loading.class="cursor-wait"
     data-chart-payload="{{ json_encode($chartPayload, JSON_HEX_APOS | JSON_HEX_QUOT) }}"
+    {{-- Kein x-init: Alpine ruft init() bei Alpine.data()-Komponenten selbst auf.
+         Beides zusammen liess die Einstiegsanimation doppelt starten, wodurch der
+         zweite Durchlauf die Kacheln wieder auf unsichtbar zuruecksetzte. --}}
     x-data="adminDashboard(@js($chartPayload))"
-    x-init="init()"
 >
 
     {{-- Kopfzeile --}}

@@ -34,6 +34,10 @@ class NewsEditCreate extends Component
 
     public ?string $excerpt = null;
 
+    // Bewusst untypisiert: ein geleertes Zahlenfeld liefert "" und wuerde
+    // gegen einen ?int-Typ laufen. Die Umwandlung passiert beim Speichern.
+    public $reading_time_minutes = null;
+
     public $news_category_id = null;
 
     public bool $published = false;
@@ -57,6 +61,7 @@ class NewsEditCreate extends Component
             $this->post = Post::where('type', 'news')->findOrFail($this->postId);
             $this->title = (string) $this->post->title;
             $this->excerpt = $this->post->excerpt;
+            $this->reading_time_minutes = $this->post->reading_time_minutes;
             $this->news_category_id = $this->post->news_category_id ?: '';
             $this->published = (bool) $this->post->published;
             $this->published_at = optional($this->post->published_at)->format('Y-m-d\TH:i');
@@ -78,6 +83,7 @@ class NewsEditCreate extends Component
             'isDirty',
             'title',
             'excerpt',
+            'reading_time_minutes',
             'news_category_id',
             'published',
             'published_at',
@@ -183,6 +189,7 @@ class NewsEditCreate extends Component
                 },
             ],
             'excerpt' => ['nullable', 'string', 'max:255'],
+            'reading_time_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'news_category_id' => [
                 'nullable',
                 'integer',
@@ -266,6 +273,20 @@ class NewsEditCreate extends Component
     {
         $this->isDirty = true;
         $this->validateOnly('excerpt');
+    }
+
+    public function updatedReadingTimeMinutes(): void
+    {
+        $this->isDirty = true;
+
+        if ($this->reading_time_minutes === '' || $this->reading_time_minutes === null) {
+            $this->reading_time_minutes = null;
+            $this->resetValidation('reading_time_minutes');
+
+            return;
+        }
+
+        $this->validateOnly('reading_time_minutes');
     }
 
     public function updatedNewsCategoryId(): void
@@ -369,6 +390,10 @@ class NewsEditCreate extends Component
             'type' => 'news',
             'title' => $this->title,
             'excerpt' => $this->excerpt,
+            // Leer lassen heisst: die Base schaetzt die Lesezeit weiterhin selbst.
+            'reading_time_minutes' => ($this->reading_time_minutes === null || $this->reading_time_minutes === '')
+                ? null
+                : (int) $this->reading_time_minutes,
             'news_category_id' => $this->news_category_id ?: null,
             'published' => $this->published,
             'published_at' => $this->published_at,

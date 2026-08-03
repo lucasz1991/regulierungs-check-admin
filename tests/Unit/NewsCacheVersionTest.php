@@ -78,6 +78,7 @@ class NewsCacheVersionTest extends TestCase
             $table->string('title');
             $table->string('slug')->nullable();
             $table->text('excerpt')->nullable();
+            $table->unsignedSmallInteger('reading_time_minutes')->nullable();
             $table->longText('body')->nullable();
             $table->string('cover_image')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
@@ -155,6 +156,44 @@ class NewsCacheVersionTest extends TestCase
 
         $this->assertNotSame($second, $this->generation());
         $this->assertDatabaseMissing('posts', ['id' => $post->id], self::CONNECTION);
+    }
+
+    public function test_reading_time_is_stored_and_can_be_cleared_again(): void
+    {
+        $create = new NewsEditCreate;
+        $create->title = 'News mit Lesezeit';
+        $create->reading_time_minutes = '7';
+        $create->save();
+
+        $post = Post::where('type', 'news')->firstOrFail();
+        $this->assertSame(7, $post->reading_time_minutes);
+
+        // Beim erneuten Oeffnen muss der Wert im Formular stehen.
+        $edit = new NewsEditCreate;
+        $edit->loadPost($post->id);
+        $this->assertSame(7, $edit->reading_time_minutes);
+
+        // Leeren heisst: die Base schaetzt wieder selbst.
+        $edit->reading_time_minutes = '';
+        $edit->save();
+
+        $this->assertNull($post->fresh()->reading_time_minutes);
+    }
+
+    public function test_reading_time_rejects_values_outside_the_allowed_range(): void
+    {
+        $component = new NewsEditCreate;
+        $component->title = 'News mit unzulaessiger Lesezeit';
+        $component->reading_time_minutes = '0';
+
+        try {
+            $component->save();
+            $this->fail('Eine Lesezeit von 0 haette abgelehnt werden muessen.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertArrayHasKey('reading_time_minutes', $e->errors());
+        }
+
+        $this->assertDatabaseMissing('posts', ['title' => 'News mit unzulaessiger Lesezeit'], self::CONNECTION);
     }
 
     public function test_category_create_update_and_delete_each_bump_the_generation(): void

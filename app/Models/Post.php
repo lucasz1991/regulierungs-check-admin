@@ -15,6 +15,7 @@ class Post extends Model
         'title',
         'slug',
         'excerpt',
+        'reading_time_minutes',
         'body',
         'cover_image',
         'user_id',
@@ -31,6 +32,8 @@ class Post extends Model
         'published' => 'boolean',
         'published_at' => 'datetime',
         'images' => 'array',
+        // Leer bedeutet: die Base schaetzt die Lesezeit weiterhin selbst.
+        'reading_time_minutes' => 'integer',
     ];
 
     public const NEWS_LAYOUTS = [

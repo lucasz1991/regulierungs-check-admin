@@ -21,12 +21,30 @@
                 </span>
             </div>
 
-            @if($isDirty)
-                <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
-                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
-                    Ungespeicherte Änderungen
-                </span>
-            @endif
+            <div class="flex shrink-0 items-center gap-2">
+                @if($postId)
+                    {{-- Social-Media-Bild dieser News; nur sinnvoll, wenn sie schon existiert. --}}
+                    <button
+                        type="button"
+                        @click="$dispatch('open-news-social-image', { postId: {{ $postId }}, title: @js($title) })"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50"
+                        aria-label="Social-Media-Bild erstellen"
+                        title="Social-Media-Bild erstellen"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M18 10.5h.008v.008H18V10.5Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v10.5A2.25 2.25 0 0 1 19.5 19.5h-15a2.25 2.25 0 0 1-2.25-2.25V6.75Z" />
+                        </svg>
+                    </button>
+                @endif
+
+                @if($isDirty)
+                    <span class="inline-flex w-fit shrink-0 items-center gap-2 rounded-md bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 ring-1 ring-inset ring-amber-200">
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+                        Ungespeicherte Änderungen
+                    </span>
+                @endif
+            </div>
         </div>
     </x-slot>
 
@@ -124,6 +142,37 @@
                                 </p>
                                 @error('excerpt')
                                     <p id="news-excerpt-error" class="mt-1 text-xs font-medium text-red-700" role="alert">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="news-reading-time" class="block text-sm font-semibold text-gray-800">Lesezeit</label>
+                                <div class="mt-1.5 flex items-center gap-2">
+                                    <input
+                                        id="news-reading-time"
+                                        type="number"
+                                        inputmode="numeric"
+                                        min="1"
+                                        max="600"
+                                        step="1"
+                                        wire:model.blur="reading_time_minutes"
+                                        class="block w-28 rounded-lg px-3.5 py-2.5 text-sm leading-6 text-gray-950 shadow-sm transition focus:ring-2 focus:ring-primary-200 focus:ring-offset-0 {{ $errors->has('reading_time_minutes') ? 'border-red-400 focus:border-red-500' : 'border-gray-300 focus:border-primary-500' }}"
+                                        placeholder="z. B. 5"
+                                        aria-invalid="{{ $errors->has('reading_time_minutes') ? 'true' : 'false' }}"
+                                        aria-describedby="news-reading-time-help{{ $errors->has('reading_time_minutes') ? ' news-reading-time-error' : '' }}"
+                                    >
+                                    <span class="text-sm text-gray-600">Minuten</span>
+                                </div>
+                                <p id="news-reading-time-help" class="mt-1.5 text-xs leading-5 text-gray-500">
+                                    Wird in der News-Liste und auf den News-Karten angezeigt. Leer lassen, um sie
+                                    automatisch aus der Textlänge schätzen zu lassen.
+                                    <span class="block">
+                                        Hinweis: Die Lesezeit im Artikel selbst steht im PageBuilder-Inhalt und muss dort
+                                        separat gepflegt werden.
+                                    </span>
+                                </p>
+                                @error('reading_time_minutes')
+                                    <p id="news-reading-time-error" class="mt-1 text-xs font-medium text-red-700" role="alert">{{ $message }}</p>
                                 @enderror
                             </div>
 

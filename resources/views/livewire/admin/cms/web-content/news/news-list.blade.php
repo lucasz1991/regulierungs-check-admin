@@ -115,6 +115,20 @@
                 </div>
 
                 <div data-role="datatable-cell" data-label="Aktion" role="cell" class="relative flex justify-end">
+                    {{-- Social-Media-Bild: oeffnet die Vorschau im Modal --}}
+                    <button
+                        type="button"
+                        @click="$dispatch('open-news-social-image', { postId: {{ $post->id }}, title: @js($post->title) })"
+                        class="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50"
+                        aria-label="Social-Media-Bild erstellen"
+                        title="Social-Media-Bild erstellen"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909M18 10.5h.008v.008H18V10.5Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 0 1 4.5 4.5h15a2.25 2.25 0 0 1 2.25 2.25v10.5A2.25 2.25 0 0 1 19.5 19.5h-15a2.25 2.25 0 0 1-2.25-2.25V6.75Z" />
+                        </svg>
+                    </button>
+
                     <div x-data="{ open: false }" class="relative">
                         <button
                             type="button"
@@ -174,4 +188,7 @@
 
     <livewire:admin.cms.web-content.news.news-edit-create />
     <livewire:admin.cms.web-content.news.news-category-manager />
+
+    {{-- Einmal pro Seite; wird aus der Liste und aus dem Bearbeiten-Modal geoeffnet. --}}
+    <x-news.social-image-modal />
 </div>

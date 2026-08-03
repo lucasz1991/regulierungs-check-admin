@@ -21,6 +21,7 @@ use App\Livewire\Admin\Reviews\ShowClaimRating;
 use App\Livewire\Welcome;
 
 
+use App\Http\Controllers\NewsSocialImageController;
 use App\Http\Controllers\PagebuilderProjectController;
 
 
@@ -60,6 +61,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/admin/reviews/claim-ratings', ClaimRatingList::class)->name('admin.reviews.claim-ratings');
         Route::get('/admin/reviews/claim-rating/{ratingId}', ShowClaimRating::class)->name('admin.reviews.show');
 
+
+        // Social-Media-Bild einer News. Wird bei jedem Aufruf neu erzeugt und
+        // gestreamt, nichts davon liegt auf dem Server.
+        Route::get('/admin/news/{post}/social-image', [NewsSocialImageController::class, 'preview'])
+            ->name('admin.news.social-image.preview');
+        Route::get('/admin/news/{post}/social-image/download', [NewsSocialImageController::class, 'download'])
+            ->name('admin.news.social-image.download');
 
         Route::post('/admin/pagebuilder/save', [PagebuilderProjectController::class, 'save']);
         Route::get('/admin/pagebuilder/load/{name}', [PagebuilderProjectController::class, 'load']);

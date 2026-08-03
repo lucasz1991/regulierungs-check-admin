@@ -24,18 +24,28 @@ class NewsSocialImageController extends Controller
      * Hochzaehlen, wenn sich das Bildlayout aendert - dann werden alle
      * abgelegten Staende beim naechsten Aufruf neu erzeugt.
      */
-    private const LAYOUT_VERSION = 2;
+    private const LAYOUT_VERSION = 3;
 
     /** Vorschau im Modal. */
     public function preview(Request $request, Post $post): Response
     {
-        return $this->stream($post, $this->format($request), false);
+        return $this->stream($post, $this->format($request), $this->logoVariant($request), false);
     }
 
     /** Download als Anhang. */
     public function download(Request $request, Post $post): Response
     {
-        return $this->stream($post, $this->format($request), true);
+        return $this->stream($post, $this->format($request), $this->logoVariant($request), true);
+    }
+
+    /** Unbekannte Logo-Varianten fallen auf den Standard zurueck. */
+    private function logoVariant(Request $request): string
+    {
+        $variant = $request->query('logo');
+
+        return NewsSocialImage::isLogoVariant(is_string($variant) ? $variant : null)
+            ? (string) $variant
+            : NewsSocialImage::DEFAULT_LOGO_VARIANT;
     }
 
     /** Ablageordner je News auf der oeffentlichen Platte des Admins. */
@@ -52,13 +62,14 @@ class NewsSocialImageController extends Controller
      * betrifft. LAYOUT_VERSION erzwingt eine Neuerzeugung, wenn sich das
      * Layout selbst aendert.
      */
-    private function fingerprint(Post $post, string $format): string
+    private function fingerprint(Post $post, string $format, string $logoVariant): string
     {
         $category = $post->newsCategory;
 
         return substr(sha1(implode('|', [
             self::LAYOUT_VERSION,
             $format,
+            $logoVariant,
             (string) $post->title,
             (string) $post->excerpt,
             (string) ($category?->id ?? ''),
@@ -79,7 +90,9 @@ class NewsSocialImageController extends Controller
     {
         $disk = Storage::disk('public');
         $dir = $this->directory($post);
-        $path = $dir.'/'.$format.'-'.$this->fingerprint($post, $format).'.png';
+        $variant = $generator->logoVariant();
+        $prefix = $format.'-'.$variant.'-';
+        $path = $dir.'/'.$prefix.$this->fingerprint($post, $format, $variant).'.png';
 
         if ($disk->exists($path)) {
             $existing = $disk->get($path);
@@ -91,9 +104,14 @@ class NewsSocialImageController extends Controller
 
         $png = $generator->render();
 
-        // Veraltete Staende desselben Formats entfernen.
+        // Veraltete Staende desselben Formats und derselben Variante entfernen;
+        // andere Varianten bleiben liegen. Der zweite Ausdruck raeumt Dateien
+        // aus der Zeit vor den Logo-Varianten ab ({format}-{hash}.png).
         foreach ($disk->files($dir) as $file) {
-            if (str_starts_with(basename($file), $format.'-')) {
+            $name = basename($file);
+
+            if (str_starts_with($name, $prefix)
+                || preg_match('/^'.preg_quote($format, '/').'-[0-9a-f]{16}\.png$/', $name) === 1) {
                 $disk->delete($file);
             }
         }
@@ -126,11 +144,11 @@ class NewsSocialImageController extends Controller
      * Die Daten kommen aus der Ablage; erzeugt wird nur beim ersten Aufruf
      * eines Standes.
      */
-    private function stream(Post $post, string $format, bool $asAttachment): Response
+    private function stream(Post $post, string $format, string $logoVariant, bool $asAttachment): Response
     {
         abort_unless($post->type === 'news', 404);
 
-        $generator = new NewsSocialImage($post, $format);
+        $generator = new NewsSocialImage($post, $format, $logoVariant);
 
         try {
             $png = $this->cached($post, $format, $generator);

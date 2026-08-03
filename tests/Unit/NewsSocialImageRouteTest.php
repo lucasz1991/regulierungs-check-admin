@@ -106,6 +106,56 @@ class NewsSocialImageRouteTest extends TestCase
         }
     }
 
+    /** Jede Logo-Variante kommt als PNG heraus, Unsinn faellt auf den Standard. */
+    public function test_logo_variants_render_and_invalid_values_fall_back(): void
+    {
+        Storage::fake('public');
+
+        $post = Post::create(['type' => 'news', 'title' => 'Varianten-Test', 'slug' => 'varianten-test']);
+        $this->asAdmin();
+
+        foreach (['yellow', 'teal', 'white', 'gibt-es-nicht'] as $variant) {
+            $response = $this->get(route('admin.news.social-image.preview', [
+                'post' => $post->id, 'format' => 'story', 'logo' => $variant,
+            ]));
+
+            $response->assertOk();
+            $size = getimagesizefromstring($response->getContent());
+            $this->assertNotFalse($size, "Variante {$variant} liefert kein Bild.");
+        }
+
+        // Drei gueltige Varianten -> drei getrennte Ablagen; der ungueltige
+        // Wert lief auf yellow und hat dessen Datei wiederverwendet.
+        $files = Storage::disk('public')->files('news-social/'.$post->id);
+        $this->assertCount(3, $files);
+    }
+
+    /** Der Wechsel der Variante darf die Ablage der anderen nicht loeschen. */
+    public function test_switching_the_logo_variant_keeps_the_other_variants_file(): void
+    {
+        Storage::fake('public');
+
+        $post = Post::create(['type' => 'news', 'title' => 'Wechsel-Test', 'slug' => 'wechsel-test']);
+        $this->asAdmin();
+
+        $url = fn (string $logo) => route('admin.news.social-image.preview', [
+            'post' => $post->id, 'format' => 'story', 'logo' => $logo,
+        ]);
+
+        $this->get($url('yellow'))->assertOk();
+        $this->get($url('teal'))->assertOk();
+
+        $disk = Storage::disk('public');
+        $dir = 'news-social/'.$post->id;
+        $this->assertCount(2, $disk->files($dir));
+
+        // Erneuter Abruf beider Varianten erzeugt nichts Neues.
+        $before = $disk->files($dir);
+        $this->get($url('yellow'))->assertOk();
+        $this->get($url('teal'))->assertOk();
+        $this->assertSame($before, $disk->files($dir));
+    }
+
     public function test_image_is_stored_once_and_replaced_only_after_a_change(): void
     {
         Storage::fake('public');

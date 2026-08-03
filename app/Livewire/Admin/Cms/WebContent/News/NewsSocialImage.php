@@ -26,6 +26,9 @@ class NewsSocialImage extends Component
     /** Aktiver Zuschnitt; siehe SocialImageRenderer::FORMATS. */
     public string $format = SocialImageRenderer::DEFAULT_FORMAT;
 
+    /** Gewaehlte Logo-Variante; siehe SocialImageRenderer::LOGO_VARIANTS. */
+    public string $logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
+
     protected $listeners = [
         'open-news-social-image' => 'openModal',
     ];
@@ -48,6 +51,7 @@ class NewsSocialImage extends Component
         $this->postId = $post->id;
         $this->title = (string) $post->title;
         $this->format = SocialImageRenderer::DEFAULT_FORMAT;
+        $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
         $this->show = true;
     }
 
@@ -59,18 +63,32 @@ class NewsSocialImage extends Component
         }
     }
 
+    /**
+     * Kommt ueber wire:model.live vom Selectfeld. Ungueltige Werte fallen auf
+     * den Standard zurueck, damit ueber das DOM nichts anderes einschleusbar
+     * ist; die Vorschau laedt durch den Re-Render automatisch neu.
+     */
+    public function updatedLogoVariant(string $value): void
+    {
+        if (! SocialImageRenderer::isLogoVariant($value)) {
+            $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
+        }
+    }
+
     public function closeModal(): void
     {
         $this->show = false;
         $this->postId = null;
         $this->title = '';
         $this->format = SocialImageRenderer::DEFAULT_FORMAT;
+        $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
     }
 
     public function render()
     {
         return view('livewire.admin.cms.web-content.news.news-social-image', [
             'formats' => SocialImageRenderer::FORMATS,
+            'logoVariants' => SocialImageRenderer::LOGO_VARIANTS,
         ]);
     }
 }

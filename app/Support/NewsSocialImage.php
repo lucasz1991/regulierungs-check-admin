@@ -45,6 +45,23 @@ class NewsSocialImage
 
     public const DEFAULT_FORMAT = 'story';
 
+    /**
+     * Waehlbare Logo-Varianten fuer die Kopfzeile.
+     *
+     * Die Assets geben nur zwei Faerbungen her (Tintenanalyse): die Wortmarke
+     * mit gelbem Haken und das komplette Lockup mit weisser Wortmarke samt
+     * weissem Haken. Den gruen/blauen Haken gibt es nicht als Datei - er
+     * entsteht beim Zeichnen, indem die gelben Pixel der Wortmarke auf das
+     * Marken-Teal umgefaerbt werden.
+     */
+    public const LOGO_VARIANTS = [
+        'yellow' => 'Gelber Haken',
+        'teal' => 'Grün/blauer Haken',
+        'white' => 'Alles weiß mit Icon',
+    ];
+
+    public const DEFAULT_LOGO_VARIANT = 'yellow';
+
     /** Faktor fuer das Supersampling. */
     private const SCALE = 2;
 
@@ -65,15 +82,25 @@ class NewsSocialImage
 
     public function __construct(
         private readonly Post $post,
-        private readonly string $format = self::DEFAULT_FORMAT
+        private readonly string $format = self::DEFAULT_FORMAT,
+        private string $logoVariant = self::DEFAULT_LOGO_VARIANT
     ) {
         $this->spec = self::FORMATS[$format] ?? self::FORMATS[self::DEFAULT_FORMAT];
         $this->unit = self::SCALE * $this->spec['type'];
+
+        if (! self::isLogoVariant($this->logoVariant)) {
+            $this->logoVariant = self::DEFAULT_LOGO_VARIANT;
+        }
     }
 
     public static function isFormat(?string $format): bool
     {
         return $format !== null && array_key_exists($format, self::FORMATS);
+    }
+
+    public static function isLogoVariant(?string $variant): bool
+    {
+        return $variant !== null && array_key_exists($variant, self::LOGO_VARIANTS);
     }
 
     /** Layout-Einheit in Zielpixeln. */
@@ -91,7 +118,16 @@ class NewsSocialImage
         $slug = preg_replace('/[^a-z0-9\-]+/i', '-', $slug) ?? 'news';
         $slug = trim((string) preg_replace('/-+/', '-', $slug), '-');
 
-        return 'social-'.($slug !== '' ? $slug : 'news-'.$this->post->id).'.png';
+        // Nur abweichende Logo-Varianten landen im Namen; der Standard bleibt
+        // unveraendert, damit bestehende Ablagen und Downloads stabil sind.
+        $suffix = $this->logoVariant === self::DEFAULT_LOGO_VARIANT ? '' : '-'.$this->logoVariant;
+
+        return 'social-'.($slug !== '' ? $slug : 'news-'.$this->post->id).$suffix.'.png';
+    }
+
+    public function logoVariant(): string
+    {
+        return $this->logoVariant;
     }
 
     /**
@@ -211,14 +247,31 @@ class NewsSocialImage
     }
 
     /**
-     * Oben links stehen Icon und Wortmarke nebeneinander, an einer
-     * gemeinsamen Mittelachse ausgerichtet.
+     * Oben links steht die gewaehlte Logo-Variante.
+     *
+     * `yellow` und `teal`: farbiges Schild-Icon plus weisse Wortmarke; beim
+     * Teal wird der gelbe Haken der Wortmarke umgefaerbt. `white`: das
+     * komplette Lockup aus logo-white.png, dessen Wortmarke samt Haken ganz
+     * in Weiss gehalten ist.
      */
     private function drawLogo(GdImage $canvas, int $s): void
     {
         $left = $this->px(72);
         $centerY = $this->px(112);
         $gap = $this->px(24);
+
+        if ($this->logoVariant === 'white') {
+            // Ein einzelnes Asset; die Icon-Hoehe bestimmt die Gesamthoehe.
+            $this->drawPngByHeight(
+                $canvas,
+                public_path('site-images/logo/logo-white.png'),
+                $left,
+                $centerY,
+                $this->px(132)
+            );
+
+            return;
+        }
 
         /*
          * Die Wortmarke fuellt ihre Bildhoehe vollstaendig aus und enthaelt
@@ -240,20 +293,28 @@ class NewsSocialImage
             public_path('site-images/logo/logo-white-yelllow.png'),
             $left + ($iconWidth > 0 ? $iconWidth + $gap : 0),
             $centerY,
-            $this->px(92)
+            $this->px(92),
+            $this->logoVariant === 'teal' ? self::TEAL : null
         );
     }
 
     /**
      * Zeichnet ein PNG auf eine Zielhoehe skaliert, vertikal um $centerY
      * zentriert, und liefert die belegte Breite zurueck.
+     *
+     * Mit $checkTint werden die gelben Pixel der Grafik auf die uebergebene
+     * Farbe umgefaerbt. Das passiert auf der bereits verkleinerten Kopie -
+     * so bleibt die Schleife bei wenigen zehntausend statt Millionen Pixeln.
+     *
+     * @param array{0:int,1:int,2:int}|null $checkTint
      */
     private function drawPngByHeight(
         GdImage $canvas,
         string $path,
         int $x,
         int $centerY,
-        int $targetHeight
+        int $targetHeight,
+        ?array $checkTint = null
     ): int {
         if (! is_file($path)) {
             return 0;
@@ -268,16 +329,76 @@ class NewsSocialImage
         imagealphablending($source, true);
 
         $targetWidth = (int) round($targetHeight * imagesx($source) / imagesy($source));
+        $destX = $x;
+        $destY = $centerY - (int) round($targetHeight / 2);
 
+        if ($checkTint === null) {
+            imagecopyresampled(
+                $canvas, $source,
+                $destX, $destY, 0, 0,
+                $targetWidth, $targetHeight,
+                imagesx($source), imagesy($source)
+            );
+            imagedestroy($source);
+
+            return $targetWidth;
+        }
+
+        // Erst verkleinern (mit erhaltenem Alphakanal), dann umfaerben.
+        $scaled = imagecreatetruecolor($targetWidth, $targetHeight);
+        imagealphablending($scaled, false);
+        imagesavealpha($scaled, true);
+        imagefill($scaled, 0, 0, imagecolorallocatealpha($scaled, 0, 0, 0, 127));
         imagecopyresampled(
-            $canvas, $source,
-            $x, $centerY - (int) round($targetHeight / 2), 0, 0,
+            $scaled, $source,
+            0, 0, 0, 0,
             $targetWidth, $targetHeight,
             imagesx($source), imagesy($source)
         );
         imagedestroy($source);
 
+        $this->tintYellowPixels($scaled, $checkTint);
+
+        imagecopy($canvas, $scaled, $destX, $destY, 0, 0, $targetWidth, $targetHeight);
+        imagedestroy($scaled);
+
         return $targetWidth;
+    }
+
+    /**
+     * Faerbt gelb-dominante Pixel auf die Zielfarbe um, der Alphakanal bleibt.
+     *
+     * Die Kanten der Wortmarke sind ueber Transparenz weichgezeichnet, nicht
+     * ueber Mischfarben - ein harter Farbtausch erhaelt deshalb die Glaettung.
+     *
+     * @param array{0:int,1:int,2:int} $tint
+     */
+    private function tintYellowPixels(GdImage $image, array $tint): void
+    {
+        $w = imagesx($image);
+        $h = imagesy($image);
+
+        for ($y = 0; $y < $h; $y++) {
+            for ($x = 0; $x < $w; $x++) {
+                $c = imagecolorat($image, $x, $y);
+                $alpha = ($c >> 24) & 0x7F;
+
+                if ($alpha >= 127) {
+                    continue;
+                }
+
+                $r = ($c >> 16) & 0xFF;
+                $g = ($c >> 8) & 0xFF;
+                $b = $c & 0xFF;
+
+                // Gelbfamilie: deutlich mehr Rot/Gruen als Blau.
+                if ($r > 110 && $r - $b > 45 && $g - $b > 25) {
+                    imagesetpixel($image, $x, $y, imagecolorallocatealpha(
+                        $image, $tint[0], $tint[1], $tint[2], $alpha
+                    ));
+                }
+            }
+        }
     }
 
     private function drawBadge(GdImage $canvas, int $w, int $s): void

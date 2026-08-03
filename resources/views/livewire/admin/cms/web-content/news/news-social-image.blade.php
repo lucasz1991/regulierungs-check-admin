@@ -38,6 +38,24 @@
                 </div>
 
                 {{--
+                    Logo-Auswahl. wire:model.live rendert die Komponente beim
+                    Wechsel neu; ueber den wire:key des Vorschaubereichs wird
+                    das Bild dabei frisch angefordert.
+                --}}
+                <div class="mb-4 flex items-center justify-center gap-2">
+                    <label for="social-image-logo" class="text-xs font-semibold text-gray-600">Logo</label>
+                    <select
+                        id="social-image-logo"
+                        wire:model.live="logoVariant"
+                        class="rounded-lg border-gray-300 py-2 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                    >
+                        @foreach($logoVariants as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{--
                     Reines HTML, kein JavaScript.
 
                     Das Bild ist von Haus aus sichtbar, das Ladeskelett liegt
@@ -51,7 +69,7 @@
                     das Skelett stehen - und steht mit Ursache im Protokoll.
                 --}}
                 <div
-                    wire:key="social-image-{{ $postId }}-{{ $format }}"
+                    wire:key="social-image-{{ $postId }}-{{ $format }}-{{ $logoVariant }}"
                     class="mx-auto w-full"
                     style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
@@ -64,7 +82,7 @@
                         </div>
 
                         <img
-                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
+                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant]) }}"
                             alt="Vorschau des Social-Media-Bildes für {{ $title }}"
                             class="relative z-10 h-full w-full object-cover"
                         >
@@ -90,7 +108,7 @@
 
             @if($postId)
                 <a
-                    href="{{ route('admin.news.social-image.download', ['post' => $postId, 'format' => $format]) }}"
+                    href="{{ route('admin.news.social-image.download', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant]) }}"
                     class="ml-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-light"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">

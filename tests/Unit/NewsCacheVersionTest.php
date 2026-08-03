@@ -196,6 +196,45 @@ class NewsCacheVersionTest extends TestCase
         $this->assertDatabaseMissing('posts', ['title' => 'News mit unzulaessiger Lesezeit'], self::CONNECTION);
     }
 
+    public function test_social_image_modal_stays_closed_without_a_valid_news(): void
+    {
+        $modal = new \App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage;
+
+        $this->assertFalse($modal->show, 'Das Modal startet geschlossen.');
+
+        // Genau der gemeldete Fall: kein Beitrag ausgewaehlt.
+        $modal->openModal(null);
+        $this->assertFalse($modal->show);
+        $this->assertNull($modal->postId);
+
+        // Unbekannte ID darf ebenfalls nicht zu einem offenen Fehlerzustand fuehren.
+        $modal->openModal(999999);
+        $this->assertFalse($modal->show);
+        $this->assertNull($modal->postId);
+    }
+
+    public function test_social_image_modal_opens_for_an_existing_news_and_closes_again(): void
+    {
+        $create = new NewsEditCreate;
+        $create->title = 'News fuer das Social-Bild';
+        $create->save();
+
+        $post = Post::where('type', 'news')->firstOrFail();
+
+        $modal = new \App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage;
+
+        // Livewire liefert das Payload als benannten Parameter; das Array ist der Rueckfall.
+        $modal->openModal(['postId' => $post->id]);
+        $this->assertTrue($modal->show);
+        $this->assertSame($post->id, $modal->postId);
+        $this->assertSame('News fuer das Social-Bild', $modal->title);
+
+        $modal->closeModal();
+        $this->assertFalse($modal->show);
+        $this->assertNull($modal->postId);
+        $this->assertSame('', $modal->title);
+    }
+
     public function test_category_create_update_and_delete_each_bump_the_generation(): void
     {
         $manager = new NewsCategoryManager;

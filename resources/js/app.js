@@ -5,12 +5,19 @@ import mask from '@alpinejs/mask';
 import resize from '@alpinejs/resize';
 import intersect from '@alpinejs/intersect';
 import sort from '@alpinejs/sort';
+import adminDashboard from './dashboard/admin-dashboard';
 
 Alpine.plugin(collapse);
 Alpine.plugin(mask);
 Alpine.plugin(resize);
 Alpine.plugin(intersect);
 Alpine.plugin(sort);
+
+// Alpine kommt hier aus Livewire und startet erst auf DOMContentLoaded -
+// diese Datei laeuft vorher, `alpine:init` greift also noch.
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('adminDashboard', adminDashboard);
+});
 
 let sidebarCollapseTimer = null;
 

@@ -118,7 +118,7 @@
                     {{-- Social-Media-Bild: oeffnet die Vorschau im Modal --}}
                     <button
                         type="button"
-                        @click="$dispatch('open-news-social-image', { postId: {{ $post->id }}, title: @js($post->title) })"
+                        @click="open = false; Livewire.dispatch('open-news-social-image', { postId: {{ $post->id }} })"
                         class="mr-1 inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50"
                         aria-label="Social-Media-Bild erstellen"
                         title="Social-Media-Bild erstellen"
@@ -189,6 +189,6 @@
     <livewire:admin.cms.web-content.news.news-edit-create />
     <livewire:admin.cms.web-content.news.news-category-manager />
 
-    {{-- Einmal pro Seite; wird aus der Liste und aus dem Bearbeiten-Modal geoeffnet. --}}
-    <x-news.social-image-modal />
+    {{-- Einmal pro Seite; wird aus der Liste und aus dem Bearbeiten-Modal per Dispatch geoeffnet. --}}
+    <livewire:admin.cms.web-content.news.news-social-image />
 </div>

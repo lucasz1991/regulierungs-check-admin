@@ -26,7 +26,7 @@
                     {{-- Social-Media-Bild dieser News; nur sinnvoll, wenn sie schon existiert. --}}
                     <button
                         type="button"
-                        @click="$dispatch('open-news-social-image', { postId: {{ $postId }}, title: @js($title) })"
+                        wire:click="$dispatch('open-news-social-image', { postId: {{ $postId }} })"
                         class="inline-flex h-9 w-9 items-center justify-center rounded-full text-gray-500 transition hover:bg-teal-50 hover:text-teal-700 focus:bg-teal-50"
                         aria-label="Social-Media-Bild erstellen"
                         title="Social-Media-Bild erstellen"

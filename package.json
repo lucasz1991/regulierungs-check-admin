@@ -67,6 +67,7 @@
         "grapesjs-plugin-forms": "^2.0.6",
         "grapesjs-plugin-tinymce6-editor": "^0.0.1",
         "grapesjs-tailwind": "^1.0.11",
+        "gsap": "^3.15.0",
         "imask": "^6.0.7",
         "interactjs": "^1.10.27",
         "jquery": "^3.7.1",

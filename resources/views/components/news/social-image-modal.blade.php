@@ -48,9 +48,19 @@
     }"
     x-on:open-news-social-image.window="show($event.detail)"
     x-on:keydown.escape.window="open && close()"
-    x-cloak
 >
-    <div x-show="open" class="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="social-image-modal-title">
+    {{--
+        Der Overlay liegt per Teleport direkt im <body>. Damit faellt er aus dem
+        Livewire-Teilbaum heraus, der bei jedem Re-Render der Liste neu gemorpht
+        wird.
+
+        Wichtig ist das inline gesetzte display:none zusammen mit x-cloak:
+        sollte Alpine auf der Seite nicht anlaufen, bleibt der Overlay
+        verborgen, statt die Seite unbedienbar zu ueberdecken. Sichtbar wird er
+        ausschliesslich, wenn x-show ihn oeffnet.
+    --}}
+    <template x-teleport="body">
+    <div x-show="open" x-cloak style="display: none" class="fixed inset-0 z-[70] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="social-image-modal-title">
         <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" @click="close()"></div>
 
         <div
@@ -146,4 +156,5 @@
             </div>
         </div>
     </div>
+    </template>
 </div>

@@ -6,6 +6,7 @@ use App\Models\Post;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /**
@@ -103,6 +104,35 @@ class NewsSocialImageRouteTest extends TestCase
             $this->assertNotFalse($size, "Format {$format} liefert kein gueltiges Bild.");
             $this->assertSame('image/png', $size['mime']);
         }
+    }
+
+    public function test_image_is_stored_once_and_replaced_only_after_a_change(): void
+    {
+        Storage::fake('public');
+
+        $post = Post::create(['type' => 'news', 'title' => 'Ablage-Test', 'slug' => 'ablage-test']);
+        $this->asAdmin();
+
+        $url = route('admin.news.social-image.preview', ['post' => $post->id, 'format' => 'story']);
+        $dir = 'news-social/'.$post->id;
+
+        $this->get($url)->assertOk();
+        $first = Storage::disk('public')->files($dir);
+        $this->assertCount(1, $first, 'Der erste Aufruf muss genau eine Datei ablegen.');
+
+        // Zweiter Aufruf ohne Aenderung: dieselbe Datei, nichts Neues.
+        $this->get($url)->assertOk();
+        $this->assertSame($first, Storage::disk('public')->files($dir));
+
+        // Nach einer Aenderung ersetzt der neue Stand den alten.
+        sleep(1);
+        $post->update(['title' => 'Ablage-Test geaendert']);
+
+        $this->get($url)->assertOk();
+        $second = Storage::disk('public')->files($dir);
+
+        $this->assertCount(1, $second, 'Der alte Stand muss ersetzt, nicht ergaenzt werden.');
+        $this->assertNotSame($first, $second, 'Nach einer Aenderung muss ein neuer Stand entstehen.');
     }
 
     public function test_download_route_sends_an_attachment(): void

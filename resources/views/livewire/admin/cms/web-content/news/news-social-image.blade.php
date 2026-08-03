@@ -57,13 +57,19 @@
                         <img
                             src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format]) }}"
                             {{--
-                                Ein abgebrochener Ladevorgang (Livewire tauscht das
-                                Element, der Browser verwirft die Anfrage) feuert
-                                ebenfalls `error`. Deshalb gilt nur als
-                                fehlgeschlagen, was auch wirklich keine Bilddaten
-                                hat - naturalWidth bleibt dann 0. Ein spaeterer
-                                Erfolg raeumt den Fehler wieder ab.
+                                Wichtig: Das Bild kann beim Initialisieren schon
+                                fertig sein - aus dem Cache oder weil Livewire den
+                                Knoten neu einsetzt. Dann feuert `load` nie mehr
+                                und die Vorschau bliebe fuer immer auf opacity-0
+                                stehen, obwohl sie geladen ist. Deshalb hier den
+                                Ist-Zustand direkt abfragen.
+
+                                Ein abgebrochener Ladevorgang feuert ebenfalls
+                                `error`. Als fehlgeschlagen gilt daher nur, was
+                                wirklich keine Bilddaten hat - naturalWidth
+                                bleibt dann 0.
                             --}}
+                            x-init="if ($el.complete) { loading = false; failed = $el.naturalWidth === 0; }"
                             x-on:load="loading = false; failed = false"
                             x-on:error="loading = false; failed = $el.naturalWidth === 0"
                             alt="Vorschau des Social-Media-Bildes"

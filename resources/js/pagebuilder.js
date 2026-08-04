@@ -11,6 +11,7 @@ import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
 import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon';
+import addSocialShareBlock from './pagebuilder/social-share';
 import { appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 let grapesJsInitializationPromise = null;
@@ -272,6 +273,7 @@ async function initializeGrapesJsEditor(editorElement) {
               }),
               editor => {
                 addFontAwesomeIconBlock(editor);
+                addSocialShareBlock(editor);
                 addCustomBlocks(editor);
               }
             ],
@@ -441,48 +443,109 @@ async function initializeGrapesJsEditor(editorElement) {
             },
             storage: {
                 type: 'self',
-                onSave: async ({ project, editor }) => {
-                    var files = await editor.runCommand('studio:projectFiles');
-                    var htmlFile = files.find(file => file.mimeType === 'text/html');
-                    var cssFile = files.find(file => file.mimeType === 'text/css');
+                /*
+                 * Speichern muss FEHLSCHLAGEN koennen.
+                 *
+                 * Bisher galt jede 2xx-Antwort als Erfolg. Lief die Session ab,
+                 * beantwortete Laravel den POST aber mit einer Umleitung zur
+                 * Login-Seite - fetch folgt ihr, die Login-Seite kommt mit 200,
+                 * und die Konsole meldete "Projekt gespeichert!", waehrend die
+                 * Daten verworfen wurden. Beim naechsten Laden standen wieder
+                 * die alten Werte bzw. die Vorlagen-Defaults im Editor. Genau
+                 * so gingen bearbeitete Element-Properties verloren.
+                 *
+                 * Deshalb: X-Requested-With erzwingt bei Session-/CSRF-Ablauf
+                 * einen echten Fehlerstatus statt der Umleitung, die Antwort
+                 * wird auf Umleitung und JSON geprueft, ein Fehler wirft (damit
+                 * behaelt Studio den ungespeicherten Zustand) und der Nutzer
+                 * sieht einen Toast statt nur einer Konsolenzeile. Eine
+                 * Warteschlange verhindert zusaetzlich, dass ein noch laufender
+                 * aelterer Save einen neueren Stand ueberschreibt.
+                 */
+                onSave: (() => {
+                    let saveQueue = Promise.resolve();
 
-                    if (!htmlFile) {
-                        throw new Error('Der PageBuilder hat keine HTML-Datei erzeugt.');
-                    }
+                    const persist = async ({ project, editor }) => {
+                        const files = await editor.runCommand('studio:projectFiles');
+                        const htmlFile = files.find(file => file.mimeType === 'text/html');
+                        const cssFile = files.find(file => file.mimeType === 'text/css');
 
-                    var htmldata = htmlFile.content;
-                    var cssdata = cssFile?.content ?? editor.getCss({ keepUnusedStyles: true }) ?? '';
-                    var body = new FormData();
-                    body.append('id', selectedProject);
-                    body.append('data', JSON.stringify(project));
-                    body.append('html', htmldata);
-                    body.append('css', cssdata);
-                    var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    var response = await fetch('/admin/pagebuilder/save', {
-                        method: 'POST',
-                        body,
-                        headers: {
-                            'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
-                            'X-CSRF-TOKEN': csrfToken
-                        },
-                    });
-                    console.log(response);
-                    if (!response.ok) {
-                        console.error('Speichern fehlgeschlagen');
-                    } else {
-                        console.log('Projekt gespeichert!');
-                    }
-                },
+                        if (!htmlFile) {
+                            throw new Error('Der PageBuilder hat keine HTML-Datei erzeugt.');
+                        }
+
+                        const htmldata = htmlFile.content;
+                        const cssdata = cssFile?.content ?? editor.getCss({ keepUnusedStyles: true }) ?? '';
+                        const body = new FormData();
+                        body.append('id', selectedProject);
+                        body.append('data', JSON.stringify(project));
+                        body.append('html', htmldata);
+                        body.append('css', cssdata);
+
+                        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                        const response = await fetch('/admin/pagebuilder/save', {
+                            method: 'POST',
+                            body,
+                            headers: {
+                                'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                                'X-CSRF-TOKEN': csrfToken,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                        });
+
+                        const contentType = response.headers.get('content-type') ?? '';
+                        const savedAsJson = response.ok
+                            && !response.redirected
+                            && contentType.includes('application/json');
+
+                        if (!savedAsJson) {
+                            const sessionLost = response.status === 401
+                                || response.status === 419
+                                || response.redirected;
+
+                            editor.runCommand('studio:toastAdd', {
+                                id: 'pagebuilder-save-failed',
+                                header: 'Speichern fehlgeschlagen',
+                                content: sessionLost
+                                    ? 'Deine Anmeldung ist abgelaufen. Bitte in einem neuen Tab neu anmelden und erneut speichern – die Änderungen sind noch im Editor.'
+                                    : 'Der Server hat das Projekt nicht angenommen (Status ' + response.status + '). Die Änderungen sind noch im Editor.',
+                                variant: 'error',
+                            });
+
+                            throw new Error('Speichern fehlgeschlagen (Status ' + response.status + ').');
+                        }
+
+                        console.log('Projekt gespeichert.');
+                    };
+
+                    return ({ project, editor }) => {
+                        const run = saveQueue.then(() => persist({ project, editor }));
+
+                        // Kette am Leben halten, auch wenn ein Save scheitert.
+                        saveQueue = run.catch(() => {});
+
+                        return run;
+                    };
+                })(),
                 onLoad: async () => {
                     var csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                     var response = await fetch('/admin/pagebuilder/load/'+selectedProject, {
-                        headers: { 'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),'X-CSRF-TOKEN': csrfToken },
+                        headers: {
+                            'Authorization': 'Bearer ' + localStorage.getItem('auth_token'),
+                            'X-CSRF-TOKEN': csrfToken,
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json',
+                        },
                     });
-                    console.log(response);
-                    if (!response.ok) {
-                        console.error('Laden fehlgeschlagen');
-                        return {};
+
+                    // Eine Umleitung zur Login-Seite darf nicht als leeres
+                    // Projekt interpretiert werden - sonst ueberschreibt der
+                    // naechste Autosave den echten Stand mit nichts.
+                    if (!response.ok || response.redirected) {
+                        throw new Error('Projekt konnte nicht geladen werden (Status ' + response.status + ').');
                     }
+
                     var projektJson = await response.json();
                     return  { project: projektJson };
                 },

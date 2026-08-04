@@ -38,7 +38,7 @@ assert.match(newsLayoutHtml, /data-template-version="2"/);
 assert.match(newsLayoutHtml, /data-template-scope="content"/);
 assert.match(newsLayoutHtml, /class="container mx-auto px-3"/);
 assert.match(newsLayoutHtml, /data-news-container="true"/);
-assert.doesNotMatch(newsLayoutHtml, /max-width\s*:/i);
+assert.match(newsLayoutHtml, /max-width:\s*1320px/i);
 
 const tagsWithClasses = [
     ...newsLayoutHtml.matchAll(/<([a-z][\w-]*)\b[^>]*\bclass="([^"]+)"[^>]*>/gi),
@@ -85,6 +85,15 @@ assert.doesNotMatch(
     'auto-fit collapses the meta boxes to a single column on mobile.'
 );
 
+// Der "Artikel teilen"-Button der Vorlage haengt am Teilen-Handler der
+// News-Seite; die Vorlage selbst darf kein Skript enthalten.
+assert.match(
+    metaSection === null ? '' : newsLayoutHtml,
+    /data-share="native"/,
+    'The share button must be wired via data-share="native".'
+);
+assert.doesNotMatch(newsLayoutHtml, /<script\b/i, 'Templates must not carry scripts; the parser drops them.');
+
 // Das News-Layout darf ausschliesslich als Vorlage angeboten werden.
 assert.equal(
     newsLayoutModule.addNewsDefaultLayoutBlock,
@@ -100,6 +109,33 @@ assert.doesNotMatch(
     'The news layout must not be registered in the blocks panel.'
 );
 assert.match(pagebuilderSource, /appendNewsLayoutTemplate\(communityTemplates\)/);
+
+// Der Teilen-Block ist registriert.
+assert.match(pagebuilderSource, /addSocialShareBlock\(editor\)/);
+
+// Speichern darf nicht stillschweigend scheitern: abgelaufene Sessions muessen
+// als Fehler ankommen (kein Redirect-Folgen als Erfolg), der Fehler wirft und
+// der Nutzer bekommt einen Toast.
+assert.match(pagebuilderSource, /'X-Requested-With': 'XMLHttpRequest'/);
+assert.match(pagebuilderSource, /response\.redirected/);
+assert.match(pagebuilderSource, /studio:toastAdd/);
+assert.match(
+    pagebuilderSource,
+    /throw new Error\('Speichern fehlgeschlagen/,
+    'A failed save must throw so Studio keeps the unsaved state.'
+);
+
+const shareSource = readSource('../resources/js/pagebuilder/social-share.js');
+
+// sanitizeJs() der Ablage entfernt vollstaendige http(s)-Adressen aus dem
+// exportierten JavaScript - die Share-Ziele muessen geteilt aufgebaut sein.
+assert.doesNotMatch(
+    shareSource,
+    /https:\/\/[a-z]/i,
+    'Share URLs must be assembled from parts; full literals are stripped server-side.'
+);
+assert.match(shareSource, /data-share-group/);
+assert.match(shareSource, /data-share-wired/);
 
 // Die linke Sidebar (Blocks, Elements, Vorlagen) muss ein-/ausklappbar sein.
 assert.match(pagebuilderSource, /studio:sidebarLeft:toggle/);

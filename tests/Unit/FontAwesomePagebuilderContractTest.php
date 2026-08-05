@@ -39,6 +39,26 @@ class FontAwesomePagebuilderContractTest extends TestCase
         $this->assertStringContainsString('addFontAwesomeIconBlock(editor)', $pagebuilder);
     }
 
+    public function test_news_share_is_a_link_property_and_not_a_separate_block(): void
+    {
+        $root = dirname(__DIR__, 2);
+        $component = file_get_contents($root.'/resources/js/pagebuilder/link-share-properties.js');
+        $pagebuilder = file_get_contents($root.'/resources/js/pagebuilder.js');
+
+        $this->assertStringContainsString("label: 'Link-Aktion'", $component);
+        $this->assertStringContainsString('News teilen (Bild, Titel & Kurztext)', $component);
+        $this->assertStringContainsString("'data-desktop-share': 'clipboard'", $component);
+        $this->assertStringContainsString('component.addTrait(shareLinkTrait', $component);
+        $this->assertStringNotContainsString('Blocks.add', $component);
+        $this->assertStringNotContainsString('data-share-group', $component);
+        $this->assertStringContainsString(
+            "import addSharePropertiesToLink from './pagebuilder/link-share-properties'",
+            $pagebuilder
+        );
+        $this->assertStringContainsString('addSharePropertiesToLink(editor)', $pagebuilder);
+        $this->assertStringNotContainsString('addSocialShareBlock', $pagebuilder);
+    }
+
     public function test_all_picker_icons_and_styles_exist_in_the_installed_font_awesome_css(): void
     {
         $root = dirname(__DIR__, 2);
@@ -82,6 +102,7 @@ class FontAwesomePagebuilderContractTest extends TestCase
         $this->assertStringContainsString('fa-regular far fa-clock', $template);
         $this->assertStringContainsString('fa-light fal fa-folder-open', $template);
         $this->assertStringContainsString('fa-light fal fa-share-alt', $template);
+        $this->assertStringContainsString('data-desktop-share="clipboard"', $template);
         $this->assertStringContainsString('fa-light fal fa-lightbulb', $template);
         $this->assertStringNotContainsString('rc-news-', $template);
         $this->assertStringNotContainsString('<style', $template);

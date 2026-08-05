@@ -11,7 +11,7 @@ import { swiperComponent } from '@grapesjs/studio-sdk-plugins';
 import { dialogComponent } from "@grapesjs/studio-sdk-plugins";
 import addCustomBlocks from './components/grapesjs-blocks';
 import addFontAwesomeIconBlock from './pagebuilder/fontawesome-icon';
-import addSocialShareBlock from './pagebuilder/social-share';
+import addSharePropertiesToLink from './pagebuilder/link-share-properties';
 import { appendNewsLayoutTemplate } from './pagebuilder/templates/news-layout-01';
 
 let grapesJsInitializationPromise = null;
@@ -273,7 +273,7 @@ async function initializeGrapesJsEditor(editorElement) {
               }),
               editor => {
                 addFontAwesomeIconBlock(editor);
-                addSocialShareBlock(editor);
+                addSharePropertiesToLink(editor);
                 addCustomBlocks(editor);
               }
             ],

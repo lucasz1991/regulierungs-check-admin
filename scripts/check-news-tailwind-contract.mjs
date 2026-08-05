@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import * as newsLayoutModule from '../resources/js/pagebuilder/templates/news-layout-01.js';
+import { ensureShareLinkProperty } from '../resources/js/pagebuilder/link-share-properties.js';
 
 const {
     newsLayoutHtml,
@@ -92,6 +93,11 @@ assert.match(
     /data-share="native"/,
     'The share button must be wired via data-share="native".'
 );
+assert.match(
+    metaSection === null ? '' : newsLayoutHtml,
+    /data-desktop-share="clipboard"/,
+    'The share button must explicitly copy its URL on desktop.'
+);
 assert.doesNotMatch(newsLayoutHtml, /<script\b/i, 'Templates must not carry scripts; the parser drops them.');
 
 // Das News-Layout darf ausschliesslich als Vorlage angeboten werden.
@@ -110,8 +116,10 @@ assert.doesNotMatch(
 );
 assert.match(pagebuilderSource, /appendNewsLayoutTemplate\(communityTemplates\)/);
 
-// Der Teilen-Block ist registriert.
-assert.match(pagebuilderSource, /addSocialShareBlock\(editor\)/);
+// Teilen ist eine Eigenschaft des vorhandenen Link-Elements und kein eigener
+// Block in der linken Blockliste.
+assert.match(pagebuilderSource, /addSharePropertiesToLink\(editor\)/);
+assert.doesNotMatch(pagebuilderSource, /addSocialShareBlock/);
 
 // Speichern darf nicht stillschweigend scheitern: abgelaufene Sessions muessen
 // als Fehler ankommen (kein Redirect-Folgen als Erfolg), der Fehler wirft und
@@ -125,17 +133,47 @@ assert.match(
     'A failed save must throw so Studio keeps the unsaved state.'
 );
 
-const shareSource = readSource('../resources/js/pagebuilder/social-share.js');
+const shareSource = readSource('../resources/js/pagebuilder/link-share-properties.js');
 
-// sanitizeJs() der Ablage entfernt vollstaendige http(s)-Adressen aus dem
-// exportierten JavaScript - die Share-Ziele muessen geteilt aufgebaut sein.
-assert.doesNotMatch(
-    shareSource,
-    /https:\/\/[a-z]/i,
-    'Share URLs must be assembled from parts; full literals are stripped server-side.'
-);
-assert.match(shareSource, /data-share-group/);
-assert.match(shareSource, /data-share-wired/);
+assert.match(shareSource, /label: 'Link-Aktion'/);
+assert.match(shareSource, /News teilen \(Bild, Titel & Kurztext\)/);
+assert.match(shareSource, /name: SHARE_TRAIT_NAME/);
+assert.match(shareSource, /component\.addTrait\(shareLinkTrait/);
+assert.match(shareSource, /'data-desktop-share': 'clipboard'/);
+assert.match(shareSource, /component:selected/);
+assert.doesNotMatch(shareSource, /Blocks\.add|data-share-group/);
+
+let shareAttributes = { 'data-share': 'native' };
+let registeredShareTrait = null;
+let attributesListener = null;
+const linkComponent = {
+    get: (name) => ({ type: 'link', tagName: 'a' })[name],
+    getTrait: () => registeredShareTrait,
+    getTraits: () => registeredShareTrait ? [registeredShareTrait] : [],
+    addTrait: (trait) => { registeredShareTrait = trait; },
+    getAttributes: () => ({ ...shareAttributes }),
+    addAttributes: (attributes) => { shareAttributes = { ...shareAttributes, ...attributes }; },
+    removeAttributes: (names) => {
+        for (const name of names) {
+            delete shareAttributes[name];
+        }
+    },
+    on: (event, listener) => {
+        if (event === 'change:attributes') {
+            attributesListener = listener;
+        }
+    },
+};
+
+assert.equal(ensureShareLinkProperty(linkComponent), true);
+assert.equal(registeredShareTrait.name, 'data-share');
+assert.equal(shareAttributes['data-desktop-share'], 'clipboard');
+assert.equal(typeof attributesListener, 'function');
+
+shareAttributes['data-share'] = '';
+attributesListener();
+assert.equal(Object.hasOwn(shareAttributes, 'data-share'), false);
+assert.equal(Object.hasOwn(shareAttributes, 'data-desktop-share'), false);
 
 // Die linke Sidebar (Blocks, Elements, Vorlagen) muss ein-/ausklappbar sein.
 assert.match(pagebuilderSource, /studio:sidebarLeft:toggle/);

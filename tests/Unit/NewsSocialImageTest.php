@@ -34,6 +34,29 @@ class NewsSocialImageTest extends TestCase
         }
     }
 
+    /** Der fruehere weisse CTA-Button darf in keinem Zuschnitt mehr erscheinen. */
+    public function test_article_button_is_not_drawn_at_the_bottom_of_any_format(): void
+    {
+        foreach (NewsSocialImage::FORMATS as $key => $spec) {
+            $image = imagecreatefromstring((new NewsSocialImage($this->newsPost(), $key))->render());
+            $x = (int) round(200 * $spec['type']);
+            $y = (int) round($spec['height'] - 150 * $spec['type']);
+            $color = imagecolorat($image, $x, $y);
+
+            $this->assertSame([
+                10,
+                32,
+                53,
+            ], [
+                ($color >> 16) & 0xFF,
+                ($color >> 8) & 0xFF,
+                $color & 0xFF,
+            ], "Im Format {$key} muss der fruehere Buttonbereich frei bleiben.");
+
+            imagedestroy($image);
+        }
+    }
+
     public function test_an_unknown_format_falls_back_to_the_default(): void
     {
         $png = (new NewsSocialImage($this->newsPost(), 'gibt-es-nicht'))->render();

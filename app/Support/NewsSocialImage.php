@@ -76,8 +76,6 @@ class NewsSocialImage
 
     private const MUTED = [214, 227, 237];
 
-    private const DARK_TEXT = [15, 44, 64];
-
     private const FALLBACK_CATEGORY_COLOR = '#0c968e';
 
     public function __construct(
@@ -162,8 +160,8 @@ class NewsSocialImage
             $this->drawLogo($canvas, $s);
             $this->drawBadge($canvas, $w, $s);
 
-            $buttonTop = $this->drawButton($canvas, $h, $s);
-            $excerptTop = $this->drawExcerpt($canvas, $w, $s, $buttonTop);
+            $contentBottom = $h - $this->px(96);
+            $excerptTop = $this->drawExcerpt($canvas, $w, $contentBottom);
             $ruleTop = $this->drawAccentRule($canvas, $s, $excerptTop);
             $this->drawTitle($canvas, $w, $s, $ruleTop);
 
@@ -432,56 +430,19 @@ class NewsSocialImage
         );
     }
 
-    /**
-     * Der Button ist reine Grafik - im Bild kann es keinen echten Link geben.
-     * Er signalisiert nur, dass der Beitrag hinter dem Post-Link steht.
-     *
-     * @return int obere Kante, damit der Text darueber ausgerichtet werden kann
-     */
-    private function drawButton(GdImage $canvas, int $h, int $s): int
-    {
-        $font = $this->font('DejaVuSans-Bold.ttf');
-        $iconFont = $this->font('fa-solid-900.ttf');
-        $label = 'ZUM ARTIKEL';
-        // Font-Awesome-Glyph fuer fa-link, als Escape statt als Rohzeichen,
-        // damit die Datei in jedem Editor lesbar bleibt.
-        $glyph = (string) json_decode('"\uf0c1"');
-
-        $size = $this->px(34);
-        $iconSize = $this->px(36);
-        $padX = $this->px(48);
-        $gap = $this->px(24);
-        $height = $this->px(108);
-
-        $iconWidth = $this->textWidth($iconFont, $iconSize, $glyph);
-        $width = (int) round($iconWidth + $gap + $this->textWidth($font, $size, $label) + 2 * $padX);
-        $x = $this->px(72);
-        $y = $h - $this->px(96) - $height;
-
-        $this->roundedRect($canvas, $x, $y, $width, $height, (int) ($height / 2), $this->color($canvas, [255, 255, 255]));
-
-        $capHeight = $this->textHeight($font, $size, 'H');
-        $baseline = (int) round($y + ($height + $capHeight) / 2);
-
-        imagettftext($canvas, $iconSize, 0, (int) round($x + $padX), $baseline + (int) round($this->px(3)), $this->color($canvas, self::TEAL), $iconFont, $glyph);
-        imagettftext($canvas, $size, 0, (int) round($x + $padX + $iconWidth + $gap), $baseline, $this->color($canvas, self::DARK_TEXT), $font, $label);
-
-        return $y;
-    }
-
-    private function drawExcerpt(GdImage $canvas, int $w, int $s, int $buttonTop): int
+    private function drawExcerpt(GdImage $canvas, int $w, int $contentBottom): int
     {
         $text = trim(strip_tags((string) $this->post->excerpt));
 
         if ($text === '') {
-            return $buttonTop - $this->px(40);
+            return $contentBottom - $this->px(40);
         }
 
         $font = $this->font('DejaVuSans.ttf');
         $size = $this->px(34);
         $lead = $this->px(50);
         $lines = $this->wrapLines($font, $size, $text, $w - $this->px(144), 2);
-        $baseline = $buttonTop - $this->px(70);
+        $baseline = $contentBottom - $this->px(70);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {

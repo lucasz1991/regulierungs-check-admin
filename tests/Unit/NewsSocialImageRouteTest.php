@@ -43,6 +43,7 @@ class NewsSocialImageRouteTest extends TestCase
             $t->boolean('published')->default(false);
             $t->dateTime('published_at')->nullable();
             $t->longText('images')->nullable();
+            $t->json('social_image_settings')->nullable();
             $t->timestamps();
         });
         Schema::connection(self::CONNECTION)->create('users', function (Blueprint $t): void {
@@ -183,6 +184,30 @@ class NewsSocialImageRouteTest extends TestCase
 
         $this->assertCount(1, $second, 'Der alte Stand muss ersetzt, nicht ergaenzt werden.');
         $this->assertNotSame($first, $second, 'Nach einer Aenderung muss ein neuer Stand entstehen.');
+    }
+
+    public function test_saved_layout_settings_create_a_new_cached_image(): void
+    {
+        Storage::fake('public');
+
+        $post = Post::create(['type' => 'news', 'title' => 'Layout-Cache-Test', 'slug' => 'layout-cache-test']);
+        $this->asAdmin();
+
+        $url = route('admin.news.social-image.preview', ['post' => $post->id, 'format' => 'story']);
+        $dir = 'news-social/'.$post->id;
+
+        $this->get($url)->assertOk();
+        $first = Storage::disk('public')->files($dir);
+
+        $settings = \App\Support\NewsSocialImage::defaultLayoutSettings();
+        $settings['story']['bottom_spacing'] = 288;
+        $post->update(['social_image_settings' => $settings]);
+
+        $this->get($url)->assertOk();
+        $second = Storage::disk('public')->files($dir);
+
+        $this->assertCount(1, $second);
+        $this->assertNotSame($first, $second);
     }
 
     public function test_download_route_sends_an_attachment(): void

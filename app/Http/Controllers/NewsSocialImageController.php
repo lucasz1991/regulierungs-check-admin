@@ -24,7 +24,7 @@ class NewsSocialImageController extends Controller
      * Hochzaehlen, wenn sich das Bildlayout aendert - dann werden alle
      * abgelegten Staende beim naechsten Aufruf neu erzeugt.
      */
-    private const LAYOUT_VERSION = 5;
+    private const LAYOUT_VERSION = 6;
 
     /** Vorschau im Modal. */
     public function preview(Request $request, Post $post): Response
@@ -77,6 +77,7 @@ class NewsSocialImageController extends Controller
             (string) ($category?->color ?? ''),
             (string) ($post->cover_image ?? ''),
             json_encode($post->images ?? []),
+            json_encode(NewsSocialImage::normalizeLayoutSettings($post->social_image_settings)),
             (string) optional($post->updated_at)->getTimestamp(),
         ])), 0, 16);
     }

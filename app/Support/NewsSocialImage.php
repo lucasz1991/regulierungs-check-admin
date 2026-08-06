@@ -62,18 +62,63 @@ class NewsSocialImage
 
     public const DEFAULT_LOGO_VARIANT = 'yellow';
 
+    /**
+     * Pro Format speicherbare Layout-Werte.
+     *
+     * Die Auswahllisten sind bewusst endlich: So kann das Livewire-Formular
+     * keine Werte speichern, mit denen Text oder Logo ausserhalb der
+     * Bildflaeche landen. Alle Angaben sind Basispixel und werden wie das
+     * bisherige Layout mit dem jeweiligen Formatfaktor skaliert.
+     */
+    public const LAYOUT_CONTROLS = [
+        'title_font_size' => [
+            'group' => 'Schrift', 'label' => 'Titelgröße', 'default' => 78,
+            'options' => [58 => 'Klein (58 px)', 68 => 'Kompakt (68 px)', 78 => 'Standard (78 px)', 88 => 'Groß (88 px)', 98 => 'Sehr groß (98 px)'],
+        ],
+        'excerpt_font_size' => [
+            'group' => 'Schrift', 'label' => 'Kurztextgröße', 'default' => 34,
+            'options' => [26 => 'Klein (26 px)', 30 => 'Kompakt (30 px)', 34 => 'Standard (34 px)', 38 => 'Groß (38 px)', 42 => 'Sehr groß (42 px)'],
+        ],
+        'title_line_height' => [
+            'group' => 'Schrift', 'label' => 'Titel-Zeilenhöhe', 'default' => 134,
+            'options' => [115 => 'Eng (115 %)', 125 => 'Kompakt (125 %)', 134 => 'Standard (134 %)', 145 => 'Luftig (145 %)'],
+        ],
+        'excerpt_line_height' => [
+            'group' => 'Schrift', 'label' => 'Kurztext-Zeilenhöhe', 'default' => 50,
+            'options' => [42 => 'Eng (42 px)', 46 => 'Kompakt (46 px)', 50 => 'Standard (50 px)', 58 => 'Luftig (58 px)'],
+        ],
+        'horizontal_padding' => [
+            'group' => 'Abstände', 'label' => 'Seitenabstand', 'default' => 72,
+            'options' => [48 => 'Klein (48 px)', 60 => 'Kompakt (60 px)', 72 => 'Standard (72 px)', 90 => 'Groß (90 px)', 108 => 'Sehr groß (108 px)'],
+        ],
+        'bottom_spacing' => [
+            'group' => 'Abstände', 'label' => 'Unterer Freiraum', 'default' => 204,
+            'options' => [96 => 'Klein (96 px)', 150 => 'Mittel (150 px)', 204 => 'Standard (204 px)', 240 => 'Groß (240 px)', 288 => 'Sehr groß (288 px)'],
+        ],
+        'section_spacing' => [
+            'group' => 'Abstände', 'label' => 'Textblock-Abstand', 'default' => 46,
+            'options' => [30 => 'Eng (30 px)', 38 => 'Kompakt (38 px)', 46 => 'Standard (46 px)', 56 => 'Luftig (56 px)', 68 => 'Sehr luftig (68 px)'],
+        ],
+        'logo_size' => [
+            'group' => 'Marke', 'label' => 'Logogröße', 'default' => 92,
+            'options' => [72 => 'Klein (72 px)', 82 => 'Kompakt (82 px)', 92 => 'Standard (92 px)', 104 => 'Groß (104 px)', 116 => 'Sehr groß (116 px)'],
+        ],
+        'badge_font_size' => [
+            'group' => 'Marke', 'label' => 'Kategoriegröße', 'default' => 30,
+            'options' => [24 => 'Klein (24 px)', 27 => 'Kompakt (27 px)', 30 => 'Standard (30 px)', 34 => 'Groß (34 px)', 38 => 'Sehr groß (38 px)'],
+        ],
+    ];
+
     /** Faktor fuer das Supersampling. */
     private const SCALE = 2;
-
-    /** Unterer Rand und bewusst freigehaltener Bereich des entfernten CTA. */
-    private const BOTTOM_MARGIN = 96;
-
-    private const FORMER_ARTICLE_BUTTON_HEIGHT = 108;
 
     /** Layout-Einheit: Supersampling mal Typo-Skalierung des Formats. */
     private float $unit;
 
     private array $spec;
+
+    /** Normalisierte Einstellungen des aktiven Formats. */
+    private array $layout;
 
     private const NAVY = [10, 32, 53];
 
@@ -88,8 +133,10 @@ class NewsSocialImage
         private readonly string $format = self::DEFAULT_FORMAT,
         private string $logoVariant = self::DEFAULT_LOGO_VARIANT
     ) {
-        $this->spec = self::FORMATS[$format] ?? self::FORMATS[self::DEFAULT_FORMAT];
+        $actualFormat = self::isFormat($format) ? $format : self::DEFAULT_FORMAT;
+        $this->spec = self::FORMATS[$actualFormat];
         $this->unit = self::SCALE * $this->spec['type'];
+        $this->layout = self::normalizeLayoutSettings($this->post->social_image_settings)[$actualFormat];
 
         if (! self::isLogoVariant($this->logoVariant)) {
             $this->logoVariant = self::DEFAULT_LOGO_VARIANT;
@@ -104,6 +151,44 @@ class NewsSocialImage
     public static function isLogoVariant(?string $variant): bool
     {
         return $variant !== null && array_key_exists($variant, self::LOGO_VARIANTS);
+    }
+
+    /** Vollstaendige Standardkonfiguration fuer alle Bildformate. */
+    public static function defaultLayoutSettings(): array
+    {
+        $defaults = [];
+
+        foreach (self::LAYOUT_CONTROLS as $key => $control) {
+            $defaults[$key] = $control['default'];
+        }
+
+        return array_fill_keys(array_keys(self::FORMATS), $defaults);
+    }
+
+    /**
+     * Ergaenzt fehlende Werte und verwirft alles ausserhalb der erlaubten
+     * Dropdown-Optionen. Damit bleiben auch alte oder manuell geaenderte JSONs
+     * renderbar.
+     */
+    public static function normalizeLayoutSettings(mixed $settings): array
+    {
+        $settings = is_array($settings) ? $settings : [];
+        $normalized = self::defaultLayoutSettings();
+
+        foreach (array_keys(self::FORMATS) as $format) {
+            $formatSettings = is_array($settings[$format] ?? null) ? $settings[$format] : [];
+
+            foreach (self::LAYOUT_CONTROLS as $key => $control) {
+                $candidate = filter_var($formatSettings[$key] ?? null, FILTER_VALIDATE_INT);
+                $allowed = array_map('intval', array_keys($control['options']));
+
+                if ($candidate !== false && in_array($candidate, $allowed, true)) {
+                    $normalized[$format][$key] = $candidate;
+                }
+            }
+        }
+
+        return $normalized;
     }
 
     /** Layout-Einheit in Zielpixeln. */
@@ -165,9 +250,7 @@ class NewsSocialImage
             $this->drawLogo($canvas, $s);
             $this->drawBadge($canvas, $w, $s);
 
-            $contentBottom = $h - $this->px(
-                self::BOTTOM_MARGIN + self::FORMER_ARTICLE_BUTTON_HEIGHT
-            );
+            $contentBottom = $h - $this->px($this->layout['bottom_spacing']);
             $excerptTop = $this->drawExcerpt($canvas, $w, $contentBottom);
             $ruleTop = $this->drawAccentRule($canvas, $s, $excerptTop);
             $this->drawTitle($canvas, $w, $s, $ruleTop);
@@ -261,9 +344,11 @@ class NewsSocialImage
      */
     private function drawLogo(GdImage $canvas, int $s): void
     {
-        $left = $this->px(72);
+        $left = $this->px($this->layout['horizontal_padding']);
         $centerY = $this->px(112);
         $gap = $this->px(24);
+        $wordmarkHeight = $this->layout['logo_size'];
+        $iconHeight = $wordmarkHeight * 132 / 92;
 
         if ($this->logoVariant === 'white') {
             // Ein einzelnes Asset; die Icon-Hoehe bestimmt die Gesamthoehe.
@@ -272,7 +357,7 @@ class NewsSocialImage
                 public_path('site-images/logo/logo-white.png'),
                 $left,
                 $centerY,
-                $this->px(132)
+                $this->px($iconHeight)
             );
 
             return;
@@ -290,7 +375,7 @@ class NewsSocialImage
             public_path('site-images/logo/logo-icon.png'),
             $left,
             $centerY,
-            $this->px(132)
+            $this->px($iconHeight)
         );
 
         $this->drawPngByHeight(
@@ -298,7 +383,7 @@ class NewsSocialImage
             public_path('site-images/logo/logo-white-yelllow.png'),
             $left + ($iconWidth > 0 ? $iconWidth + $gap : 0),
             $centerY,
-            $this->px(92),
+            $this->px($wordmarkHeight),
             $this->logoVariant === 'teal' ? self::TEAL : null
         );
     }
@@ -416,15 +501,16 @@ class NewsSocialImage
         }
 
         $font = $this->font('DejaVuSans-Bold.ttf');
-        $size = $this->px(30);
-        $padX = $this->px(34);
-        $height = $this->px(84);
+        $baseSize = $this->layout['badge_font_size'];
+        $size = $this->px($baseSize);
+        $padX = $this->px($baseSize * 34 / 30);
+        $height = $this->px($baseSize * 84 / 30);
         $width = (int) round($this->textWidth($font, $size, $label) + 2 * $padX);
-        $x = $w - $this->px(72) - $width;
+        $x = $w - $this->px($this->layout['horizontal_padding']) - $width;
         $y = $this->px(66);
 
         $this->roundedRect(
-            $canvas, $x, $y, $width, $height, $this->px(20),
+            $canvas, $x, $y, $width, $height, $this->px($baseSize * 20 / 30),
             $this->color($canvas, $this->hexToRgb($category->color ?? self::FALLBACK_CATEGORY_COLOR))
         );
 
@@ -446,14 +532,15 @@ class NewsSocialImage
         }
 
         $font = $this->font('DejaVuSans.ttf');
-        $size = $this->px(34);
-        $lead = $this->px(50);
-        $lines = $this->wrapLines($font, $size, $text, $w - $this->px(144), 2);
+        $size = $this->px($this->layout['excerpt_font_size']);
+        $lead = $this->px($this->layout['excerpt_line_height']);
+        $horizontalPadding = $this->layout['horizontal_padding'];
+        $lines = $this->wrapLines($font, $size, $text, $w - $this->px(2 * $horizontalPadding), 2);
         $baseline = $contentBottom - $this->px(70);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, $this->px(72), (int) round($top + $i * $lead), $this->color($canvas, self::MUTED), $font, $line);
+            imagettftext($canvas, $size, 0, $this->px($horizontalPadding), (int) round($top + $i * $lead), $this->color($canvas, self::MUTED), $font, $line);
         }
 
         return (int) round($top - $this->textHeight($font, $size, 'Hg'));
@@ -462,8 +549,8 @@ class NewsSocialImage
     private function drawAccentRule(GdImage $canvas, int $s, int $excerptTop): int
     {
         $height = $this->px(8);
-        $y = $excerptTop - $this->px(46);
-        $this->roundedRect($canvas, $this->px(72), $y, $this->px(120), $height, (int) ($height / 2), $this->color($canvas, self::TEAL));
+        $y = $excerptTop - $this->px($this->layout['section_spacing']);
+        $this->roundedRect($canvas, $this->px($this->layout['horizontal_padding']), $y, $this->px(120), $height, (int) ($height / 2), $this->color($canvas, self::TEAL));
 
         return $y;
     }
@@ -477,15 +564,17 @@ class NewsSocialImage
         }
 
         $font = $this->font('DejaVuSans-Bold.ttf');
-        $maxWidth = $w - $this->px(144);
+        $horizontalPadding = $this->layout['horizontal_padding'];
+        $maxWidth = $w - $this->px(2 * $horizontalPadding);
+        $maxSize = $this->layout['title_font_size'];
 
-        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $this->spec['lines'], $this->px(78), $this->px(34), $this->px(2));
-        $lead = (int) round($size * 1.34);
-        $baseline = $ruleTop - $this->px(52);
+        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $this->spec['lines'], $this->px($maxSize), $this->px(max(24, $maxSize - 44)), $this->px(2));
+        $lead = (int) round($size * $this->layout['title_line_height'] / 100);
+        $baseline = $ruleTop - $this->px($this->layout['section_spacing'] + 6);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, $this->px(72), (int) round($top + $i * $lead), $this->color($canvas, [255, 255, 255]), $font, $line);
+            imagettftext($canvas, $size, 0, $this->px($horizontalPadding), (int) round($top + $i * $lead), $this->color($canvas, [255, 255, 255]), $font, $line);
         }
     }
 

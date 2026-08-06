@@ -5,3 +5,4 @@
 | Review project state | unassigned | open | - |
 | Remove the embedded article button from News social-media images | Codex | completed | 2026-08-05T19:43:37Z |
 | Preserve the former button-height spacing below News social-image content | Codex | completed | 2026-08-06T20:48:41Z |
+| Add persistent per-News social-image layout settings with JSON migration and dropdown UI | Codex | completed | 2026-08-06T22:23:40Z |

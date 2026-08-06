@@ -45,3 +45,25 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: 19 focused renderer/route tests passed with 94 assertions; PHP syntax and diff checks passed; all three formats were re-rendered and visually inspected.
 - Artifacts: `.lmzdev/artifacts/images/news-social-without-button-story.png`, `.lmzdev/artifacts/images/news-social-without-button-square.png`, `.lmzdev/artifacts/images/news-social-without-button-landscape.png`
 - Next: Review and commit the spacing correction and regenerated QA artifacts.
+
+## 2026-08-06T22:10:23Z | Codex -> all | status
+
+- Message: Started: Add persistent per-News social-image layout settings with dropdown UI and JSON migration
+
+## 2026-08-06T22:10:23Z | Codex -> all | start
+
+- Task: Add persistent per-News layout controls for generated social-media images.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Existing renderer, versioned cache, and prior spacing decisions are documented.
+- Artifacts: none
+- Next: Inspect the Livewire modal, Blade view, Post schema/model, routes, and focused tests before choosing the JSON contract.
+
+## 2026-08-06T22:23:40Z | Codex -> all | handoff
+
+- Task: Add persistent per-News layout controls for generated social-media images.
+- Status: completed
+- Changed: Admin Livewire modal/view, renderer, controller cache fingerprint, Admin/Base Post models, Base JSON migration, and focused tests.
+- Verified: 37 focused tests passed with 180 assertions; migration SQL passed in pretend mode; PHP syntax, diff checks, Tailwind contract, Livewire render contract, and three visual output checks passed.
+- Artifacts: `.lmzdev/artifacts/images/news-social-custom-layout-story.png`, `.lmzdev/artifacts/images/news-social-custom-layout-square.png`, `.lmzdev/artifacts/images/news-social-custom-layout-landscape.png`
+- Next: Run the Base migration during deployment, then verify the modal once in an authenticated Admin session.

@@ -87,6 +87,7 @@ class NewsCacheVersionTest extends TestCase
             $table->boolean('published')->default(false);
             $table->dateTime('published_at')->nullable();
             $table->longText('images')->nullable();
+            $table->json('social_image_settings')->nullable();
             $table->timestamps();
         });
     }
@@ -233,6 +234,76 @@ class NewsCacheVersionTest extends TestCase
         $this->assertFalse($modal->show);
         $this->assertNull($modal->postId);
         $this->assertSame('', $modal->title);
+    }
+
+    public function test_social_image_layout_settings_are_saved_per_news_and_format(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News mit eigener Bildgestaltung',
+        ]);
+
+        $modal = new \App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage;
+        $modal->openModal($post->id);
+
+        $this->assertSame(204, $modal->layoutSettings['story']['bottom_spacing']);
+        $this->assertSame(72, $modal->layoutSettings['square']['horizontal_padding']);
+
+        $modal->layoutSettings['square']['horizontal_padding'] = 90;
+        $modal->layoutSettings['square']['title_font_size'] = 88;
+        $modal->updatedLayoutSettings();
+        $modal->saveLayoutSettings();
+
+        $saved = $post->fresh()->social_image_settings;
+
+        $this->assertSame(90, $saved['square']['horizontal_padding']);
+        $this->assertSame(88, $saved['square']['title_font_size']);
+        $this->assertSame(72, $saved['story']['horizontal_padding']);
+        $this->assertFalse($modal->layoutSettingsDirty);
+        $this->assertSame('Bildeinstellungen dauerhaft gespeichert.', $modal->settingsStatus);
+        $this->assertSame(1, $modal->previewRevision);
+    }
+
+    public function test_social_image_layout_rejects_values_outside_the_dropdowns(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News mit manipuliertem Bildwert',
+        ]);
+
+        $modal = new \App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage;
+        $modal->openModal($post->id);
+        $modal->layoutSettings['story']['title_font_size'] = 999;
+
+        try {
+            $modal->saveLayoutSettings();
+            $this->fail('Ein nicht angebotener Schriftwert hätte abgelehnt werden müssen.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->assertSame(
+                'Dieser Wert ist für die Bildeinstellung nicht erlaubt.',
+                $e->errors()['layoutSettings.story.title_font_size'][0]
+            );
+        }
+
+        $this->assertNull($post->fresh()->social_image_settings);
+    }
+
+    public function test_social_image_modal_renders_the_accessible_layout_dropdown(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News für die Layout-Oberfläche',
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
+            ->call('openModal', $post->id)
+            ->assertSee('Layout anpassen')
+            ->assertSee('Titelgröße')
+            ->assertSee('Unterer Freiraum')
+            ->assertSee('Logogröße')
+            ->assertSee('Einstellungen speichern')
+            ->assertSeeHtml('aria-controls="social-image-layout-settings"')
+            ->assertSeeHtml('min-h-[44px]');
     }
 
     public function test_category_create_update_and_delete_each_bump_the_generation(): void

@@ -26,12 +26,14 @@ class Post extends Model
         'published_at',
         'layout',
         'images',
+        'social_image_settings',
     ];
 
     protected $casts = [
         'published' => 'boolean',
         'published_at' => 'datetime',
         'images' => 'array',
+        'social_image_settings' => 'array',
         // Leer bedeutet: die Base schaetzt die Lesezeit weiterhin selbst.
         'reading_time_minutes' => 'integer',
     ];

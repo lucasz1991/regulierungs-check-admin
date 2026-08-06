@@ -63,6 +63,43 @@ class NewsSocialImageTest extends TestCase
         }
     }
 
+    public function test_layout_settings_are_completed_and_limited_to_dropdown_values(): void
+    {
+        $normalized = NewsSocialImage::normalizeLayoutSettings([
+            'story' => [
+                'title_font_size' => '88',
+                'bottom_spacing' => 999,
+                'unknown_setting' => 123,
+            ],
+        ]);
+
+        $this->assertSame(88, $normalized['story']['title_font_size']);
+        $this->assertSame(204, $normalized['story']['bottom_spacing']);
+        $this->assertSame(72, $normalized['story']['horizontal_padding']);
+        $this->assertArrayNotHasKey('unknown_setting', $normalized['story']);
+        $this->assertSame(78, $normalized['square']['title_font_size']);
+        $this->assertSame(78, $normalized['landscape']['title_font_size']);
+    }
+
+    public function test_saved_layout_settings_change_only_the_selected_format(): void
+    {
+        $defaultPost = $this->newsPost();
+        $customPost = $this->newsPost();
+        $settings = NewsSocialImage::defaultLayoutSettings();
+        $settings['story']['bottom_spacing'] = 288;
+        $settings['story']['title_font_size'] = 88;
+        $customPost->social_image_settings = $settings;
+
+        $this->assertNotSame(
+            sha1((new NewsSocialImage($defaultPost, 'story'))->render()),
+            sha1((new NewsSocialImage($customPost, 'story'))->render())
+        );
+        $this->assertSame(
+            sha1((new NewsSocialImage($defaultPost, 'square'))->render()),
+            sha1((new NewsSocialImage($customPost, 'square'))->render())
+        );
+    }
+
     public function test_an_unknown_format_falls_back_to_the_default(): void
     {
         $png = (new NewsSocialImage($this->newsPost(), 'gibt-es-nicht'))->render();

@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Cms\WebContent\News;
 
 use App\Models\Post;
 use App\Support\NewsSocialImage as SocialImageRenderer;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
@@ -29,6 +30,16 @@ class NewsSocialImage extends Component
     /** Gewaehlte Logo-Variante; siehe SocialImageRenderer::LOGO_VARIANTS. */
     public string $logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
 
+    /** Vollstaendige, pro Format getrennte Layoutkonfiguration. */
+    public array $layoutSettings = [];
+
+    public bool $layoutSettingsDirty = false;
+
+    public ?string $settingsStatus = null;
+
+    /** Erzwingt nach dem Speichern eine frische Bildanfrage im Browser. */
+    public int $previewRevision = 0;
+
     protected $listeners = [
         'open-news-social-image' => 'openModal',
     ];
@@ -52,6 +63,11 @@ class NewsSocialImage extends Component
         $this->title = (string) $post->title;
         $this->format = SocialImageRenderer::DEFAULT_FORMAT;
         $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
+        $this->layoutSettings = SocialImageRenderer::normalizeLayoutSettings($post->social_image_settings);
+        $this->layoutSettingsDirty = false;
+        $this->settingsStatus = null;
+        $this->previewRevision = 0;
+        $this->resetValidation();
         $this->show = true;
     }
 
@@ -75,6 +91,82 @@ class NewsSocialImage extends Component
         }
     }
 
+    public function updatedLayoutSettings(): void
+    {
+        $this->layoutSettingsDirty = true;
+        $this->settingsStatus = null;
+        $this->resetValidation();
+    }
+
+    /** Nur die Einstellungen des aktuell sichtbaren Formats zuruecksetzen. */
+    public function resetCurrentFormat(): void
+    {
+        if (! SocialImageRenderer::isFormat($this->format)) {
+            return;
+        }
+
+        $this->layoutSettings[$this->format] = SocialImageRenderer::defaultLayoutSettings()[$this->format];
+        $this->layoutSettingsDirty = true;
+        $this->settingsStatus = 'Standardwerte eingesetzt – bitte noch speichern.';
+        $this->resetValidation();
+    }
+
+    /** Speichert die gesamte Konfiguration dauerhaft an der aktuellen News. */
+    public function saveLayoutSettings(): void
+    {
+        $post = $this->postId
+            ? Post::where('type', 'news')->find($this->postId)
+            : null;
+
+        if (! $post) {
+            $this->closeModal();
+
+            return;
+        }
+
+        $validated = $this->validate();
+        $normalized = SocialImageRenderer::normalizeLayoutSettings($validated['layoutSettings']);
+
+        $post->update(['social_image_settings' => $normalized]);
+
+        $this->layoutSettings = $normalized;
+        $this->layoutSettingsDirty = false;
+        $this->settingsStatus = 'Bildeinstellungen dauerhaft gespeichert.';
+        $this->previewRevision++;
+    }
+
+    protected function rules(): array
+    {
+        $rules = ['layoutSettings' => ['required', 'array']];
+
+        foreach (SocialImageRenderer::FORMATS as $format => $spec) {
+            $rules["layoutSettings.{$format}"] = ['required', 'array'];
+
+            foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {
+                $rules["layoutSettings.{$format}.{$key}"] = [
+                    'required',
+                    'integer',
+                    Rule::in(array_keys($control['options'])),
+                ];
+            }
+        }
+
+        return $rules;
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'layoutSettings.required' => 'Die Bildeinstellungen fehlen.',
+            'layoutSettings.array' => 'Die Bildeinstellungen haben ein ungültiges Format.',
+            'layoutSettings.*.required' => 'Die Einstellungen für ein Bildformat fehlen.',
+            'layoutSettings.*.array' => 'Die Einstellungen eines Bildformats sind ungültig.',
+            'layoutSettings.*.*.required' => 'Bitte wähle für jede Bildeinstellung einen Wert aus.',
+            'layoutSettings.*.*.integer' => 'Die gewählte Bildeinstellung ist ungültig.',
+            'layoutSettings.*.*.in' => 'Dieser Wert ist für die Bildeinstellung nicht erlaubt.',
+        ];
+    }
+
     public function closeModal(): void
     {
         $this->show = false;
@@ -82,6 +174,11 @@ class NewsSocialImage extends Component
         $this->title = '';
         $this->format = SocialImageRenderer::DEFAULT_FORMAT;
         $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
+        $this->layoutSettings = [];
+        $this->layoutSettingsDirty = false;
+        $this->settingsStatus = null;
+        $this->previewRevision = 0;
+        $this->resetValidation();
     }
 
     public function render()
@@ -89,6 +186,7 @@ class NewsSocialImage extends Component
         return view('livewire.admin.cms.web-content.news.news-social-image', [
             'formats' => SocialImageRenderer::FORMATS,
             'logoVariants' => SocialImageRenderer::LOGO_VARIANTS,
+            'layoutControls' => SocialImageRenderer::LAYOUT_CONTROLS,
         ]);
     }
 }

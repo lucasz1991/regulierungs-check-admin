@@ -65,6 +65,11 @@ class NewsSocialImage
     /** Faktor fuer das Supersampling. */
     private const SCALE = 2;
 
+    /** Unterer Rand und bewusst freigehaltener Bereich des entfernten CTA. */
+    private const BOTTOM_MARGIN = 96;
+
+    private const FORMER_ARTICLE_BUTTON_HEIGHT = 108;
+
     /** Layout-Einheit: Supersampling mal Typo-Skalierung des Formats. */
     private float $unit;
 
@@ -160,7 +165,9 @@ class NewsSocialImage
             $this->drawLogo($canvas, $s);
             $this->drawBadge($canvas, $w, $s);
 
-            $contentBottom = $h - $this->px(96);
+            $contentBottom = $h - $this->px(
+                self::BOTTOM_MARGIN + self::FORMER_ARTICLE_BUTTON_HEIGHT
+            );
             $excerptTop = $this->drawExcerpt($canvas, $w, $contentBottom);
             $ruleTop = $this->drawAccentRule($canvas, $s, $excerptTop);
             $this->drawTitle($canvas, $w, $s, $ruleTop);

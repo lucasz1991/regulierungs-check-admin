@@ -34,24 +34,30 @@ class NewsSocialImageTest extends TestCase
         }
     }
 
-    /** Der fruehere weisse CTA-Button darf in keinem Zuschnitt mehr erscheinen. */
-    public function test_article_button_is_not_drawn_at_the_bottom_of_any_format(): void
+    /** Der entfernte CTA bleibt als ruhiger, leerer Abstand im Layout erhalten. */
+    public function test_former_article_button_area_stays_empty_in_every_format(): void
     {
         foreach (NewsSocialImage::FORMATS as $key => $spec) {
             $image = imagecreatefromstring((new NewsSocialImage($this->newsPost(), $key))->render());
-            $x = (int) round(200 * $spec['type']);
-            $y = (int) round($spec['height'] - 150 * $spec['type']);
-            $color = imagecolorat($image, $x, $y);
+            $areaTop = (int) ceil($spec['height'] - 204 * $spec['type']);
+            $areaBottom = (int) floor($spec['height'] - 96 * $spec['type']);
+            $nonNavyPixels = 0;
 
-            $this->assertSame([
-                10,
-                32,
-                53,
-            ], [
-                ($color >> 16) & 0xFF,
-                ($color >> 8) & 0xFF,
-                $color & 0xFF,
-            ], "Im Format {$key} muss der fruehere Buttonbereich frei bleiben.");
+            for ($y = $areaTop; $y <= $areaBottom; $y += 2) {
+                for ($x = 0; $x < $spec['width']; $x += 2) {
+                    $color = imagecolorat($image, $x, $y);
+
+                    if ([
+                        ($color >> 16) & 0xFF,
+                        ($color >> 8) & 0xFF,
+                        $color & 0xFF,
+                    ] !== [10, 32, 53]) {
+                        $nonNavyPixels++;
+                    }
+                }
+            }
+
+            $this->assertSame(0, $nonNavyPixels, "Im Format {$key} muss der fruehere Buttonbereich vollstaendig frei bleiben.");
 
             imagedestroy($image);
         }

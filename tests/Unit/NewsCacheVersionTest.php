@@ -301,6 +301,28 @@ class NewsCacheVersionTest extends TestCase
         $this->assertFalse($modal->layoutSettingsDirty);
     }
 
+    public function test_logo_variant_is_auto_saved_independently_per_format(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News mit getrennten Logo-Varianten',
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
+            ->call('openModal', $post->id)
+            ->set('logoVariant', 'teal')
+            ->assertSet('layoutSettings.story.logo_variant', 'teal')
+            ->assertSet('previewRevisions.story', 1)
+            ->call('setFormat', 'square')
+            ->assertSet('logoVariant', 'yellow')
+            ->assertSet('previewRevisions.square', 0);
+
+        $saved = $post->fresh()->social_image_settings;
+
+        $this->assertSame('teal', $saved['story']['logo_variant']);
+        $this->assertSame('yellow', $saved['square']['logo_variant']);
+    }
+
     public function test_social_image_layout_rejects_values_outside_the_dropdowns(): void
     {
         $post = Post::create([
@@ -362,6 +384,10 @@ class NewsCacheVersionTest extends TestCase
             ->assertSee('Einstellungen für Story gespeichert und Bild neu gerendert.');
 
         $this->assertSame(288, $post->fresh()->social_image_settings['story']['bottom_spacing']);
+
+        \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
+            ->call('openModal', $post->id)
+            ->assertSet('layoutSettings.story.bottom_spacing', 288);
     }
 
     public function test_category_create_update_and_delete_each_bump_the_generation(): void

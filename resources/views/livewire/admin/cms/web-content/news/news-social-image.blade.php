@@ -1,4 +1,12 @@
 <div>
+    <style>
+        @media (max-width: 639px) {
+            #news-social-image-modal [data-social-hotspot="horizontal"] {
+                left: 8px !important;
+            }
+        }
+    </style>
+
     <x-dialog-modal id="news-social-image-modal" wire:model="show" :maxWidth="'2xl'">
         <x-slot name="title">
             <span class="text-base font-bold text-gray-900">Social-Media-Bild</span>
@@ -41,45 +49,45 @@
                         'logo' => [
                             'label' => 'Logo',
                             'keys' => ['logo_size'],
-                            'position' => 'left-2 top-2',
-                            'panel' => 'left-0 top-11',
+                            'style' => 'left: 8px; top: 8px;',
+                            'panelStyle' => 'left: 0; top: 44px;',
                             'logoVariant' => true,
                         ],
                         'category' => [
                             'label' => 'Kategorie',
                             'keys' => ['badge_font_size'],
-                            'position' => 'right-2 top-2',
-                            'panel' => 'right-0 top-11',
+                            'style' => 'right: 8px; top: 8px;',
+                            'panelStyle' => 'right: 0; top: 44px;',
                         ],
                         'title' => [
                             'label' => 'Titel',
                             'keys' => ['title_font_size', 'title_line_height'],
-                            'position' => 'bottom-[38%] left-2',
-                            'panel' => 'left-11 top-0',
+                            'style' => 'left: 8px; top: 61%;',
+                            'panelStyle' => 'left: 44px; top: 0;',
                         ],
                         'section' => [
                             'label' => 'Textabstand',
                             'keys' => ['section_spacing'],
-                            'position' => 'bottom-[28%] right-2',
-                            'panel' => 'right-11 top-0',
+                            'style' => 'right: 8px; top: 71%;',
+                            'panelStyle' => 'right: 44px; top: 0;',
                         ],
                         'excerpt' => [
                             'label' => 'Kurztext',
                             'keys' => ['excerpt_font_size', 'excerpt_line_height'],
-                            'position' => 'bottom-[16%] left-2',
-                            'panel' => 'left-11 bottom-0',
+                            'style' => 'left: 8px; top: 79%;',
+                            'panelStyle' => 'left: 44px; bottom: 0;',
                         ],
                         'horizontal' => [
                             'label' => 'Seitenabstand',
                             'keys' => ['horizontal_padding'],
-                            'position' => 'left-2 top-1/2 -translate-y-1/2 md:-left-12',
-                            'panel' => 'left-11 top-1/2 -translate-y-1/2',
+                            'style' => 'left: -44px; top: 50%; transform: translateY(-50%);',
+                            'panelStyle' => 'left: 44px; top: 50%; transform: translateY(-50%);',
                         ],
                         'bottom' => [
                             'label' => 'Unterer Abstand',
                             'keys' => ['bottom_spacing'],
-                            'position' => 'bottom-2 left-1/2 -translate-x-1/2',
-                            'panel' => 'bottom-11 left-1/2 -translate-x-1/2',
+                            'style' => 'bottom: 8px; left: 50%; transform: translateX(-50%);',
+                            'panelStyle' => 'bottom: 44px; left: 50%; transform: translateX(-50%);',
                         ],
                     ];
                 @endphp
@@ -89,51 +97,57 @@
                     class="relative mx-auto w-full overflow-visible"
                     style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
-                    <div
-                        class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 shadow-lg ring-1 ring-black/5"
-                        style="aspect-ratio: {{ $formats[$format]['width'] }} / {{ $formats[$format]['height'] }};"
-                    >
-                        <div class="absolute inset-0 z-0 flex items-center justify-center">
-                            <span class="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-300 border-t-primary" aria-hidden="true"></span>
+                    <div class="relative overflow-visible">
+                        <div
+                            class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 shadow-lg ring-1 ring-black/5"
+                            style="aspect-ratio: {{ $formats[$format]['width'] }} / {{ $formats[$format]['height'] }};"
+                        >
+                            <div class="absolute inset-0 z-0 flex items-center justify-center">
+                                <span class="h-7 w-7 animate-spin rounded-full border-[3px] border-slate-300 border-t-primary" aria-hidden="true"></span>
+                            </div>
+
+                            <img
+                                src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant, 'revision' => $previewRevisions[$format] ?? 0]) }}"
+                                alt="Vorschau des Social-Media-Bildes für {{ $title }}"
+                                class="relative z-10 h-full w-full object-cover"
+                            >
                         </div>
 
-                        <img
-                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant, 'revision' => $previewRevisions[$format] ?? 0]) }}"
-                            alt="Vorschau des Social-Media-Bildes für {{ $title }}"
-                            class="relative z-10 h-full w-full object-cover"
-                        >
-                    </div>
-
-                    @foreach($hotspots as $hotspotKey => $hotspot)
-                        <div
-                            x-data="{ open: false }"
-                            x-on:mouseenter="open = true"
-                            x-on:mouseleave="open = false"
-                            x-on:focusin="open = true"
-                            x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
-                            class="absolute z-30 {{ $hotspot['position'] }}"
-                        >
+                        @foreach($hotspots as $hotspotKey => $hotspot)
+                            <div
+                                x-data="{ open: false }"
+                                x-on:mouseenter="open = true"
+                                x-on:mouseleave="open = false"
+                                x-on:focusin="open = true"
+                                x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
+                                x-on:click.outside="open = false"
+                                class="absolute z-30"
+                                data-social-hotspot="{{ $hotspotKey }}"
+                                style="{{ $hotspot['style'] }}"
+                            >
                             <button
                                 type="button"
-                                x-on:click="open = ! open"
+                                x-on:click="open = true"
                                 x-bind:aria-expanded="open.toString()"
                                 aria-controls="social-image-hotspot-{{ $format }}-{{ $hotspotKey }}"
                                 aria-label="{{ $hotspot['label'] }} einstellen"
                                 title="{{ $hotspot['label'] }} einstellen"
-                                class="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-slate-950/75 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2"
+                                class="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 text-white shadow-lg backdrop-blur transition hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2"
+                                style="background-color: rgba(2, 6, 23, .82);"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0 4m0-4v-2m0 6v2m12-6a2 2 0 1 0 0 4m0-4v-2m0 6v2M6 12V4m0 8v4m6-6v10m6-16v10" />
                                 </svg>
                             </button>
 
-                            <div
-                                id="social-image-hotspot-{{ $format }}-{{ $hotspotKey }}"
-                                x-cloak
-                                x-show="open"
-                                x-transition.opacity.duration.150ms
-                                class="absolute z-50 w-64 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-2xl {{ $hotspot['panel'] }}"
-                            >
+                                <div
+                                    id="social-image-hotspot-{{ $format }}-{{ $hotspotKey }}"
+                                    x-cloak
+                                    x-show="open"
+                                    x-transition.opacity.duration.150ms
+                                    class="absolute z-50 w-64 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-2xl"
+                                    style="{{ $hotspot['panelStyle'] }}"
+                                >
                                 <p class="mb-3 text-xs font-extrabold uppercase tracking-wider text-gray-500">{{ $hotspot['label'] }}</p>
 
                                 @if($hotspot['logoVariant'] ?? false)
@@ -174,9 +188,10 @@
                                         @enderror
                                     </div>
                                 @endforeach
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
 
                     <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
                         <span class="font-semibold text-gray-700">{{ $formats[$format]['width'] }} × {{ $formats[$format]['height'] }}</span>

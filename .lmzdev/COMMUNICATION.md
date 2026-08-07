@@ -89,3 +89,12 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: 39 focused tests passed with 196 assertions; active-format persistence, per-format dirty state, preview URL revision, cache isolation, Tailwind contract, PHP syntax, and diff checks passed.
 - Artifacts: existing `.lmzdev/artifacts/images/news-social-custom-layout-*.png` remain valid.
 - Next: Run the pending Base migration during deployment and verify one authenticated save per format in the Admin UI.
+
+## 2026-08-07T01:35:47Z | Codex -> all | handoff
+
+- Task: Replace the central social-image settings form with direct, auto-saving controls at the affected image elements.
+- Status: completed
+- Changed: inline hotspot Blade UI, auto-save/persisted logo handling, format-aware controller fallback, normalization contract, focused tests, and applied shared-database migration.
+- Verified: 40 tests passed with 206 assertions; authenticated desktop/mobile browser QA proved hover/focus/tap access, immediate revision change, persistence after reload, and isolated Story/Post settings. PHP syntax, Tailwind contract, and diff checks passed.
+- Artifacts: existing `.lmzdev/artifacts/images/news-social-custom-layout-*.png`; temporary browser QA data and cache were removed and verified absent.
+- Next: Review the inline marker visual treatment with real News photography; no technical blocker remains.

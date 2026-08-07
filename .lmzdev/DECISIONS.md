@@ -23,3 +23,11 @@ Record durable decisions with date, context, decision, and consequences.
 - Use the shared Base project for the database migration and cast the JSON column in both Post models.
 - Persist only the active format on each save, preserve unsaved edits in the other formats, and use a per-format preview revision plus per-format cache fingerprint.
 - Do not change the News `updated_at` timestamp for social-image layout metadata, otherwise saving one format would invalidate all three image caches.
+
+## 2026-08-07 | Inline auto-saving social-image controls
+
+- Supersedes the explicit-save decision: every allowlisted select change is persisted immediately and increments only the active format's preview revision.
+- Supersedes the download-only logo-variant decision: `logo_variant` is now stored independently inside every format's JSON configuration.
+- Anchor controls to the visual element they affect; keep side spacing once at the left edge and bottom spacing once at the lower image edge.
+- Open every control by hover, keyboard focus, or tap, with the mobile side marker moved inside the image so its complete 36 px target remains available.
+- Execute the previously pending nullable JSON migration after runtime schema evidence proved the production-like local database did not yet contain the column.

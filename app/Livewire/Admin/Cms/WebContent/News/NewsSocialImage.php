@@ -109,6 +109,10 @@ class NewsSocialImage extends Component
         $this->layoutSettingsDirty = (bool) ($this->dirtyFormats[$this->format] ?? false);
         $this->settingsStatus = null;
         $this->resetValidation();
+
+        // Jede Dropdown-Aenderung ist sofort dauerhaft und erzeugt durch die
+        // neue Format-Revision unmittelbar eine frische Bildanfrage.
+        $this->saveLayoutSettings($changedFormat);
     }
 
     /** Nur die Einstellungen des aktuell sichtbaren Formats zuruecksetzen. */
@@ -121,12 +125,16 @@ class NewsSocialImage extends Component
         $this->layoutSettings[$this->format] = SocialImageRenderer::defaultLayoutSettings()[$this->format];
         $this->dirtyFormats[$this->format] = true;
         $this->layoutSettingsDirty = true;
-        $this->settingsStatus = 'Standardwerte eingesetzt – bitte noch speichern.';
         $this->resetValidation();
+        $this->saveLayoutSettings($this->format);
+        $this->settingsStatus = sprintf(
+            '%s auf Standard zurückgesetzt und neu gerendert.',
+            SocialImageRenderer::FORMATS[$this->format]['label']
+        );
     }
 
     /** Speichert ausschliesslich das aktuell sichtbare Bildformat. */
-    public function saveLayoutSettings(): void
+    public function saveLayoutSettings(?string $requestedFormat = null): void
     {
         $post = $this->postId
             ? Post::where('type', 'news')->find($this->postId)
@@ -138,10 +146,12 @@ class NewsSocialImage extends Component
             return;
         }
 
-        $format = SocialImageRenderer::isFormat($this->format)
-            ? $this->format
-            : SocialImageRenderer::DEFAULT_FORMAT;
-        $validated = $this->validate();
+        $format = SocialImageRenderer::isFormat($requestedFormat)
+            ? $requestedFormat
+            : (SocialImageRenderer::isFormat($this->format)
+                ? $this->format
+                : SocialImageRenderer::DEFAULT_FORMAT);
+        $validated = $this->validate($this->rulesForFormat($format), $this->messages());
         $stored = SocialImageRenderer::normalizeLayoutSettings($post->social_image_settings);
         $submitted = SocialImageRenderer::normalizeLayoutSettings([
             $format => $validated['layoutSettings'][$format],
@@ -175,6 +185,12 @@ class NewsSocialImage extends Component
         $format = SocialImageRenderer::isFormat($this->format)
             ? $this->format
             : SocialImageRenderer::DEFAULT_FORMAT;
+
+        return $this->rulesForFormat($format);
+    }
+
+    private function rulesForFormat(string $format): array
+    {
         $rules = [
             'layoutSettings' => ['required', 'array'],
             "layoutSettings.{$format}" => ['required', 'array'],

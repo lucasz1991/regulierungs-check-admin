@@ -1,10 +1,3 @@
-{{--
-    Vorschau des Social-Media-Bildes: Formatumschalter, Bild, Status, Buttons.
-
-    Die Sichtbarkeit steuert ausschliesslich die Livewire-Eigenschaft $show
-    ueber x-dialog-modal. Ohne gesetzte postId wird nichts gerendert, im
-    geschlossenen Zustand laeuft also auch keine Bildanfrage.
---}}
 <div>
     <x-dialog-modal id="news-social-image-modal" wire:model="show" :maxWidth="'2xl'">
         <x-slot name="title">
@@ -16,7 +9,6 @@
 
         <x-slot name="content">
             @if($postId)
-                {{-- Formatumschalter --}}
                 <div class="mb-4 flex justify-center">
                     <div class="inline-flex rounded-xl bg-gray-100 p-1" role="group" aria-label="Bildformat">
                         @foreach($formats as $key => $spec)
@@ -37,158 +29,64 @@
                     </div>
                 </div>
 
-                {{--
-                    Logo-Auswahl. wire:model.live rendert die Komponente beim
-                    Wechsel neu; ueber den wire:key des Vorschaubereichs wird
-                    das Bild dabei frisch angefordert.
-                --}}
-                <div class="mb-4 flex items-center justify-center gap-2">
-                    <label for="social-image-logo" class="text-xs font-semibold text-gray-600">Logo</label>
-                    <select
-                        id="social-image-logo"
-                        wire:model.live="logoVariant"
-                        class="rounded-lg border-gray-300 py-2 pl-3 pr-9 text-xs font-semibold text-gray-800 shadow-sm transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                    >
-                        @foreach($logoVariants as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
+                <div class="mb-5 text-center">
+                    <p class="text-sm font-bold text-gray-800">Layout direkt am Bild anpassen</p>
+                    <p class="mt-1 text-xs leading-5 text-gray-500">
+                        Mit Mauszeiger, Tastaturfokus oder Tippen einen Marker öffnen. Jede Auswahl wird sofort gespeichert und neu gerendert.
+                    </p>
                 </div>
 
-                {{-- Formatbezogene, dauerhaft an der News gespeicherte Gestaltung. --}}
-                <div
-                    x-data="{ settingsOpen: false }"
-                    class="mb-5 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm"
-                >
-                    <button
-                        type="button"
-                        x-on:click="settingsOpen = ! settingsOpen"
-                        class="flex min-h-[48px] w-full items-center justify-between gap-4 px-4 py-3 text-left transition hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-300"
-                        x-bind:aria-expanded="settingsOpen.toString()"
-                        aria-controls="social-image-layout-settings"
-                    >
-                        <span>
-                            <span class="block text-sm font-bold text-gray-900">Layout anpassen</span>
-                            <span class="mt-0.5 block text-xs text-gray-500">
-                                Eigene Werte für {{ $formats[$format]['label'] }} {{ $formats[$format]['hint'] }}
-                            </span>
-                        </span>
+                @php
+                    $hotspots = [
+                        'logo' => [
+                            'label' => 'Logo',
+                            'keys' => ['logo_size'],
+                            'position' => 'left-2 top-2',
+                            'panel' => 'left-0 top-11',
+                            'logoVariant' => true,
+                        ],
+                        'category' => [
+                            'label' => 'Kategorie',
+                            'keys' => ['badge_font_size'],
+                            'position' => 'right-2 top-2',
+                            'panel' => 'right-0 top-11',
+                        ],
+                        'title' => [
+                            'label' => 'Titel',
+                            'keys' => ['title_font_size', 'title_line_height'],
+                            'position' => 'bottom-[38%] left-2',
+                            'panel' => 'left-11 top-0',
+                        ],
+                        'section' => [
+                            'label' => 'Textabstand',
+                            'keys' => ['section_spacing'],
+                            'position' => 'bottom-[28%] right-2',
+                            'panel' => 'right-11 top-0',
+                        ],
+                        'excerpt' => [
+                            'label' => 'Kurztext',
+                            'keys' => ['excerpt_font_size', 'excerpt_line_height'],
+                            'position' => 'bottom-[16%] left-2',
+                            'panel' => 'left-11 bottom-0',
+                        ],
+                        'horizontal' => [
+                            'label' => 'Seitenabstand',
+                            'keys' => ['horizontal_padding'],
+                            'position' => 'left-2 top-1/2 -translate-y-1/2 md:-left-12',
+                            'panel' => 'left-11 top-1/2 -translate-y-1/2',
+                        ],
+                        'bottom' => [
+                            'label' => 'Unterer Abstand',
+                            'keys' => ['bottom_spacing'],
+                            'position' => 'bottom-2 left-1/2 -translate-x-1/2',
+                            'panel' => 'bottom-11 left-1/2 -translate-x-1/2',
+                        ],
+                    ];
+                @endphp
 
-                        <span class="flex items-center gap-2">
-                            @if($layoutSettingsDirty)
-                                <span class="rounded-full bg-amber-100 px-2 py-1 text-[11px] font-bold text-amber-800">Ungespeichert</span>
-                            @elseif($settingsStatus)
-                                <span class="rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-800">Gespeichert</span>
-                            @endif
-
-                            <svg
-                                class="h-5 w-5 text-gray-500 transition-transform"
-                                x-bind:class="settingsOpen ? 'rotate-180' : ''"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke-width="2"
-                                stroke="currentColor"
-                                aria-hidden="true"
-                            >
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-                            </svg>
-                        </span>
-                    </button>
-
-                    <div
-                        id="social-image-layout-settings"
-                        x-cloak
-                        x-show="settingsOpen"
-                        x-collapse
-                        class="border-t border-gray-200 bg-gray-50/70 px-4 py-4"
-                    >
-                        <p class="mb-4 text-xs leading-5 text-gray-600">
-                            Die Einstellungen gelten nur für dieses Format dieser News. Die Vorschau und der Download werden nach dem Speichern aktualisiert.
-                        </p>
-
-                        @foreach(collect($layoutControls)->groupBy(fn ($control) => $control['group']) as $group => $controls)
-                            <fieldset class="mb-5 last:mb-0">
-                                <legend class="mb-2 text-xs font-extrabold uppercase tracking-wider text-gray-500">{{ $group }}</legend>
-
-                                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                                    @foreach($controls as $key => $control)
-                                        <div>
-                                            <label
-                                                for="social-image-setting-{{ $format }}-{{ $key }}"
-                                                class="mb-1 block text-xs font-semibold text-gray-700"
-                                            >
-                                                {{ $control['label'] }}
-                                            </label>
-                                            <select
-                                                id="social-image-setting-{{ $format }}-{{ $key }}"
-                                                wire:model.live="layoutSettings.{{ $format }}.{{ $key }}"
-                                                class="block min-h-[44px] w-full rounded-lg border-gray-300 py-2 pl-3 pr-9 text-sm text-gray-800 shadow-sm transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
-                                                @if($errors->has("layoutSettings.{$format}.{$key}")) aria-invalid="true" @endif
-                                            >
-                                                @foreach($control['options'] as $value => $label)
-                                                    <option value="{{ $value }}">{{ $label }}</option>
-                                                @endforeach
-                                            </select>
-
-                                            @error("layoutSettings.{$format}.{$key}")
-                                                <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </fieldset>
-                        @endforeach
-
-                        @if($settingsStatus)
-                            <p
-                                class="mb-3 rounded-lg px-3 py-2 text-xs font-semibold {{ $layoutSettingsDirty ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900' }}"
-                                role="status"
-                            >
-                                {{ $settingsStatus }}
-                            </p>
-                        @endif
-
-                        <div class="flex flex-col-reverse gap-2 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
-                            <button
-                                type="button"
-                                wire:click="resetCurrentFormat"
-                                class="inline-flex min-h-[44px] items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
-                            >
-                                Dieses Format zurücksetzen
-                            </button>
-
-                            <button
-                                type="button"
-                                wire:click="saveLayoutSettings"
-                                wire:loading.attr="disabled"
-                                wire:target="saveLayoutSettings"
-                                @disabled(! $layoutSettingsDirty)
-                                class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <span wire:loading.remove wire:target="saveLayoutSettings">{{ $formats[$format]['label'] }} speichern</span>
-                                <span wire:loading wire:target="saveLayoutSettings">Wird gespeichert …</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {{--
-                    Reines HTML, kein JavaScript.
-
-                    Das Bild ist von Haus aus sichtbar, das Ladeskelett liegt
-                    darunter und wird davon ueberdeckt, sobald es gezeichnet ist.
-
-                    Bewusst ohne Fehler-Overlay: Livewire tauscht beim Abgleich
-                    das src-Attribut, was am <img> ein error-Ereignis ausloest,
-                    obwohl das Bild einwandfrei geladen ist. Das Overlay legte
-                    sich dadurch faelschlich ueber die fertige Vorschau. Ein
-                    tatsaechlicher Fehlschlag ist ohnehin sichtbar - dann bleibt
-                    das Skelett stehen - und steht mit Ursache im Protokoll.
-                --}}
                 <div
                     wire:key="social-image-{{ $postId }}-{{ $format }}-{{ $logoVariant }}-{{ $previewRevisions[$format] ?? 0 }}"
-                    class="mx-auto w-full"
+                    class="relative mx-auto w-full overflow-visible"
                     style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
                     <div
@@ -206,10 +104,99 @@
                         >
                     </div>
 
-                    <div class="mt-3 flex items-center justify-center gap-2 text-xs text-gray-500">
+                    @foreach($hotspots as $hotspotKey => $hotspot)
+                        <div
+                            x-data="{ open: false }"
+                            x-on:mouseenter="open = true"
+                            x-on:mouseleave="open = false"
+                            x-on:focusin="open = true"
+                            x-on:focusout="if (! $el.contains($event.relatedTarget)) open = false"
+                            class="absolute z-30 {{ $hotspot['position'] }}"
+                        >
+                            <button
+                                type="button"
+                                x-on:click="open = ! open"
+                                x-bind:aria-expanded="open.toString()"
+                                aria-controls="social-image-hotspot-{{ $format }}-{{ $hotspotKey }}"
+                                aria-label="{{ $hotspot['label'] }} einstellen"
+                                title="{{ $hotspot['label'] }} einstellen"
+                                class="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-slate-950/75 text-white shadow-lg backdrop-blur transition hover:scale-105 hover:bg-primary focus:outline-none focus:ring-2 focus:ring-primary-300 focus:ring-offset-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 1 0 0 4m0-4a2 2 0 1 1 0 4m-6 8a2 2 0 1 0 0 4m0-4v-2m0 6v2m12-6a2 2 0 1 0 0 4m0-4v-2m0 6v2M6 12V4m0 8v4m6-6v10m6-16v10" />
+                                </svg>
+                            </button>
+
+                            <div
+                                id="social-image-hotspot-{{ $format }}-{{ $hotspotKey }}"
+                                x-cloak
+                                x-show="open"
+                                x-transition.opacity.duration.150ms
+                                class="absolute z-50 w-64 rounded-xl border border-gray-200 bg-white p-3 text-left shadow-2xl {{ $hotspot['panel'] }}"
+                            >
+                                <p class="mb-3 text-xs font-extrabold uppercase tracking-wider text-gray-500">{{ $hotspot['label'] }}</p>
+
+                                @if($hotspot['logoVariant'] ?? false)
+                                    <div class="mb-3">
+                                        <label for="social-image-logo-{{ $format }}" class="mb-1 block text-xs font-semibold text-gray-700">Logo-Variante</label>
+                                        <select
+                                            id="social-image-logo-{{ $format }}"
+                                            wire:model.live="logoVariant"
+                                            class="block min-h-[44px] w-full rounded-lg border-gray-300 py-2 pl-3 pr-9 text-sm text-gray-800 shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                                        >
+                                            @foreach($logoVariants as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+
+                                @foreach($hotspot['keys'] as $controlKey)
+                                    @php($control = $layoutControls[$controlKey])
+                                    <div class="mb-3 last:mb-0">
+                                        <label for="social-image-setting-{{ $format }}-{{ $controlKey }}" class="mb-1 block text-xs font-semibold text-gray-700">
+                                            {{ $control['label'] }}
+                                        </label>
+                                        <select
+                                            id="social-image-setting-{{ $format }}-{{ $controlKey }}"
+                                            wire:model.live="layoutSettings.{{ $format }}.{{ $controlKey }}"
+                                            wire:loading.attr="disabled"
+                                            class="block min-h-[44px] w-full rounded-lg border-gray-300 py-2 pl-3 pr-9 text-sm text-gray-800 shadow-sm transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:cursor-wait disabled:opacity-60"
+                                            @if($errors->has("layoutSettings.{$format}.{$controlKey}")) aria-invalid="true" @endif
+                                        >
+                                            @foreach($control['options'] as $value => $label)
+                                                <option value="{{ $value }}">{{ $label }}</option>
+                                            @endforeach
+                                        </select>
+
+                                        @error("layoutSettings.{$format}.{$controlKey}")
+                                            <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+
+                    <div class="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs text-gray-500">
                         <span class="font-semibold text-gray-700">{{ $formats[$format]['width'] }} × {{ $formats[$format]['height'] }}</span>
                         <span aria-hidden="true">·</span>
                         <span>PNG</span>
+                        <span wire:loading class="font-semibold text-primary">· Speichert und rendert …</span>
+                    </div>
+
+                    @if($settingsStatus)
+                        <p class="mt-2 text-center text-xs font-semibold text-emerald-700" role="status">{{ $settingsStatus }}</p>
+                    @endif
+
+                    <div class="mt-3 text-center">
+                        <button
+                            type="button"
+                            wire:click="resetCurrentFormat"
+                            class="min-h-[44px] rounded-lg px-3 py-2 text-xs font-semibold text-gray-500 underline-offset-4 transition hover:text-gray-800 hover:underline focus:outline-none focus:ring-2 focus:ring-primary-300"
+                        >
+                            {{ $formats[$format]['label'] }} auf Standard zurücksetzen
+                        </button>
                     </div>
                 </div>
             @endif
@@ -225,26 +212,15 @@
             </button>
 
             @if($postId)
-                @if($layoutSettingsDirty)
-                    <button
-                        type="button"
-                        disabled
-                        title="Bitte zuerst die Bildeinstellungen speichern."
-                        class="ml-2 inline-flex cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600"
-                    >
-                        Erst speichern
-                    </button>
-                @else
-                    <a
-                        href="{{ route('admin.news.social-image.download', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant]) }}"
-                        class="ml-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-light"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                        </svg>
-                        Herunterladen
-                    </a>
-                @endif
+                <a
+                    href="{{ route('admin.news.social-image.download', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant]) }}"
+                    class="ml-2 inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-light"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Herunterladen
+                </a>
             @endif
         </x-slot>
     </x-dialog-modal>

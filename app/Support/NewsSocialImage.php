@@ -156,7 +156,7 @@ class NewsSocialImage
     /** Vollstaendige Standardkonfiguration fuer alle Bildformate. */
     public static function defaultLayoutSettings(): array
     {
-        $defaults = [];
+        $defaults = ['logo_variant' => self::DEFAULT_LOGO_VARIANT];
 
         foreach (self::LAYOUT_CONTROLS as $key => $control) {
             $defaults[$key] = $control['default'];
@@ -177,6 +177,10 @@ class NewsSocialImage
 
         foreach (array_keys(self::FORMATS) as $format) {
             $formatSettings = is_array($settings[$format] ?? null) ? $settings[$format] : [];
+
+            if (self::isLogoVariant($formatSettings['logo_variant'] ?? null)) {
+                $normalized[$format]['logo_variant'] = $formatSettings['logo_variant'];
+            }
 
             foreach (self::LAYOUT_CONTROLS as $key => $control) {
                 $candidate = filter_var($formatSettings[$key] ?? null, FILTER_VALIDATE_INT);

@@ -67,6 +67,7 @@ class NewsSocialImage extends Component
         $this->format = SocialImageRenderer::DEFAULT_FORMAT;
         $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
         $this->layoutSettings = SocialImageRenderer::normalizeLayoutSettings($post->social_image_settings);
+        $this->logoVariant = $this->layoutSettings[$this->format]['logo_variant'];
         $this->layoutSettingsDirty = false;
         $this->dirtyFormats = array_fill_keys(array_keys(SocialImageRenderer::FORMATS), false);
         $this->settingsStatus = null;
@@ -80,6 +81,7 @@ class NewsSocialImage extends Component
     {
         if (SocialImageRenderer::isFormat($format)) {
             $this->format = $format;
+            $this->logoVariant = $this->layoutSettings[$format]['logo_variant'];
             $this->layoutSettingsDirty = (bool) ($this->dirtyFormats[$format] ?? false);
             $this->settingsStatus = null;
         }
@@ -95,6 +97,12 @@ class NewsSocialImage extends Component
         if (! SocialImageRenderer::isLogoVariant($value)) {
             $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
         }
+
+        $this->layoutSettings[$this->format]['logo_variant'] = $this->logoVariant;
+        $this->dirtyFormats[$this->format] = true;
+        $this->layoutSettingsDirty = true;
+        $this->settingsStatus = null;
+        $this->saveLayoutSettings($this->format);
     }
 
     public function updatedLayoutSettings(mixed $value = null, ?string $key = null): void
@@ -194,6 +202,10 @@ class NewsSocialImage extends Component
         $rules = [
             'layoutSettings' => ['required', 'array'],
             "layoutSettings.{$format}" => ['required', 'array'],
+            "layoutSettings.{$format}.logo_variant" => [
+                'required',
+                Rule::in(array_keys(SocialImageRenderer::LOGO_VARIANTS)),
+            ],
         ];
 
         foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {

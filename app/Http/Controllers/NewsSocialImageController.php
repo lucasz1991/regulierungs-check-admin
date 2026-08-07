@@ -29,23 +29,29 @@ class NewsSocialImageController extends Controller
     /** Vorschau im Modal. */
     public function preview(Request $request, Post $post): Response
     {
-        return $this->stream($post, $this->format($request), $this->logoVariant($request), false);
+        $format = $this->format($request);
+
+        return $this->stream($post, $format, $this->logoVariant($request, $post, $format), false);
     }
 
     /** Download als Anhang. */
     public function download(Request $request, Post $post): Response
     {
-        return $this->stream($post, $this->format($request), $this->logoVariant($request), true);
+        $format = $this->format($request);
+
+        return $this->stream($post, $format, $this->logoVariant($request, $post, $format), true);
     }
 
     /** Unbekannte Logo-Varianten fallen auf den Standard zurueck. */
-    private function logoVariant(Request $request): string
+    private function logoVariant(Request $request, Post $post, string $format): string
     {
         $variant = $request->query('logo');
 
-        return NewsSocialImage::isLogoVariant(is_string($variant) ? $variant : null)
-            ? (string) $variant
-            : NewsSocialImage::DEFAULT_LOGO_VARIANT;
+        if (NewsSocialImage::isLogoVariant(is_string($variant) ? $variant : null)) {
+            return (string) $variant;
+        }
+
+        return NewsSocialImage::normalizeLayoutSettings($post->social_image_settings)[$format]['logo_variant'];
     }
 
     /** Ablageordner je News auf der oeffentlichen Platte des Admins. */

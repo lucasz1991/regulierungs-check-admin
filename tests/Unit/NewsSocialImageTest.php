@@ -63,20 +63,28 @@ class NewsSocialImageTest extends TestCase
         }
     }
 
-    public function test_layout_settings_are_completed_and_limited_to_dropdown_values(): void
+    public function test_layout_settings_are_completed_and_limited_to_supported_values(): void
     {
         $normalized = NewsSocialImage::normalizeLayoutSettings([
             'story' => [
                 'title_font_size' => '88',
+                'title_color' => 'gold',
+                'title_alignment' => 'center',
+                'title_lines' => '4',
+                'horizontal_padding' => 86,
                 'bottom_spacing' => 999,
                 'unknown_setting' => 123,
             ],
         ]);
 
         $this->assertSame(88, $normalized['story']['title_font_size']);
+        $this->assertSame('gold', $normalized['story']['title_color']);
+        $this->assertSame('center', $normalized['story']['title_alignment']);
+        $this->assertSame('4', $normalized['story']['title_lines']);
+        $this->assertSame(86, $normalized['story']['horizontal_padding']);
         $this->assertSame(204, $normalized['story']['bottom_spacing']);
-        $this->assertSame(72, $normalized['story']['horizontal_padding']);
         $this->assertArrayNotHasKey('unknown_setting', $normalized['story']);
+        $this->assertSame('white', $normalized['square']['title_color']);
         $this->assertSame(78, $normalized['square']['title_font_size']);
         $this->assertSame(78, $normalized['landscape']['title_font_size']);
     }
@@ -88,6 +96,9 @@ class NewsSocialImageTest extends TestCase
         $settings = NewsSocialImage::defaultLayoutSettings();
         $settings['story']['bottom_spacing'] = 288;
         $settings['story']['title_font_size'] = 88;
+        $settings['story']['title_color'] = 'gold';
+        $settings['story']['title_alignment'] = 'center';
+        $settings['story']['accent_color'] = 'violet';
         $customPost->social_image_settings = $settings;
 
         $this->assertNotSame(

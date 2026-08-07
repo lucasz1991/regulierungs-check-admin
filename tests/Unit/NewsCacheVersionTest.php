@@ -252,12 +252,14 @@ class NewsCacheVersionTest extends TestCase
         $modal->setFormat('square');
         $modal->layoutSettings['square']['horizontal_padding'] = 90;
         $modal->layoutSettings['square']['title_font_size'] = 88;
+        $modal->layoutSettings['square']['title_color'] = 'gold';
         $modal->updatedLayoutSettings();
 
         $saved = $post->fresh()->social_image_settings;
 
         $this->assertSame(90, $saved['square']['horizontal_padding']);
         $this->assertSame(88, $saved['square']['title_font_size']);
+        $this->assertSame('gold', $saved['square']['title_color']);
         $this->assertSame(72, $saved['story']['horizontal_padding']);
         $this->assertFalse($modal->layoutSettingsDirty);
         $this->assertSame('Einstellungen für Post gespeichert und Bild neu gerendert.', $modal->settingsStatus);
@@ -356,15 +358,48 @@ class NewsCacheVersionTest extends TestCase
 
         \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
             ->call('openModal', $post->id)
-            ->assertSee('Layout direkt am Bild anpassen')
             ->assertSee('Titelgröße')
+            ->assertSee('Titelfarbe')
+            ->assertSee('Titelausrichtung')
+            ->assertSee('Kategorie-Hintergrund')
+            ->assertSee('Akzentfarbe')
             ->assertSee('Unterer Freiraum')
             ->assertSee('Logogröße')
-            ->assertSee('Jede Auswahl wird sofort gespeichert')
+            ->assertDontSee('Layout direkt am Bild anpassen')
+            ->assertDontSee('Jede Auswahl wird sofort gespeichert')
+            ->assertDontSee('1080 × 1920')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-logo"')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-horizontal"')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-bottom"')
+            ->assertSeeHtml('x-show="controlsVisible || open"')
+            ->assertSeeHtml('x-on:click.stop="open = ! open"')
+            ->assertDontSeeHtml('x-on:mouseenter="open = true"')
+            ->assertSeeHtml('type="number"')
+            ->assertSeeHtml('type="range"')
+            ->assertSeeHtml('aria-label="Seitenabstand als Schieberegler"')
             ->assertSeeHtml('min-h-[44px]');
+    }
+
+    public function test_text_and_color_settings_are_auto_saved_for_the_active_format(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News mit eigener Typografie',
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
+            ->call('openModal', $post->id)
+            ->set('layoutSettings.story.title_color', 'gold')
+            ->set('layoutSettings.story.title_alignment', 'center')
+            ->set('layoutSettings.story.excerpt_lines', 3)
+            ->assertSet('previewRevisions.story', 3);
+
+        $saved = $post->fresh()->social_image_settings;
+
+        $this->assertSame('gold', $saved['story']['title_color']);
+        $this->assertSame('center', $saved['story']['title_alignment']);
+        $this->assertSame(3, $saved['story']['excerpt_lines']);
+        $this->assertSame('white', $saved['square']['title_color']);
     }
 
     public function test_saving_the_active_format_changes_its_preview_url_immediately(): void

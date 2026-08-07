@@ -75,9 +75,33 @@ class NewsSocialImage
             'group' => 'Schrift', 'label' => 'Titelgröße', 'default' => 78,
             'options' => [58 => 'Klein (58 px)', 68 => 'Kompakt (68 px)', 78 => 'Standard (78 px)', 88 => 'Groß (88 px)', 98 => 'Sehr groß (98 px)'],
         ],
+        'title_color' => [
+            'group' => 'Schrift', 'label' => 'Titelfarbe', 'default' => 'white',
+            'options' => ['white' => 'Weiß', 'muted' => 'Hellblau', 'teal' => 'Türkis', 'gold' => 'Gold'],
+        ],
+        'title_alignment' => [
+            'group' => 'Schrift', 'label' => 'Titelausrichtung', 'default' => 'left',
+            'options' => ['left' => 'Linksbündig', 'center' => 'Zentriert', 'right' => 'Rechtsbündig'],
+        ],
+        'title_lines' => [
+            'group' => 'Schrift', 'label' => 'Maximale Titelzeilen', 'default' => 'auto',
+            'options' => ['auto' => 'Automatisch', '2' => '2 Zeilen', '3' => '3 Zeilen', '4' => '4 Zeilen', '5' => '5 Zeilen'],
+        ],
         'excerpt_font_size' => [
             'group' => 'Schrift', 'label' => 'Kurztextgröße', 'default' => 34,
             'options' => [26 => 'Klein (26 px)', 30 => 'Kompakt (30 px)', 34 => 'Standard (34 px)', 38 => 'Groß (38 px)', 42 => 'Sehr groß (42 px)'],
+        ],
+        'excerpt_color' => [
+            'group' => 'Schrift', 'label' => 'Kurztextfarbe', 'default' => 'muted',
+            'options' => ['muted' => 'Hellblau', 'white' => 'Weiß', 'teal' => 'Türkis', 'gold' => 'Gold'],
+        ],
+        'excerpt_alignment' => [
+            'group' => 'Schrift', 'label' => 'Kurztextausrichtung', 'default' => 'left',
+            'options' => ['left' => 'Linksbündig', 'center' => 'Zentriert', 'right' => 'Rechtsbündig'],
+        ],
+        'excerpt_lines' => [
+            'group' => 'Schrift', 'label' => 'Maximale Kurztextzeilen', 'default' => 2,
+            'options' => [1 => '1 Zeile', 2 => '2 Zeilen', 3 => '3 Zeilen'],
         ],
         'title_line_height' => [
             'group' => 'Schrift', 'label' => 'Titel-Zeilenhöhe', 'default' => 134,
@@ -89,15 +113,15 @@ class NewsSocialImage
         ],
         'horizontal_padding' => [
             'group' => 'Abstände', 'label' => 'Seitenabstand', 'default' => 72,
-            'options' => [48 => 'Klein (48 px)', 60 => 'Kompakt (60 px)', 72 => 'Standard (72 px)', 90 => 'Groß (90 px)', 108 => 'Sehr groß (108 px)'],
+            'input' => 'range', 'min' => 36, 'max' => 140, 'step' => 2, 'unit' => 'px',
         ],
         'bottom_spacing' => [
             'group' => 'Abstände', 'label' => 'Unterer Freiraum', 'default' => 204,
-            'options' => [96 => 'Klein (96 px)', 150 => 'Mittel (150 px)', 204 => 'Standard (204 px)', 240 => 'Groß (240 px)', 288 => 'Sehr groß (288 px)'],
+            'input' => 'range', 'min' => 72, 'max' => 360, 'step' => 6, 'unit' => 'px',
         ],
         'section_spacing' => [
             'group' => 'Abstände', 'label' => 'Textblock-Abstand', 'default' => 46,
-            'options' => [30 => 'Eng (30 px)', 38 => 'Kompakt (38 px)', 46 => 'Standard (46 px)', 56 => 'Luftig (56 px)', 68 => 'Sehr luftig (68 px)'],
+            'input' => 'range', 'min' => 20, 'max' => 100, 'step' => 2, 'unit' => 'px',
         ],
         'logo_size' => [
             'group' => 'Marke', 'label' => 'Logogröße', 'default' => 92,
@@ -106,6 +130,18 @@ class NewsSocialImage
         'badge_font_size' => [
             'group' => 'Marke', 'label' => 'Kategoriegröße', 'default' => 30,
             'options' => [24 => 'Klein (24 px)', 27 => 'Kompakt (27 px)', 30 => 'Standard (30 px)', 34 => 'Groß (34 px)', 38 => 'Sehr groß (38 px)'],
+        ],
+        'badge_background' => [
+            'group' => 'Marke', 'label' => 'Kategorie-Hintergrund', 'default' => 'category',
+            'options' => ['category' => 'Kategoriefarbe', 'teal' => 'Türkis', 'navy' => 'Dunkelblau', 'gold' => 'Gold', 'violet' => 'Violett', 'white' => 'Weiß'],
+        ],
+        'badge_text_color' => [
+            'group' => 'Marke', 'label' => 'Kategorie-Textfarbe', 'default' => 'white',
+            'options' => ['white' => 'Weiß', 'navy' => 'Dunkelblau', 'gold' => 'Gold'],
+        ],
+        'accent_color' => [
+            'group' => 'Marke', 'label' => 'Akzentfarbe', 'default' => 'teal',
+            'options' => ['teal' => 'Türkis', 'gold' => 'Gold', 'white' => 'Weiß', 'violet' => 'Violett'],
         ],
     ];
 
@@ -125,6 +161,15 @@ class NewsSocialImage
     private const TEAL = [20, 184, 166];
 
     private const MUTED = [214, 227, 237];
+
+    private const LAYOUT_COLORS = [
+        'white' => [255, 255, 255],
+        'muted' => [214, 227, 237],
+        'teal' => [20, 184, 166],
+        'gold' => [247, 181, 0],
+        'navy' => [10, 32, 53],
+        'violet' => [124, 58, 237],
+    ];
 
     private const FALLBACK_CATEGORY_COLOR = '#0c968e';
 
@@ -183,10 +228,27 @@ class NewsSocialImage
             }
 
             foreach (self::LAYOUT_CONTROLS as $key => $control) {
-                $candidate = filter_var($formatSettings[$key] ?? null, FILTER_VALIDATE_INT);
-                $allowed = array_map('intval', array_keys($control['options']));
+                $raw = $formatSettings[$key] ?? null;
 
-                if ($candidate !== false && in_array($candidate, $allowed, true)) {
+                if (($control['input'] ?? 'select') === 'range') {
+                    $candidate = filter_var($raw, FILTER_VALIDATE_INT);
+
+                    if ($candidate !== false && $candidate >= $control['min'] && $candidate <= $control['max']) {
+                        $normalized[$format][$key] = $candidate;
+                    }
+
+                    continue;
+                }
+
+                if (is_int($control['default'])) {
+                    $candidate = filter_var($raw, FILTER_VALIDATE_INT);
+                    $allowed = array_map('intval', array_keys($control['options']));
+                } else {
+                    $candidate = is_scalar($raw) ? (string) $raw : null;
+                    $allowed = array_map('strval', array_keys($control['options']));
+                }
+
+                if ($candidate !== false && $candidate !== null && in_array($candidate, $allowed, true)) {
                     $normalized[$format][$key] = $candidate;
                 }
             }
@@ -513,9 +575,13 @@ class NewsSocialImage
         $x = $w - $this->px($this->layout['horizontal_padding']) - $width;
         $y = $this->px(66);
 
+        $background = $this->layout['badge_background'] === 'category'
+            ? $this->hexToRgb($category->color ?? self::FALLBACK_CATEGORY_COLOR)
+            : $this->layoutColor('badge_background', self::TEAL);
+
         $this->roundedRect(
             $canvas, $x, $y, $width, $height, $this->px($baseSize * 20 / 30),
-            $this->color($canvas, $this->hexToRgb($category->color ?? self::FALLBACK_CATEGORY_COLOR))
+            $this->color($canvas, $background)
         );
 
         $capHeight = $this->textHeight($font, $size, 'H');
@@ -523,7 +589,7 @@ class NewsSocialImage
             $canvas, $size, 0,
             (int) round($x + $padX),
             (int) round($y + ($height + $capHeight) / 2),
-            $this->color($canvas, [255, 255, 255]), $font, $label
+            $this->color($canvas, $this->layoutColor('badge_text_color', [255, 255, 255])), $font, $label
         );
     }
 
@@ -539,12 +605,19 @@ class NewsSocialImage
         $size = $this->px($this->layout['excerpt_font_size']);
         $lead = $this->px($this->layout['excerpt_line_height']);
         $horizontalPadding = $this->layout['horizontal_padding'];
-        $lines = $this->wrapLines($font, $size, $text, $w - $this->px(2 * $horizontalPadding), 2);
+        $maxWidth = $w - $this->px(2 * $horizontalPadding);
+        $lines = $this->wrapLines($font, $size, $text, $maxWidth, $this->layout['excerpt_lines']);
         $baseline = $contentBottom - $this->px(70);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, $this->px($horizontalPadding), (int) round($top + $i * $lead), $this->color($canvas, self::MUTED), $font, $line);
+            imagettftext(
+                $canvas, $size, 0,
+                $this->alignedTextX($font, $size, $line, $w, $horizontalPadding, $this->layout['excerpt_alignment']),
+                (int) round($top + $i * $lead),
+                $this->color($canvas, $this->layoutColor('excerpt_color', self::MUTED)),
+                $font, $line
+            );
         }
 
         return (int) round($top - $this->textHeight($font, $size, 'Hg'));
@@ -554,7 +627,10 @@ class NewsSocialImage
     {
         $height = $this->px(8);
         $y = $excerptTop - $this->px($this->layout['section_spacing']);
-        $this->roundedRect($canvas, $this->px($this->layout['horizontal_padding']), $y, $this->px(120), $height, (int) ($height / 2), $this->color($canvas, self::TEAL));
+        $this->roundedRect(
+            $canvas, $this->px($this->layout['horizontal_padding']), $y, $this->px(120), $height,
+            (int) ($height / 2), $this->color($canvas, $this->layoutColor('accent_color', self::TEAL))
+        );
 
         return $y;
     }
@@ -572,13 +648,22 @@ class NewsSocialImage
         $maxWidth = $w - $this->px(2 * $horizontalPadding);
         $maxSize = $this->layout['title_font_size'];
 
-        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $this->spec['lines'], $this->px($maxSize), $this->px(max(24, $maxSize - 44)), $this->px(2));
+        $maxLines = $this->layout['title_lines'] === 'auto'
+            ? $this->spec['lines']
+            : (int) $this->layout['title_lines'];
+        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $maxLines, $this->px($maxSize), $this->px(max(24, $maxSize - 44)), $this->px(2));
         $lead = (int) round($size * $this->layout['title_line_height'] / 100);
         $baseline = $ruleTop - $this->px($this->layout['section_spacing'] + 6);
         $top = $baseline - (count($lines) - 1) * $lead;
 
         foreach ($lines as $i => $line) {
-            imagettftext($canvas, $size, 0, $this->px($horizontalPadding), (int) round($top + $i * $lead), $this->color($canvas, [255, 255, 255]), $font, $line);
+            imagettftext(
+                $canvas, $size, 0,
+                $this->alignedTextX($font, $size, $line, $w, $horizontalPadding, $this->layout['title_alignment']),
+                (int) round($top + $i * $lead),
+                $this->color($canvas, $this->layoutColor('title_color', [255, 255, 255])),
+                $font, $line
+            );
         }
     }
 
@@ -647,6 +732,30 @@ class NewsSocialImage
     private function color(GdImage $im, array $rgb): int
     {
         return imagecolorallocate($im, $rgb[0], $rgb[1], $rgb[2]);
+    }
+
+    /** @param array{0:int,1:int,2:int} $fallback */
+    private function layoutColor(string $setting, array $fallback): array
+    {
+        return self::LAYOUT_COLORS[$this->layout[$setting] ?? ''] ?? $fallback;
+    }
+
+    private function alignedTextX(
+        string $font,
+        float $size,
+        string $text,
+        int $canvasWidth,
+        int $horizontalPadding,
+        string $alignment
+    ): int {
+        $left = $this->px($horizontalPadding);
+        $textWidth = $this->textWidth($font, $size, $text);
+
+        return match ($alignment) {
+            'center' => (int) round(($canvasWidth - $textWidth) / 2),
+            'right' => (int) round($canvasWidth - $left - $textWidth),
+            default => $left,
+        };
     }
 
     /** @return array{0:int,1:int,2:int} */

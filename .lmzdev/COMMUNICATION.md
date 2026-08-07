@@ -98,3 +98,16 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: 40 tests passed with 206 assertions; authenticated desktop/mobile browser QA proved hover/focus/tap access, immediate revision change, persistence after reload, and isolated Story/Post settings. PHP syntax, Tailwind contract, and diff checks passed.
 - Artifacts: existing `.lmzdev/artifacts/images/news-social-custom-layout-*.png`; temporary browser QA data and cache were removed and verified absent.
 - Next: Review the inline marker visual treatment with real News photography; no technical blocker remains.
+
+## 2026-08-07T02:12:39Z | Codex -> all | status
+
+- Message: Started: Click-only social-image popovers with contextual icons and expanded typography/color controls
+
+## 2026-08-07T02:14:17Z | Codex -> all | start
+
+- Task: Refine the inline social-image editor with click-only popovers, correct stacking, contextual icons, hover/focus visibility, more typography and color controls, and numeric pixel spacing fields paired with optional sliders.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Existing implementation auto-saves per format and currently opens its popovers on hover/focus.
+- Artifacts: none
+- Next: Extend the renderer/settings contract, rebuild the inline controls, and cover persistence plus rendering with focused tests and browser QA.

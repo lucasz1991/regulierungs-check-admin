@@ -209,9 +209,19 @@ class NewsSocialImage extends Component
         ];
 
         foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {
+            if (($control['input'] ?? 'select') === 'range') {
+                $rules["layoutSettings.{$format}.{$key}"] = [
+                    'required',
+                    'integer',
+                    "between:{$control['min']},{$control['max']}",
+                ];
+
+                continue;
+            }
+
             $rules["layoutSettings.{$format}.{$key}"] = [
                 'required',
-                'integer',
+                is_int($control['default']) ? 'integer' : 'string',
                 Rule::in(array_keys($control['options'])),
             ];
         }
@@ -228,6 +238,8 @@ class NewsSocialImage extends Component
             'layoutSettings.*.array' => 'Die Einstellungen eines Bildformats sind ungültig.',
             'layoutSettings.*.*.required' => 'Bitte wähle für jede Bildeinstellung einen Wert aus.',
             'layoutSettings.*.*.integer' => 'Die gewählte Bildeinstellung ist ungültig.',
+            'layoutSettings.*.*.string' => 'Die gewählte Text- oder Farbeinstellung ist ungültig.',
+            'layoutSettings.*.*.between' => 'Der Pixelwert liegt außerhalb des erlaubten Bereichs.',
             'layoutSettings.*.*.in' => 'Dieser Wert ist für die Bildeinstellung nicht erlaubt.',
         ];
     }

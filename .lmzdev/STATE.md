@@ -9,6 +9,7 @@
 - Each News can now persist separate Story, Post, and Link layout settings in `posts.social_image_settings`.
 - The collapsible modal controls typography, horizontal/bottom/section spacing, logo size, and category size through allowlisted dropdown values.
 - Social-image layout version is now `6`; the normalized JSON configuration is part of the cache fingerprint.
+- Saving is scoped to the active Story, Post, or Link format; its preview URL and cache entry change immediately, while other format settings, dirty state, and cached images remain untouched.
 
 ## Verification
 
@@ -19,6 +20,7 @@
 - `php artisan test tests\Unit\NewsSocialImageTest.php tests\Unit\NewsSocialImageRouteTest.php tests\Unit\NewsCacheVersionTest.php`: 37 tests passed, 180 assertions.
 - The Base migration was checked with `php artisan migrate --pretend`; PHP syntax, `git diff --check`, and the News Tailwind contract passed.
 - Custom Story, Post, and Link layouts were rendered and visually inspected.
+- Latest focused verification: 39 tests passed with 196 assertions; the News Tailwind contract and both repository diff checks passed.
 
 ## Risks and blockers
 

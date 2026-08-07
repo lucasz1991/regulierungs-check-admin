@@ -166,7 +166,7 @@
                                 @disabled(! $layoutSettingsDirty)
                                 class="inline-flex min-h-[44px] items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-primary-light disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                <span wire:loading.remove wire:target="saveLayoutSettings">Einstellungen speichern</span>
+                                <span wire:loading.remove wire:target="saveLayoutSettings">{{ $formats[$format]['label'] }} speichern</span>
                                 <span wire:loading wire:target="saveLayoutSettings">Wird gespeichert …</span>
                             </button>
                         </div>
@@ -187,7 +187,7 @@
                     das Skelett stehen - und steht mit Ursache im Protokoll.
                 --}}
                 <div
-                    wire:key="social-image-{{ $postId }}-{{ $format }}-{{ $logoVariant }}-{{ $previewRevision }}"
+                    wire:key="social-image-{{ $postId }}-{{ $format }}-{{ $logoVariant }}-{{ $previewRevisions[$format] ?? 0 }}"
                     class="mx-auto w-full"
                     style="max-width: {{ $formats[$format]['height'] > $formats[$format]['width'] ? '268px' : '440px' }};"
                 >
@@ -200,7 +200,7 @@
                         </div>
 
                         <img
-                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant]) }}"
+                            src="{{ route('admin.news.social-image.preview', ['post' => $postId, 'format' => $format, 'logo' => $logoVariant, 'revision' => $previewRevisions[$format] ?? 0]) }}"
                             alt="Vorschau des Social-Media-Bildes für {{ $title }}"
                             class="relative z-10 h-full w-full object-cover"
                         >

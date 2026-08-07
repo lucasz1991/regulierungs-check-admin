@@ -77,7 +77,7 @@ class NewsSocialImageController extends Controller
             (string) ($category?->color ?? ''),
             (string) ($post->cover_image ?? ''),
             json_encode($post->images ?? []),
-            json_encode(NewsSocialImage::normalizeLayoutSettings($post->social_image_settings)),
+            json_encode(NewsSocialImage::normalizeLayoutSettings($post->social_image_settings)[$format]),
             (string) optional($post->updated_at)->getTimestamp(),
         ])), 0, 16);
     }

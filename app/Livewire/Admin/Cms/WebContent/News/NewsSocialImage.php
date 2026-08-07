@@ -35,10 +35,13 @@ class NewsSocialImage extends Component
 
     public bool $layoutSettingsDirty = false;
 
+    /** Merkt ungespeicherte Aenderungen getrennt je Bildformat. */
+    public array $dirtyFormats = [];
+
     public ?string $settingsStatus = null;
 
-    /** Erzwingt nach dem Speichern eine frische Bildanfrage im Browser. */
-    public int $previewRevision = 0;
+    /** Erzwingt nach dem Speichern eine frische Bildanfrage je Format. */
+    public array $previewRevisions = [];
 
     protected $listeners = [
         'open-news-social-image' => 'openModal',
@@ -65,8 +68,9 @@ class NewsSocialImage extends Component
         $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
         $this->layoutSettings = SocialImageRenderer::normalizeLayoutSettings($post->social_image_settings);
         $this->layoutSettingsDirty = false;
+        $this->dirtyFormats = array_fill_keys(array_keys(SocialImageRenderer::FORMATS), false);
         $this->settingsStatus = null;
-        $this->previewRevision = 0;
+        $this->previewRevisions = array_fill_keys(array_keys(SocialImageRenderer::FORMATS), 0);
         $this->resetValidation();
         $this->show = true;
     }
@@ -76,6 +80,8 @@ class NewsSocialImage extends Component
     {
         if (SocialImageRenderer::isFormat($format)) {
             $this->format = $format;
+            $this->layoutSettingsDirty = (bool) ($this->dirtyFormats[$format] ?? false);
+            $this->settingsStatus = null;
         }
     }
 
@@ -91,9 +97,16 @@ class NewsSocialImage extends Component
         }
     }
 
-    public function updatedLayoutSettings(): void
+    public function updatedLayoutSettings(mixed $value = null, ?string $key = null): void
     {
-        $this->layoutSettingsDirty = true;
+        $changedFormat = is_string($key) ? strtok($key, '.') : $this->format;
+
+        if (! SocialImageRenderer::isFormat($changedFormat)) {
+            $changedFormat = $this->format;
+        }
+
+        $this->dirtyFormats[$changedFormat] = true;
+        $this->layoutSettingsDirty = (bool) ($this->dirtyFormats[$this->format] ?? false);
         $this->settingsStatus = null;
         $this->resetValidation();
     }
@@ -106,12 +119,13 @@ class NewsSocialImage extends Component
         }
 
         $this->layoutSettings[$this->format] = SocialImageRenderer::defaultLayoutSettings()[$this->format];
+        $this->dirtyFormats[$this->format] = true;
         $this->layoutSettingsDirty = true;
         $this->settingsStatus = 'Standardwerte eingesetzt – bitte noch speichern.';
         $this->resetValidation();
     }
 
-    /** Speichert die gesamte Konfiguration dauerhaft an der aktuellen News. */
+    /** Speichert ausschliesslich das aktuell sichtbare Bildformat. */
     public function saveLayoutSettings(): void
     {
         $post = $this->postId
@@ -124,31 +138,54 @@ class NewsSocialImage extends Component
             return;
         }
 
+        $format = SocialImageRenderer::isFormat($this->format)
+            ? $this->format
+            : SocialImageRenderer::DEFAULT_FORMAT;
         $validated = $this->validate();
-        $normalized = SocialImageRenderer::normalizeLayoutSettings($validated['layoutSettings']);
+        $stored = SocialImageRenderer::normalizeLayoutSettings($post->social_image_settings);
+        $submitted = SocialImageRenderer::normalizeLayoutSettings([
+            $format => $validated['layoutSettings'][$format],
+        ]);
 
-        $post->update(['social_image_settings' => $normalized]);
+        $stored[$format] = $submitted[$format];
 
-        $this->layoutSettings = $normalized;
+        // Layout-Metadaten veraendern nicht den redaktionellen updated_at-Wert.
+        // So bleiben auch die Bild-Caches der beiden anderen Formate bestehen.
+        $post->social_image_settings = $stored;
+        $post->timestamps = false;
+
+        try {
+            $post->save();
+        } finally {
+            $post->timestamps = true;
+        }
+
+        $this->layoutSettings[$format] = $stored[$format];
+        $this->dirtyFormats[$format] = false;
         $this->layoutSettingsDirty = false;
-        $this->settingsStatus = 'Bildeinstellungen dauerhaft gespeichert.';
-        $this->previewRevision++;
+        $this->settingsStatus = sprintf(
+            'Einstellungen für %s gespeichert und Bild neu gerendert.',
+            SocialImageRenderer::FORMATS[$format]['label']
+        );
+        $this->previewRevisions[$format] = ($this->previewRevisions[$format] ?? 0) + 1;
     }
 
     protected function rules(): array
     {
-        $rules = ['layoutSettings' => ['required', 'array']];
+        $format = SocialImageRenderer::isFormat($this->format)
+            ? $this->format
+            : SocialImageRenderer::DEFAULT_FORMAT;
+        $rules = [
+            'layoutSettings' => ['required', 'array'],
+            "layoutSettings.{$format}" => ['required', 'array'],
+        ];
 
-        foreach (SocialImageRenderer::FORMATS as $format => $spec) {
-            $rules["layoutSettings.{$format}"] = ['required', 'array'];
-
-            foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {
-                $rules["layoutSettings.{$format}.{$key}"] = [
-                    'required',
-                    'integer',
-                    Rule::in(array_keys($control['options'])),
-                ];
-            }
+        foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {
+            $rules["layoutSettings.{$format}.{$key}"] = [
+                'required',
+                'integer',
+                Rule::in(array_keys($control['options'])),
+            ];
         }
 
         return $rules;
@@ -176,8 +213,9 @@ class NewsSocialImage extends Component
         $this->logoVariant = SocialImageRenderer::DEFAULT_LOGO_VARIANT;
         $this->layoutSettings = [];
         $this->layoutSettingsDirty = false;
+        $this->dirtyFormats = [];
         $this->settingsStatus = null;
-        $this->previewRevision = 0;
+        $this->previewRevisions = [];
         $this->resetValidation();
     }
 

@@ -67,3 +67,25 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: 37 focused tests passed with 180 assertions; migration SQL passed in pretend mode; PHP syntax, diff checks, Tailwind contract, Livewire render contract, and three visual output checks passed.
 - Artifacts: `.lmzdev/artifacts/images/news-social-custom-layout-story.png`, `.lmzdev/artifacts/images/news-social-custom-layout-square.png`, `.lmzdev/artifacts/images/news-social-custom-layout-landscape.png`
 - Next: Run the Base migration during deployment, then verify the modal once in an authenticated Admin session.
+
+## 2026-08-06T22:38:12Z | Codex -> all | status
+
+- Message: Started: Save and re-render News social-image settings independently per format
+
+## 2026-08-06T22:38:17Z | Codex -> all | start
+
+- Task: Save only the active social-image format and force its preview to render again immediately.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Current JSON is already separated by format, but saving writes the complete JSON and the cache fingerprint includes every format.
+- Artifacts: none
+- Next: Scope persistence and cache fingerprints to the active format and add regression coverage.
+
+## 2026-08-06T22:41:26Z | Codex -> all | handoff
+
+- Task: Save only the active social-image format and force its preview to render again immediately.
+- Status: completed
+- Changed: `app/Livewire/Admin/Cms/WebContent/News/NewsSocialImage.php`, `app/Http/Controllers/NewsSocialImageController.php`, `resources/views/livewire/admin/cms/web-content/news/news-social-image.blade.php`, and focused tests.
+- Verified: 39 focused tests passed with 196 assertions; active-format persistence, per-format dirty state, preview URL revision, cache isolation, Tailwind contract, PHP syntax, and diff checks passed.
+- Artifacts: existing `.lmzdev/artifacts/images/news-social-custom-layout-*.png` remain valid.
+- Next: Run the pending Base migration during deployment and verify one authenticated save per format in the Admin UI.

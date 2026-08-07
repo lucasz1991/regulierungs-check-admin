@@ -249,6 +249,7 @@ class NewsCacheVersionTest extends TestCase
         $this->assertSame(204, $modal->layoutSettings['story']['bottom_spacing']);
         $this->assertSame(72, $modal->layoutSettings['square']['horizontal_padding']);
 
+        $modal->setFormat('square');
         $modal->layoutSettings['square']['horizontal_padding'] = 90;
         $modal->layoutSettings['square']['title_font_size'] = 88;
         $modal->updatedLayoutSettings();
@@ -260,8 +261,43 @@ class NewsCacheVersionTest extends TestCase
         $this->assertSame(88, $saved['square']['title_font_size']);
         $this->assertSame(72, $saved['story']['horizontal_padding']);
         $this->assertFalse($modal->layoutSettingsDirty);
-        $this->assertSame('Bildeinstellungen dauerhaft gespeichert.', $modal->settingsStatus);
-        $this->assertSame(1, $modal->previewRevision);
+        $this->assertSame('Einstellungen für Post gespeichert und Bild neu gerendert.', $modal->settingsStatus);
+        $this->assertSame(1, $modal->previewRevisions['square']);
+        $this->assertSame(0, $modal->previewRevisions['story']);
+    }
+
+    public function test_saving_one_social_image_format_preserves_the_other_formats_and_their_dirty_state(): void
+    {
+        $settings = \App\Support\NewsSocialImage::defaultLayoutSettings();
+        $settings['story']['bottom_spacing'] = 288;
+
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News mit getrennten Formaten',
+            'social_image_settings' => $settings,
+        ]);
+
+        $modal = new \App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage;
+        $modal->openModal($post->id);
+
+        $modal->layoutSettings['story']['title_font_size'] = 88;
+        $modal->updatedLayoutSettings(null, 'story.title_font_size');
+        $modal->setFormat('square');
+        $modal->layoutSettings['square']['horizontal_padding'] = 90;
+        $modal->updatedLayoutSettings(null, 'square.horizontal_padding');
+        $modal->saveLayoutSettings();
+
+        $saved = $post->fresh()->social_image_settings;
+
+        $this->assertSame(288, $saved['story']['bottom_spacing']);
+        $this->assertSame(78, $saved['story']['title_font_size']);
+        $this->assertSame(90, $saved['square']['horizontal_padding']);
+        $this->assertTrue($modal->dirtyFormats['story']);
+        $this->assertFalse($modal->dirtyFormats['square']);
+
+        $modal->setFormat('story');
+        $this->assertTrue($modal->layoutSettingsDirty);
+        $this->assertSame(88, $modal->layoutSettings['story']['title_font_size']);
     }
 
     public function test_social_image_layout_rejects_values_outside_the_dropdowns(): void
@@ -301,9 +337,27 @@ class NewsCacheVersionTest extends TestCase
             ->assertSee('Titelgröße')
             ->assertSee('Unterer Freiraum')
             ->assertSee('Logogröße')
-            ->assertSee('Einstellungen speichern')
+            ->assertSee('Story speichern')
             ->assertSeeHtml('aria-controls="social-image-layout-settings"')
             ->assertSeeHtml('min-h-[44px]');
+    }
+
+    public function test_saving_the_active_format_changes_its_preview_url_immediately(): void
+    {
+        $post = Post::create([
+            'type' => 'news',
+            'title' => 'News für den Vorschau-Neuaufbau',
+        ]);
+
+        \Livewire\Livewire::test(\App\Livewire\Admin\Cms\WebContent\News\NewsSocialImage::class)
+            ->call('openModal', $post->id)
+            ->assertSeeHtml('revision=0')
+            ->set('layoutSettings.story.bottom_spacing', 288)
+            ->call('saveLayoutSettings')
+            ->assertSet('previewRevisions.story', 1)
+            ->assertSet('previewRevisions.square', 0)
+            ->assertSeeHtml('revision=1')
+            ->assertSee('Einstellungen für Story gespeichert und Bild neu gerendert.');
     }
 
     public function test_category_create_update_and_delete_each_bump_the_generation(): void

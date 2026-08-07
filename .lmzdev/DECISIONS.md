@@ -21,3 +21,5 @@ Record durable decisions with date, context, decision, and consequences.
 - Expose only finite dropdown values and validate them server-side with German messages, preventing malformed JSON from breaking the renderer.
 - Require an explicit save before preview/download refresh; while settings are dirty, the download action is disabled so the file always matches the visible saved state.
 - Use the shared Base project for the database migration and cast the JSON column in both Post models.
+- Persist only the active format on each save, preserve unsaved edits in the other formats, and use a per-format preview revision plus per-format cache fingerprint.
+- Do not change the News `updated_at` timestamp for social-image layout metadata, otherwise saving one format would invalidate all three image caches.

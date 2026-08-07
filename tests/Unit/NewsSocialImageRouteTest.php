@@ -186,28 +186,38 @@ class NewsSocialImageRouteTest extends TestCase
         $this->assertNotSame($first, $second, 'Nach einer Aenderung muss ein neuer Stand entstehen.');
     }
 
-    public function test_saved_layout_settings_create_a_new_cached_image(): void
+    public function test_saved_layout_settings_refresh_only_the_changed_formats_cache(): void
     {
         Storage::fake('public');
 
         $post = Post::create(['type' => 'news', 'title' => 'Layout-Cache-Test', 'slug' => 'layout-cache-test']);
         $this->asAdmin();
 
-        $url = route('admin.news.social-image.preview', ['post' => $post->id, 'format' => 'story']);
+        $storyUrl = route('admin.news.social-image.preview', ['post' => $post->id, 'format' => 'story']);
+        $squareUrl = route('admin.news.social-image.preview', ['post' => $post->id, 'format' => 'square']);
         $dir = 'news-social/'.$post->id;
 
-        $this->get($url)->assertOk();
+        $this->get($storyUrl)->assertOk();
+        $this->get($squareUrl)->assertOk();
         $first = Storage::disk('public')->files($dir);
+        $firstStory = array_values(array_filter($first, fn (string $file) => str_starts_with(basename($file), 'story-')));
+        $firstSquare = array_values(array_filter($first, fn (string $file) => str_starts_with(basename($file), 'square-')));
 
         $settings = \App\Support\NewsSocialImage::defaultLayoutSettings();
         $settings['story']['bottom_spacing'] = 288;
-        $post->update(['social_image_settings' => $settings]);
+        $post->social_image_settings = $settings;
+        $post->timestamps = false;
+        $post->save();
 
-        $this->get($url)->assertOk();
+        $this->get($storyUrl)->assertOk();
+        $this->get($squareUrl)->assertOk();
         $second = Storage::disk('public')->files($dir);
+        $secondStory = array_values(array_filter($second, fn (string $file) => str_starts_with(basename($file), 'story-')));
+        $secondSquare = array_values(array_filter($second, fn (string $file) => str_starts_with(basename($file), 'square-')));
 
-        $this->assertCount(1, $second);
-        $this->assertNotSame($first, $second);
+        $this->assertCount(2, $second);
+        $this->assertNotSame($firstStory, $secondStory);
+        $this->assertSame($firstSquare, $secondSquare);
     }
 
     public function test_download_route_sends_an_attachment(): void

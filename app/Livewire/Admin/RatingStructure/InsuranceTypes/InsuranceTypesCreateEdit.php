@@ -2,15 +2,25 @@
 
 namespace App\Livewire\Admin\RatingStructure\InsuranceTypes;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\InsuranceType;
 use App\Models\InsuranceSubtype;
 use App\Models\Insurance;
 use App\Support\PivotSorter;
+use App\Support\SafeIconMarkup;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class InsuranceTypesCreateEdit extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public $insuranceTypeId;
     public $name;
     public $description;
@@ -87,9 +97,15 @@ class InsuranceTypesCreateEdit extends Component
             'icon' => 'nullable|string|max:20000',
         ]);
 
-        $iconValue = $this->icon_type === 'svg'
-            ? $this->sanitizeSvg($this->icon)
-            : (is_string($this->icon) ? trim($this->icon) : null);
+        $iconValue = SafeIconMarkup::forType($this->icon_type, $this->icon);
+
+        if (is_string($this->icon) && trim($this->icon) !== '' && $iconValue === null) {
+            throw ValidationException::withMessages([
+                'icon' => $this->icon_type === 'svg'
+                    ? 'Das SVG enthÃ¤lt nicht erlaubte Elemente oder Attribute.'
+                    : 'Bitte nur gÃ¼ltige FontAwesome-Klassen verwenden.',
+            ]);
+        }
 
         $type = InsuranceType::updateOrCreate(
             ['id' => $this->insuranceTypeId],
@@ -118,24 +134,6 @@ class InsuranceTypesCreateEdit extends Component
 
         $this->dispatch('refreshInsuranceTypes');
         $this->showModal = false;
-    }
-
-    protected function sanitizeSvg(?string $svg): ?string
-    {
-        $svg = is_string($svg) ? trim($svg) : null;
-        if (!$svg) return null;
-
-        // kill scripts + event handler
-        $svg = preg_replace('#<\s*script[^>]*>.*?<\s*/\s*script\s*>#is', '', $svg);
-        $svg = preg_replace('#on\w+\s*=\s*"[^"]*"#i', '', $svg);
-        $svg = preg_replace("#on\w+\s*=\s*'[^']*'#i", '', $svg);
-
-        // optional: nur SVG erlauben
-        if (!str_contains(Str::lower($svg), '<svg')) {
-            return null;
-        }
-
-        return $svg;
     }
 
     public function addInsurance()

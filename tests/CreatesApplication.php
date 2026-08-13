@@ -16,6 +16,17 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        $connection = (string) $app['config']->get('database.default');
+        $database = (string) $app['config']->get("database.connections.{$connection}.database");
+
+        if ($connection !== 'sqlite' || $database !== ':memory:') {
+            throw new \RuntimeException(sprintf(
+                'Unsichere Testdatenbank blockiert: %s/%s. PHPUnit muss SQLite :memory: verwenden.',
+                $connection,
+                $database,
+            ));
+        }
+
         return $app;
     }
 }

@@ -29,7 +29,10 @@ return [
      |
      */
 
-    'middleware' => ['web'],
+    // The admin runtime shares its user/session tables with the public app.
+    // Jetstream profile routes must therefore stay global-admin-only; in
+    // particular Promotion staff may access only /promotion and logout.
+    'middleware' => ['web', 'auth:sanctum', AuthenticateSession::class, 'verified', 'account.active', 'can:admin.dashboard.view'],
 
     'auth_session' => AuthenticateSession::class,
 
@@ -60,9 +63,12 @@ return [
     'features' => [
         // Features::termsAndPrivacyPolicy(),
         Features::profilePhotos(),
-        Features::api(),
-        Features::teams(['invitations' => true]),
-        Features::accountDeletion(),
+        // API-token self service is intentionally disabled in the admin app.
+        // Teamwechsel, Team-Erstellung und Jetstream-Einladungen bleiben aus.
+        // Gemeinsame Teams/Rechte werden ausschliesslich durch den globalen
+        // Admin ueber die gehaertete RBAC-Verwaltung gepflegt.
+        // Konten mit Promotion-/Auditbezug duerfen nicht per Jetstream
+        // hart geloescht werden. Die Kontoloeschung ist deshalb bewusst aus.
     ],
 
     /*

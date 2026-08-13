@@ -52,6 +52,7 @@ class NewsSocialImageRouteTest extends TestCase
             $t->string('email')->unique();
             $t->string('password');
             $t->string('role')->default('guest');
+            $t->boolean('status')->default(true);
             $t->timestamp('email_verified_at')->nullable();
             $t->rememberToken();
             $t->timestamps();
@@ -77,6 +78,7 @@ class NewsSocialImageRouteTest extends TestCase
         $user = \App\Models\User::firstOrCreate(['email' => 'admin@example.test'], [
             'name' => 'Admin',
             'password' => bcrypt('geheim'), 'role' => 'admin',
+            'status' => true,
             'email_verified_at' => now(),
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Http\Controllers\MediaController;
 use App\Models\NewsCategory;
 use App\Models\PagebuilderProject;
@@ -18,6 +19,12 @@ use Throwable;
 
 class NewsEditCreate extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.news.manage';
+    }
     use WithFileUploads;
 
     public bool $show = false;

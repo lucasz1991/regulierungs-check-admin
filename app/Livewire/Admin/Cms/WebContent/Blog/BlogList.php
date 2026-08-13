@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\Blog;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Post;
 use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,12 @@ use Livewire\Component;
 
 class BlogList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.web.manage';
+    }
     public $posts;
 
     public bool $blogEnabled = false;

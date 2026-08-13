@@ -2,11 +2,19 @@
 
 namespace App\Livewire\Admin\Config;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Setting;
 
 class GrapesJsSettings extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'settings.manage';
+    }
+
     public string $apiKey = '';
 
     public function mount(): void

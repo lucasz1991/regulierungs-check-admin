@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\PagebuilderProject;
 use App\Models\Setting;
@@ -9,6 +10,13 @@ use Illuminate\Support\Carbon;
 
 class EditProject extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.pagebuilder.manage';
+    }
+
     public $projectId;
     public $project;
     public $grapejsLicenseKey;

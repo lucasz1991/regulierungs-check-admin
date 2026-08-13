@@ -2,11 +2,18 @@
 
 namespace App\Livewire\Admin\RatingStructure\Settings;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Setting;
 
 class AiScoringSettings extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
 
     public $status, $apiUrl, $apiKey, $aiModel, $modelTitle, $refererUrl;
 

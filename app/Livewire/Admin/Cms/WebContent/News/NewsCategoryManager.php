@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\NewsCategory;
 use App\Support\NewsCacheVersion;
 use Illuminate\Support\Str;
@@ -9,6 +10,12 @@ use Livewire\Component;
 
 class NewsCategoryManager extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.news.manage';
+    }
     public bool $show = false;
 
     public ?int $categoryId = null;

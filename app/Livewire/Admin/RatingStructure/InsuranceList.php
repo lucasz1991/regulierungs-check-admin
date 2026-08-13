@@ -2,13 +2,20 @@
 
 namespace App\Livewire\Admin\RatingStructure;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Insurance;
 use Livewire\WithPagination;
 
 class InsuranceList extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination; 
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
     
     public $insurancesAll = [];
     public $search = '';

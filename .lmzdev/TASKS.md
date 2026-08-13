@@ -3,9 +3,20 @@
 | Task | Owner | Status | Updated (UTC) |
 |---|---|---|---|
 | Review project state | unassigned | open | - |
+| Promotion-Kern ohne Commands, Jobs, Scheduler, Auditmail oder Zugriffskontext betreiben | Codex / simplify_promotion_core | completed | 2026-08-13T18:39:00Z |
+| Promotion-Konfiguration vollstaendig aus env in MAC-geschuetzten DB-Singleton verlagern | Codex / promotion_db_settings_core | completed | 2026-08-13T17:10:00Z |
 | Remove the embedded article button from News social-media images | Codex | completed | 2026-08-05T19:43:37Z |
 | Preserve the former button-height spacing below News social-image content | Codex | completed | 2026-08-06T20:48:41Z |
 | Add persistent per-News social-image layout settings with JSON migration and dropdown UI | Codex | completed | 2026-08-06T22:23:40Z |
 | Save and re-render News social-image settings independently per format | Codex | completed | 2026-08-06T22:41:26Z |
 | Replace the layout dropdown with auto-saving inline image hotspots | Codex | completed | 2026-08-07T01:35:47Z |
 | Refine inline social-image controls with click popovers, contextual icons, typography/colors, and pixel sliders | Codex | in-progress | 2026-08-07T02:14:17Z |
+| Testdatenbank fuer Promotion-Suite hart absichern | Codex | completed | 2026-08-12T21:50:00Z |
+| Team-RBAC, Mitarbeitereinladung und Promotion-Konsole | Codex / admin_rbac agent | completed | 2026-08-12T21:50:00Z |
+| Exakte Promotion-Team-Matrix bei jeder RBAC-Pruefung fail-closed erzwingen | Codex / promotion_rbac_exact agent | completed | 2026-08-13T00:08:00Z |
+| Verschachtelte Livewire-RBAC-Revoke-Pruefungen und InsuranceTypes-Icon-XSS schliessen | Codex / nested_rbac_xss_final | completed | 2026-08-13T16:31:00Z |
+| Globale Admin-Konten vor delegierten Benutzerstatus-Mutationen schuetzen | Codex / admin_user_guard_final | completed | 2026-08-13T16:22:24Z |
+| Jetstream-Loeschung, WebPage-Head-Code und oeffentliche Titel gegen Legacy-P1 absichern | Codex / final_legacy_security_fixes | completed | 2026-08-13T18:48:00Z |
+| Auditanker bei deaktivierter Promotion weiterfuehren und verifizieren | Codex / audit_retention_disabled_fix | completed | 2026-08-13T17:00:49Z |
+| Blog-Rich-HTML beim Speichern gegen persistentes XSS sanitizieren | Codex / blog_html_xss_fix | completed | 2026-08-13T17:04:24Z |
+| Promotion-Adminbedienung auf reine Webaktionen ohne Commands oder Jobs vereinfachen | Codex / simplify_admin_webflow | completed | 2026-08-13T18:55:00Z |

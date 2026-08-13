@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Rbac\RbacCatalog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
@@ -19,6 +20,7 @@ class Team extends JetstreamTeam
      */
     protected $casts = [
         'personal_team' => 'boolean',
+        'rbac_permissions' => 'array',
     ];
 
     /**
@@ -29,6 +31,7 @@ class Team extends JetstreamTeam
     protected $fillable = [
         'name',
         'personal_team',
+        'rbac_permissions',
     ];
 
     /**
@@ -41,4 +44,26 @@ class Team extends JetstreamTeam
         'updated' => TeamUpdated::class,
         'deleted' => TeamDeleted::class,
     ];
+
+    /** @return array<string, bool> */
+    public function permissionMatrix(): array
+    {
+        return RbacCatalog::normalize($this->rbac_permissions ?? []);
+    }
+
+    public function grants(string $permission): bool
+    {
+        return (bool) ($this->permissionMatrix()[$permission] ?? false);
+    }
+
+    public function isPromotionTeam(): bool
+    {
+        return mb_strtolower(trim($this->name)) === mb_strtolower(RbacCatalog::PROMOTION_TEAM_NAME)
+            && ! $this->personal_team;
+    }
+
+    public function staffInvitations()
+    {
+        return $this->hasMany(StaffInvitation::class);
+    }
 }

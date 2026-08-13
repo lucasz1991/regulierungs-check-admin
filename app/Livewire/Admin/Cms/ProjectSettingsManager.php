@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\PagebuilderProject;
 use Illuminate\Support\Facades\Session;
@@ -10,6 +11,13 @@ use App\Models\WebPage;
 
 class ProjectSettingsManager extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.pagebuilder.manage';
+    }
+
     public $showModal = false;
     public $projectId;
     public $name;

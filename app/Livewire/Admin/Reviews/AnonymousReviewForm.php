@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reviews;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,13 @@ use App\Models\ClaimRating;
 
 class AnonymousReviewForm extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'reviews.manage';
+    }
+
     public $types = [];
     public $insuranceTypeId = null;
     public $insuranceType;

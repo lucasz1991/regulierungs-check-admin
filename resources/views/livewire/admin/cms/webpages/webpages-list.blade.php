@@ -209,7 +209,12 @@
                                     <button @click="showTextarea = !showTextarea" 
                                             class="border rounded p-2 w-full aspect-video bg-white ">
                                             <div class="flex items-center justify-center object-contain object-center max-h-full svg-icon-button overflow-hidden" >
-                                                {!! $icon ?: '<span class="text-gray-400 text-xs">SVG</span>' !!}
+                                                @php($safeWebPageIcon = \App\Support\SafeIconMarkup::svg($icon))
+                                                @if($safeWebPageIcon)
+                                                    {!! $safeWebPageIcon !!}
+                                                @else
+                                                    <span class="text-gray-400 text-xs">SVG</span>
+                                                @endif
                                             </div>
                                     </button>
                                 </div>
@@ -364,23 +369,25 @@
                             @error('og_description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-medium">Benutzerdefinierte Meta-Tags (JSON-Format)</label>
-                            <textarea wire:model="custom_meta" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2" rows="4" placeholder='[{"name": "author", "content": "John Doe"}]'></textarea>
-                            @error('custom_meta') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                        @if(auth()->user()?->isAdmin())
+                            <div>
+                                <label class="block text-sm font-medium">Benutzerdefinierte Meta-Tags (JSON-Format)</label>
+                                <textarea wire:model="custom_meta" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2" rows="4" placeholder='[{"name": "author", "content": "John Doe"}]'></textarea>
+                                @error('custom_meta') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-sm font-medium">Benutzerdefiniertes CSS</label>
-                            <textarea wire:model="custom_css" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2"></textarea>
-                            @error('custom_css') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <div>
+                                <label class="block text-sm font-medium">Benutzerdefiniertes CSS</label>
+                                <textarea wire:model="custom_css" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2"></textarea>
+                                @error('custom_css') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
 
-                        <div>
-                            <label class="block text-sm font-medium">Benutzerdefiniertes JavaScript</label>
-                            <textarea wire:model="custom_js" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2"></textarea>
-                            @error('custom_js') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
-                        </div>
+                            <div>
+                                <label class="block text-sm font-medium">Benutzerdefiniertes JavaScript</label>
+                                <textarea wire:model="custom_js" class="w-full border rounded px-4 py-2 font-mono text-sm mt-2"></textarea>
+                                @error('custom_js') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

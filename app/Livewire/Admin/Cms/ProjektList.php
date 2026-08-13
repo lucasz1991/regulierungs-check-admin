@@ -2,11 +2,18 @@
 
 namespace App\Livewire\Admin\Cms;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\PagebuilderProject;
 
 class ProjektList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.pagebuilder.manage';
+    }
     public $projects = [];
 
     protected $listeners = [

@@ -2,11 +2,18 @@
 
 namespace App\Livewire\Admin\Cms\Tools;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Setting;
 
 class AiAssistantConfig extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'settings.manage';
+    }
     public $status, $assistantName, $apiUrl, $apiKey, $aiModel, $modelTitle, $refererUrl, $trainContent;
 
     public function mount()

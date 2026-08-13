@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\RatingStructure\Questionnaire;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\InsuranceSubtype;
 use App\Models\RatingQuestionnaireVersion;
@@ -9,6 +10,13 @@ use App\Models\RatingQuestionnaireVersion;
 
 class QuestionnaireList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public $types = [];
 
     protected $listeners = [

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\RatingStructure\Insurance;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Insurance;
 use App\Models\DetailInsuranceRating;
@@ -9,6 +10,13 @@ use App\Models\ClaimRating;
 
 class ShowModal extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public bool $showModal = false;
 
     public ?int $insuranceId = null;

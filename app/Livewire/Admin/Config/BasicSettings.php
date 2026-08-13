@@ -2,13 +2,20 @@
 
 namespace App\Livewire\Admin\Config;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\Setting;
 
 class BasicSettings extends Component
 {
+    use RequiresRbacPermission;
     use WithFileUploads;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'settings.manage';
+    }
 
     public $companyName, $shopName, $currency, $timezone, $contactEmail, $vatRate, $maintenanceMode;
     public $favicon, $logoSquare, $logoHorizontal, $logoVertical;

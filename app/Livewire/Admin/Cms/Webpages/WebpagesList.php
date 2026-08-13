@@ -2,14 +2,17 @@
 
 namespace App\Livewire\Admin\Cms\Webpages;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Admin\MediaController;
 use App\Models\WebPage;
+use App\Support\SafeIconMarkup;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Intervention\Image\Laravel\Facades\Image;
 use Illuminate\Http\UploadedFile;
 
@@ -17,6 +20,12 @@ use Illuminate\Http\UploadedFile;
 
 class WebpagesList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.web.manage';
+    }
     use WithPagination, WithFileUploads;
 
     public $title, $slug, $meta_title, $meta_description, $meta_keywords, $canonical_url, $robots_meta;
@@ -43,6 +52,20 @@ class WebpagesList extends Component
         $this->page = WebPage::findOrFail($id);
         $this->editingId = $this->page->id;
         $this->fill($this->page->toArray());
+
+        if (auth()->user()?->isAdmin()) {
+            $this->custom_meta = $this->page->custom_meta
+                ? json_encode($this->page->custom_meta, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+                : '';
+        } else {
+            // Diese Felder enthalten ausfuehrbaren bzw. freien Head-Code. Sie
+            // werden delegierten Editoren auch nicht in den Livewire-Snapshot
+            // geschrieben; save() ignoriert manipulierte Clientwerte zudem.
+            $this->custom_css = '';
+            $this->custom_js = '';
+            $this->custom_meta = '';
+        }
+
         $this->header_image = $this->page->header_image; 
         $this->header_image_url = $this->page->getHeaderImageUrlAttribute(); 
         $this->showHeader = $this->page->settings['showHeader'] ?? false;
@@ -53,21 +76,45 @@ class WebpagesList extends Component
 
     public function save()
     {
-        $this->validate([
+        $actor = auth()->user();
+        abort_unless($actor?->isAdmin() || $actor?->hasRbacPermission('content.web.manage'), 403);
+        $isGlobalAdmin = $actor->isAdmin();
+
+        $rules = [
             'title' => 'required|string|max:255|unique:web_pages,title,' . $this->editingId,
             'slug' => 'required|string|max:255|unique:web_pages,slug,' . $this->editingId,
             'meta_title' => 'nullable|string|max:255',
             'meta_description' => 'nullable|string',
             'meta_keywords' => 'nullable|string',
-            'custom_meta' => 'nullable|array',
             'new_header_image' => 'nullable|image|mimes:jpeg,png,webp|max:16048',
             'og_title'          => 'nullable|string|max:255',
             'og_description'    => 'nullable|string|max:500',
-            'custom_css'        => 'nullable|string',
-            'custom_js'         => 'nullable|string',
-            'custom_meta'       => 'nullable|string',
+            'icon'              => 'nullable|string|max:20000',
+        ];
 
-        ]);
+        if ($isGlobalAdmin) {
+            $rules += [
+                'custom_css' => 'nullable|string',
+                'custom_js' => 'nullable|string',
+                'custom_meta' => 'nullable|string',
+            ];
+        }
+
+        $this->validate($rules);
+
+        if (preg_match('/[<>]/u', (string) $this->title) === 1) {
+            throw ValidationException::withMessages([
+                'title' => 'Der Seitentitel darf kein HTML enthalten.',
+            ]);
+        }
+
+        $safeIcon = SafeIconMarkup::svg($this->icon);
+
+        if (is_string($this->icon) && trim($this->icon) !== '' && $safeIcon === null) {
+            throw ValidationException::withMessages([
+                'icon' => 'Das SVG enthält nicht erlaubte Elemente oder Attribute.',
+            ]);
+        }
 
         if (!$this->slug) {
             $this->slug = Str::slug($this->title);
@@ -75,7 +122,7 @@ class WebpagesList extends Component
 
                 // JSON aus Textarea in Array parsen + validieren
         $customMetaArr = [];
-        if (!empty($this->custom_meta)) {
+        if ($isGlobalAdmin && !empty($this->custom_meta)) {
             try {
                 $decoded = json_decode($this->custom_meta, true, 512, JSON_THROW_ON_ERROR);
                 if (!is_array($decoded)) {
@@ -122,10 +169,7 @@ class WebpagesList extends Component
             'og_title' => $this->og_title,
             'og_description' => $this->og_description,
             'og_image' => $this->og_image,
-            'custom_css' => $this->custom_css,
-            'custom_js' => $this->custom_js,
-            'custom_meta' => $customMetaArr,
-            'icon' => $this->icon,
+            'icon' => $safeIcon,
             'header_image' => $this->header_image,
             'is_active' => $this->is_active,
             'published_from' => $this->published_from,
@@ -135,6 +179,18 @@ class WebpagesList extends Component
                 'header_image_positioning' => $this->header_image_positioning,
             ],
         ];
+
+        // CSS, JavaScript und freie Meta-Konfiguration sind ausführbarer bzw.
+        // sicherheitsrelevanter Seiten-Code. Delegierte Content-Editoren dürfen
+        // diese Felder weder neu setzen noch bei einer normalen Bearbeitung
+        // überschreiben; nur ein globaler Admin kann sie bewusst verwalten.
+        if ($isGlobalAdmin) {
+            $data += [
+                'custom_css' => $this->custom_css,
+                'custom_js' => $this->custom_js,
+                'custom_meta' => $customMetaArr,
+            ];
+        }
 
         if ($this->editingId) {
             WebPage::find($this->editingId)->update($data);
@@ -164,7 +220,7 @@ class WebpagesList extends Component
         $this->title = $this->slug = $this->meta_title = $this->meta_description = $this->meta_keywords = '';
         $this->canonical_url = $this->robots_meta = $this->og_title = $this->og_description = '';
         $this->custom_css = $this->custom_js = '';
-        $this->custom_meta = [];
+        $this->custom_meta = '';
         $this->icon = null;
         $this->header_image = null;
         $this->header_image_url = null;
@@ -172,6 +228,44 @@ class WebpagesList extends Component
         $this->is_active = true;
         $this->published_from = $this->published_until = null;
         $this->page = null;
+    }
+
+    /**
+     * @param  array<mixed>  $entries
+     * @return list<array<string, string>>
+     */
+    private function normalizeCustomMetaArray(array $entries): array
+    {
+        if (!array_is_list($entries) || count($entries) > 50) {
+            throw new \RuntimeException('Die Meta-Konfiguration muss eine Liste mit maximal 50 Eintraegen sein.');
+        }
+
+        $normalized = [];
+        $allowedKeys = ['name', 'property', 'http-equiv', 'charset', 'content'];
+
+        foreach ($entries as $entry) {
+            if (!is_array($entry) || array_diff(array_keys($entry), $allowedKeys) !== []) {
+                throw new \RuntimeException('Ein Meta-Eintrag enthaelt nicht erlaubte Felder.');
+            }
+
+            $clean = [];
+
+            foreach ($entry as $key => $value) {
+                if (!is_string($value) || mb_strlen($value) > 1000 || preg_match('/[<>]/u', $value) === 1) {
+                    throw new \RuntimeException('Meta-Werte muessen kurzer Text ohne HTML sein.');
+                }
+
+                $clean[$key] = trim($value);
+            }
+
+            if ($clean === [] || (!isset($clean['charset']) && !isset($clean['content']))) {
+                throw new \RuntimeException('Ein Meta-Eintrag benoetigt charset oder content.');
+            }
+
+            $normalized[] = $clean;
+        }
+
+        return $normalized;
     }
 
     protected function resizeImage($file, int $maxKb = 700): UploadedFile

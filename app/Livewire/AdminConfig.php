@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Setting;
 use App\Models\Category;
@@ -19,6 +20,13 @@ use Illuminate\Support\Str;
 
 class AdminConfig extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'settings.manage';
+    }
+
     public $locations = [];
     public $retailSpaces = [];
     public $shelves = [];

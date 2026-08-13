@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\RatingStructure\Questionnaire;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\InsuranceSubtype;
 use App\Models\RatingQuestion;
@@ -9,6 +10,13 @@ use App\Support\PivotSorter; // wichtig: gleicher Import wie im anderen Componen
 
 class QuestionnaireEdit extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public $insuranceSubTypeId;
     public $insuranceSubType;
     public $showModal = false;

@@ -2,12 +2,19 @@
 
 namespace App\Livewire\Admin\Cms\WebContent;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\WebContent;
 use Illuminate\Support\Carbon;
 
 class FaqList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.web.manage';
+    }
     public $contents = [];
     public $newKey;
     public $newValue;

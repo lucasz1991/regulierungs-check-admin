@@ -2,12 +2,23 @@
 
 namespace App\Livewire\Admin;
 
-use Livewire\Component;
-use App\Models\User;
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Mail;
+use App\Models\User;
+use App\Services\Admin\UserStatusService;
+use Livewire\Attributes\Locked;
+use Livewire\Component;
 
 class UserProfile extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'users.manage';
+    }
+
+    #[Locked]
     public $userId;
     public $user;
 
@@ -30,27 +41,39 @@ class UserProfile extends Component
         $this->user = User::findOrFail($this->userId);
     }
 
-    public function activateUser()
+    public function activateUser(UserStatusService $statuses)
     {
+        $result = $this->mutateUserStatus($statuses, true);
 
-        if ($this->user && !$this->user->status) {
-            $this->user->update(['status' => true]);
-                $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert.', 'success');
+        if ($result['changed'] === 1) {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert.', 'success');
         } else {
             $this->dispatch('showAlert', 'Benutzer ist bereits aktiv.', 'info');
         }
+
         $this->loadUser();
     }
 
-    public function deactivateUser()
+    public function deactivateUser(UserStatusService $statuses)
     {
-        if ($this->user && $this->user->status) {
-            $this->user->update(['status' => false]);
-                $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert.', 'success');
+        $result = $this->mutateUserStatus($statuses, false);
+
+        if ($result['changed'] === 1) {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert.', 'success');
         } else {
             $this->dispatch('showAlert', 'Benutzer ist bereits inaktiv.', 'info');
         }
+
         $this->loadUser();
+    }
+
+    /** @return array{changed: int, total: int} */
+    private function mutateUserStatus(UserStatusService $statuses, bool $active): array
+    {
+        $actor = auth()->user();
+        abort_unless($actor instanceof User, 403);
+
+        return $statuses->setActive($actor, [$this->userId], $active);
     }
 
     public function openMailModal()

@@ -2,13 +2,20 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Mail;
 
 class MailManagement extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'mails.manage';
+    }
 
     public $sortBy = 'id'; // Standard-Sortierfeld
     public $sortDirection = 'desc'; // Standard-Sortierreihenfolge

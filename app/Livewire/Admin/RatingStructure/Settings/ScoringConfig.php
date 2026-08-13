@@ -2,11 +2,19 @@
 
 namespace App\Livewire\Admin\RatingStructure\Settings;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Setting;
 
 class ScoringConfig extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public  $regulation_speed, $customer_service, $fairness, $transparency, $overall_satisfaction;
 
     public function mount()

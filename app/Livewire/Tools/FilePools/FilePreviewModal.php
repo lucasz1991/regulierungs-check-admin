@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Tools\FilePools;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\File;
 use Livewire\Attributes\On;
@@ -12,6 +13,13 @@ use Illuminate\Support\Str;
 
 class FilePreviewModal extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'tasks.manage';
+    }
+
     public bool $open = false;
     public ?int $fileId = null;
     public ?File $file = null;

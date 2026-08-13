@@ -3,11 +3,19 @@
 namespace App\Livewire;
 
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Message;
 
 class AdminMessageBox extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'messages.manage';
+    }
+
     public $messages;
     public $selectedMessage;
     public $showMessageModal = false;

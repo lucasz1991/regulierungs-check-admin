@@ -2,16 +2,23 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithoutUrlPagination;
 use App\Models\User;
 use App\Models\Mail;
-use Illuminate\Support\Facades\DB;
+use App\Services\Admin\UserStatusService;
 
 class Users extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination, WithoutUrlPagination; 
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'users.manage';
+    }
 
     public $search = '';
     public $sortBy = 'name'; 
@@ -48,79 +55,62 @@ class Users extends Component
         }
     }
 
-    public function activateUsers()
+    public function activateUsers(UserStatusService $statuses)
     {
-        $totalUsers = count($this->selectedUsers);
-        $allGood = false; // Wird true, wenn mindestens ein Benutzer aktiviert wurde
-        $allActive = true; // Standardmäßig davon ausgehen, dass alle Benutzer aktiv sind
-    
-        foreach ($this->selectedUsers as $index => $userId) {
-            $user = User::find($userId);
-            if ($user && !$user->status) {
-                    $allActive = false;
-                    $this->progress = (($index + 1) / $totalUsers) * 100;
-                    $user->update(['status' => true]);
-                    $allGood = true;
-            }
-        }
-    
-        if ($allActive) {
-            $this->dispatch('showAlert', 'Alle ausgewählten Benutzer sind bereits aktiv.', 'info');
-        } elseif ($allGood) {
-            $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert und verarbeitet.', 'success');
-        } else {
-            $this->dispatch('showAlert', 'Fehler beim Aktivieren der Benutzer.', 'error');
-        }
-        $this->progress = 0; // Fortschrittsanzeige zurücksetzen
-    }
-    
-    public function deactivateUsers()
-    {
-        $totalUsers = count($this->selectedUsers);
-        $allGood = false; // Wird true, wenn mindestens ein Benutzer deaktiviert wurde
-        $allInactive = true; // Standardmäßig davon ausgehen, dass alle Benutzer inaktiv sind
-    
-        foreach ($this->selectedUsers as $index => $userId) {
-            $user = User::find($userId);
-            if ($user && $user->status) {
-                    $allInactive = false; 
-                    $this->progress = (($index + 1) / $totalUsers) * 100;
-                    $user->update(['status' => false]);
-                    $allGood = true;
-            }
-        }
-    
-        if ($allInactive) {
-            $this->dispatch('showAlert', 'Alle ausgewählten Benutzer sind bereits inaktiv.', 'info');
-        } elseif ($allGood) {
-            $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert und verarbeitet.', 'success');
-        } else {
-            $this->dispatch('showAlert', 'Fehler beim Deaktivieren der Benutzer.', 'error');
-        }
-        $this->progress = 0; // Fortschrittsanzeige zurücksetzen
-    }
-    public function activateUser($userId)
-    {
-        $user = User::find($userId);
+        $result = $this->mutateUserStatuses($statuses, $this->selectedUsers, true);
 
-        if ($user && !$user->status) {
-                $user->update(['status' => true]);
-                $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert.', 'success');
+        if ($result['changed'] === 0) {
+            $this->dispatch('showAlert', 'Alle ausgewählten Benutzer sind bereits aktiv.', 'info');
+        } else {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert und verarbeitet.', 'success');
+        }
+        $this->progress = 0; // Fortschrittsanzeige zurücksetzen
+    }
+    
+    public function deactivateUsers(UserStatusService $statuses)
+    {
+        $result = $this->mutateUserStatuses($statuses, $this->selectedUsers, false);
+
+        if ($result['changed'] === 0) {
+            $this->dispatch('showAlert', 'Alle ausgewählten Benutzer sind bereits inaktiv.', 'info');
+        } else {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert und verarbeitet.', 'success');
+        }
+        $this->progress = 0; // Fortschrittsanzeige zurücksetzen
+    }
+
+    public function activateUser($userId, UserStatusService $statuses)
+    {
+        $result = $this->mutateUserStatuses($statuses, [$userId], true);
+
+        if ($result['changed'] === 1) {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich aktiviert.', 'success');
         } else {
             $this->dispatch('showAlert', 'Benutzer ist bereits aktiv.', 'info');
         }
     }
 
-    public function deactivateUser($userId)
+    public function deactivateUser($userId, UserStatusService $statuses)
     {
-        $user = User::find($userId);
+        $result = $this->mutateUserStatuses($statuses, [$userId], false);
 
-        if ($user && $user->status) {
-                $user->update(['status' => false]);
-                $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert.', 'success');
+        if ($result['changed'] === 1) {
+            $this->dispatch('showAlert', 'Benutzer erfolgreich deaktiviert.', 'success');
         } else {
             $this->dispatch('showAlert', 'Benutzer ist bereits inaktiv.', 'info');
         }
+    }
+
+    /**
+     * @param  iterable<mixed>  $userIds
+     * @return array{changed: int, total: int}
+     */
+    private function mutateUserStatuses(UserStatusService $statuses, iterable $userIds, bool $status): array
+    {
+        $actor = auth()->user();
+        abort_unless($actor instanceof User, 403);
+
+        return $statuses->setActive($actor, $userIds, $status);
     }
 
     protected function updateHasUsers()

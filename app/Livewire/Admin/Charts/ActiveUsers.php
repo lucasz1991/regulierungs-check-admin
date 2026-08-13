@@ -2,12 +2,20 @@
 
 namespace App\Livewire\Admin\Charts;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
 
 class ActiveUsers extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'users.manage';
+    }
+
     public $data = [];       // Y-Werte für aktive Nutzer
     public $timestamps = []; // X-Werte (Zeitstempel)
     public string $chartId = 'activeUsersChart';

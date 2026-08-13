@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\AdminTask;
@@ -10,7 +11,13 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminTasksList extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'tasks.manage';
+    }
 
     /**
      * Aufgabe einem selbst zuweisen.

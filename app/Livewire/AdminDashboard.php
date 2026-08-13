@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\ClaimRating;
 use App\Models\Insurance;
 use App\Models\Post;
@@ -22,6 +23,13 @@ use Livewire\Component;
  */
 class AdminDashboard extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'admin.dashboard.view';
+    }
+
     /** Fenster fuer die Zeitreihen. */
     private const MONTHS = 12;
 

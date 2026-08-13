@@ -1,6 +1,7 @@
 <div x-data="{ selectedTab: @entangle('selectedTab') }" class="w-full">
     <!-- Tab-Menü -->
     <ul class="flex w-max text-sm font-medium text-center text-gray-500 bg-gray-100 border border-gray-200 rounded-lg shadow divide-gray-200 overflow-hidden">
+        @can('content.web.manage')
         <!-- webpages Tab -->
         <li class="border-l border-gray-200">
             <button 
@@ -11,6 +12,8 @@
                 Seiten 
             </button>
         </li>
+        @endcan
+        @can('content.pagebuilder.manage')
         <!-- Module Tab -->
         <li class="border-l border-gray-200">
             <button 
@@ -21,6 +24,8 @@
                 Module
             </button>
         </li>
+        @endcan
+        @can('content.web.manage')
         <!-- FAQ Tab -->
         <li class="border-l border-gray-200">
             <button 
@@ -41,6 +46,8 @@
                 Blog
             </button>
         </li>
+        @endcan
+        @can('content.news.manage')
         <li class="border-l border-gray-200">
             <button 
                 @click="selectedTab = 'news'" 
@@ -50,6 +57,8 @@
                 News
             </button>
         </li>
+        @endcan
+        @can('settings.manage')
         <!-- Ai Assist -->
         <li class="border-l border-gray-200">
             <button 
@@ -60,6 +69,7 @@
                 Tool's
             </button>
         </li>
+        @endcan
     </ul>
     <!-- Erfolgsmeldung -->
     @if (session()->has('message'))
@@ -69,13 +79,18 @@
     @endif
     <!-- Inhalt der Tabs -->
     <div class="mt-6">
+        @can('content.web.manage')
         <div x-show="selectedTab === 'webpages'" x-cloak>
             <livewire:admin.cms.webpages.webpages-list lazy />
         </div>
+        @endcan
+        @can('content.pagebuilder.manage')
         <!-- Module Inhalt -->
         <div x-show="selectedTab === 'module'" x-cloak>
             <livewire:admin.cms.projekt-list  />
         </div>
+        @endcan
+        @can('content.web.manage')
         <!-- FAQ Inhalt -->
         <div x-show="selectedTab === 'faq'" x-cloak>
             <livewire:admin.cms.web-content.faq-list lazy />
@@ -84,9 +99,13 @@
         <div x-show="selectedTab === 'blog'" x-cloak>
             <livewire:admin.cms.web-content.blog.blog-list lazy />
         </div>
+        @endcan
+        @can('content.news.manage')
         <div x-show="selectedTab === 'news'" x-cloak>
             <livewire:admin.cms.web-content.news.news-list lazy />
         </div>
+        @endcan
+        @can('settings.manage')
         <!-- tools Inhalt -->
         <div x-show="selectedTab === 'tools'" x-cloak>
             <h1 class=" text-lg px-2 py-1 w-max mb-10">
@@ -96,5 +115,6 @@
                 <livewire:admin.cms.tools.ai-assistant-config lazy />
             </div>
         </div>
+        @endcan
     </div>
 </div>

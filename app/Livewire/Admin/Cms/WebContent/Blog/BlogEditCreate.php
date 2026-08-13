@@ -2,15 +2,23 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\Blog;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Post;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
 use App\Http\Controllers\MediaController;
 use App\Models\BlogCategory;
+use App\Support\BlogHtmlSanitizer;
 
 class BlogEditCreate extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.web.manage';
+    }
     use WithFileUploads;
 
     public $show = false;
@@ -87,6 +95,8 @@ class BlogEditCreate extends Component
             'cover_image',
             'type',
         ]);
+
+        $data['body'] = BlogHtmlSanitizer::sanitize((string) $data['body']);
 
         $data['user_id'] = auth()->id();
 

@@ -25,12 +25,13 @@
                         <div class="col-span-4 font-semibold truncate pr-4">
                             <div class="flex items-center gap-2 min-w-0">
                                 <div class="w-8 h-8 shrink-0 rounded bg-white  flex items-center justify-center overflow-hidden">
-                                    @if(!empty($type->icon_svg))
+                                    @php($safeIcon = \App\Support\SafeIconMarkup::forType($type->icon_type, $type->icon_svg))
+                                    @if($safeIcon)
                                         <div class="w-full h-full p-1 flex items-center justify-center [&_svg]:w-5 [&_svg]:h-5 [&_svg]:max-w-full [&_svg]:max-h-full">
-                                            @if($type->icon_type === 'svg' && $type->icon_svg)
-                                                {!! $type->icon_svg !!}
+                                            @if($type->icon_type === 'svg')
+                                                {!! $safeIcon !!}
                                             @elseif($type->icon_type === 'fontawesome')
-                                                <i class="{!! $type->icon_svg !!}"></i>
+                                                <i class="{{ $safeIcon }}"></i>
                                             @endif
 
                                         </div>

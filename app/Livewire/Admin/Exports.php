@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\ShelfRental;
 use App\Models\ShelfRentalExtension;
@@ -14,6 +15,13 @@ use Carbon\Carbon;
 
 class Exports extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'exports.manage';
+    }
+
     public $selectedMonthMonth;
     public $selectedMonthYear;
     public $autoExport;

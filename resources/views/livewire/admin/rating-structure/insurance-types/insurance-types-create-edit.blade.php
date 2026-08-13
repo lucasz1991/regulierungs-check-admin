@@ -182,7 +182,12 @@
                                                 type="button"
                                                 class="border rounded p-2 w-full aspect-video bg-white">
                                             <div class="flex items-center justify-center object-contain object-center max-h-full svg-icon-button overflow-hidden">
-                                                {!! $icon ?: '<span class="text-gray-400 text-xs">SVG</span>' !!}
+                                                @php($safeSvgPreview = \App\Support\SafeIconMarkup::svg($icon))
+                                                @if($safeSvgPreview)
+                                                    {!! $safeSvgPreview !!}
+                                                @else
+                                                    <span class="text-gray-400 text-xs">SVG</span>
+                                                @endif
                                             </div>
                                         </button>
                                     </div>
@@ -210,7 +215,7 @@
                                         </div>
                                         <div class="border rounded bg-white p-3">
                                             <div class="text-xs text-gray-500 mb-2">Vorschau</div>
-                                            @php($fa = trim((string) $icon))
+                                            @php($fa = \App\Support\SafeIconMarkup::fontAwesomeClasses($icon))
                                             <div class="text-2xl">
                                                 @if($fa)
                                                     <i class="{{ $fa }}"></i>

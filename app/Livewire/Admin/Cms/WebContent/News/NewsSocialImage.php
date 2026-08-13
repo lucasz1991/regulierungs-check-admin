@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Post;
 use App\Support\NewsSocialImage as SocialImageRenderer;
 use Illuminate\Validation\Rule;
@@ -18,6 +19,12 @@ use Livewire\Component;
  */
 class NewsSocialImage extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.news.manage';
+    }
     public bool $show = false;
 
     public ?int $postId = null;

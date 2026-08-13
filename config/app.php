@@ -70,7 +70,10 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    // The admin and public applications share naive DATETIME columns.
+    // Keep the timezone identical so short-lived promotion tokens and audit
+    // timestamps are interpreted consistently across both runtimes.
+    'timezone' => 'Europe/Berlin',
 
     /*
     |--------------------------------------------------------------------------

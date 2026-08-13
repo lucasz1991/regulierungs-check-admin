@@ -111,3 +111,265 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: Existing implementation auto-saves per format and currently opens its popovers on hover/focus.
 - Artifacts: none
 - Next: Extend the renderer/settings contract, rebuild the inline controls, and cover persistence plus rendering with focused tests and browser QA.
+
+## 2026-08-12T20:09:21Z | Codex -> all | status
+
+- Message: Started: Promotion-Gluecksrad Admin, Team-RBAC und Mitarbeiterzugang implementieren
+
+## 2026-08-12T20:10:00Z | Codex -> all | start
+
+- Task: Vollstaendiges Team-RBAC, Mitarbeitereinladung und isolierte Promotion-Konsole implementieren.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Bestehende Adminrouten bleiben globalen Admins vorbehalten; Promotion-Mitarbeiter erhalten nur Gate-geschuetzte Promotion-Funktionen.
+- Artifacts: none
+- Next: Testdatenbank absichern und Laravel-10-kompatiblen RailTime-RBAC-Kern integrieren.
+
+## 2026-08-12T21:02:22Z | Codex -> all | status
+
+- Message: Started: Fix promotion prize quota race condition
+
+## 2026-08-12T21:12:00Z | Codex -> all | handoff
+
+- Task: Admin-Preisverwaltung gegen veraltete Reservierungszähler und unzulässige Amazon-Ausgabemodi härten.
+- Status: completed
+- Changed: `app/Livewire/Admin/PromotionAdministration.php`, `tests/Feature/Promotion/AdminPromotionSecurityTest.php`
+- Verified: 3 fokussierte Tests mit 20 Assertions bestanden; PHP-Syntax und `git diff --check` bestanden. Ausgabe und Storno wurden geprüft und verwenden bereits `lockForUpdate` für den Zähler.
+- Artifacts: none
+- Next: Den vollständigen Promotion-Testlauf nach Abschluss der parallel bearbeiteten Einladungseiten- und Audit-Tests erneut ausführen.
+
+## 2026-08-12T21:35:00Z | Codex -> all | handoff
+
+- Task: Quoten-Reconciliation und Konfigurationsaudit atomar abschließen.
+- Status: completed
+- Changed: `app/Livewire/Admin/PromotionAdministration.php`, `tests/Feature/Promotion/AdminPromotionSecurityTest.php`
+- Verified: Vollständige Admin-Promotion-Suite mit 28 Tests und 158 Assertions bestanden; finaler fokussierter Lauf 6 Tests und 37 Assertions bestanden; PHP-Syntax und `git diff --check` bestanden.
+- Artifacts: none
+- Next: Den parallel koordinierten fail-closed Verifier für fehlende Konfigurationsereignisse zusammenführen und anschließend die gesamte Promotion-Suite erneut ausführen.
+
+## 2026-08-13T00:20:00Z | Codex -> all | handoff
+
+- Task: Bereits auditierte Campaign-/Prize-Konfigurationen vor Admin-Mutationen fail-closed verifizieren.
+- Status: completed
+- Changed: `app/Livewire/Admin/PromotionAdministration.php`, `tests/Feature/Promotion/AdminPromotionSecurityTest.php`
+- Verified: Admin-Promotion-Suite mit 30 Tests und 172 Assertions bestanden; fokussierter Audit-/Quota-Lauf 6 Tests und 42 Assertions bestanden; PHP-Syntax und Diff-Check bestanden.
+- Artifacts: none
+- Next: Gemeinsamen abschließenden Promotion-Testlauf nach Merge aller parallel koordinierten Audit-Härtungen ausführen.
+
+## 2026-08-12T21:12:00Z | Codex promotion_domain -> all | handoff
+
+- Message: Audit-P1 abgeschlossen: PromotionAuditChain zentralisiert fail-closed Append/Verify; PromotionWinService delegiert. Admin Audit: 2 Tests, 27 Assertions gruen; PHP-Lint und scoped diff-check sauber.
+
+## 2026-08-12T21:42:53Z | Codex livewire_rbac_hardening -> all | status
+
+- Message: Started: Revoke-safe RBAC for all routed Admin Livewire components and Promotion winner table Blade fix
+
+## 2026-08-12T21:43:13Z | Codex livewire_rbac_hardening -> all | handoff
+
+- Message: Completed revoke-safe RBAC for every routed Admin Livewire component, dynamic WebContentManager hydration authorization, route/component matrix and revocation tests; formatted Promotion winner table Blade directives and added verified onsite render regression. Verified 6 tests/103 assertions plus 1 render test/2 assertions, PHP lint and scoped diff check. A repeated full Promotion run exposed three concurrently introduced Audit verifier failures outside this scope; rerun after Audit integration.
+
+## 2026-08-12T21:46:02Z | Codex promotion_domain -> all | handoff
+
+- Message: Audit P1 hardening complete cross-app: claim-key continuity, participation identity snapshot, configuration baselines required, issue verifies audit before writes. Admin 3 tests/40 assertions passed; lint and scoped diff-check clean.
+
+## 2026-08-12T21:50:00Z | Codex -> all | handoff
+
+- Task: Promotion-Admin, RailTime-Team-RBAC, Mitarbeitereinladung und Gewinnerfassung.
+- Status: completed
+- Changed: vollstaendiger Rechtekatalog/Gates, revoke-sichere Livewire-Komponenten, Team-Rechtematrix, Einladungen, schlanke Promotion-Konsole, Kampagnen-/Kontingentverwaltung, Ausgabe und Audit sowie `.lmzdev/HANDOFF_PROMOTION.md`.
+- Verified: Admin-Promotion/RBAC/Audit 39 Tests/305 Assertions; 390-px-Browserflow mit maskierter Gewinnerliste und einmaliger Vor-Ort-Ausgabe; PHP-Lint, Builds und Routen.
+- Artifacts: `C:\xampp\htdocs\regulierungs-check\output\playwright\staff-list-confirmed-390.png`.
+- Next: Produktionsbackup, Base-Migrationen, gemeinsame Secrets/URL setzen, Promotion-Team und Kampagne vorbereiten, Smoke-Test, dann Feature aktivieren.
+
+## 2026-08-12T21:59:11Z | Codex -> all | status
+
+- Message: Started: exact fail-closed Promotion team RBAC matrix and regression tests
+
+## 2026-08-12T22:01:03Z | Codex promotion_rbac_exact -> all | handoff
+
+- Message: Completed exact fail-closed Promotion team RBAC matrix enforcement in User::hasRbacPermission; added separate regressions for one foreign extra right and one missing mandatory right. Verified full tests/Feature/Promotion: 41 tests, 323 assertions; PHP lint and scoped diff checks passed. Changed only app/Models/User.php, tests/Feature/Promotion/PromotionTeamMatrixFailClosedTest.php, and .lmzdev coordination files; no audit or UI files.
+
+## 2026-08-12T22:15:00Z | Codex -> all | final-security-handoff
+
+- Task: Abschliessende Promotion-Haertung nach unabhaengigem Gate-Review.
+- Status: completed
+- Changed: exakte Promotion-Team-Matrix, Konfigurations-Pre-Verify, historische Gewinn-/Ausgabemodus-Snapshots, zeitstempelgebundene Transitionen und vollstaendige Verifikation vor jeder Mutation.
+- Verified: kompletter Admin-Promotion-Ordner 43 Tests/342 Assertions; Base 29 Tests/178 Assertions; beide gruen.
+- Artifacts: `C:\xampp\htdocs\regulierungs-check\output\playwright\staff-list-confirmed-390.png`.
+- Next: Produktionsbackup und dokumentierten deaktivierten Rollout durchfuehren.
+
+## 2026-08-12T22:21:13Z | Codex promotion_rbac_exact -> all | status
+
+- Message: Started: fail-closed global-admin target protection in Users status mutations
+
+## 2026-08-12T22:23:54Z | Codex-nested-rbac -> all | status
+
+- Message: Started: nested Livewire RBAC matrix and InsuranceTypes icon sanitization
+
+## 2026-08-13T16:15:25Z | Codex -> all | status
+
+- Message: Started: nested Livewire RBAC revoke hardening and InsuranceTypes icon XSS regression coverage
+
+## 2026-08-13T16:16:00Z | Codex nested_rbac_xss_final -> all | start
+
+- Task: Verschachtelte Livewire-Komponenten bei Mount und jeder Hydration exakt autorisieren sowie InsuranceTypes-Icons vor Raw-Rendering strikt sanitizen.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Laravel 10/Livewire 3 und das bestehende `RequiresRbacPermission`-Trait-Muster wurden bestaetigt; parallele User-Target-Guard-Aenderungen in `UserProfile.php` sind an den zustaendigen Agenten abgegrenzt.
+- Artifacts: none
+- Next: Komponentenmatrix patchen und echte Snapshot-Revoke- sowie XSS-Regressionstests ausfuehren.
+
+## 2026-08-13T16:31:00Z | Codex nested_rbac_xss_final -> all | handoff
+
+- Task: Verschachtelte Livewire-RBAC-Revoke-Pruefungen und persistente InsuranceTypes-Icon-XSS schliessen.
+- Status: completed
+- Changed: 22 verschachtelte Livewire-Komponenten, `app/Support/SafeIconMarkup.php`, beide InsuranceTypes-Icon-Views sowie fokussierte RBAC-/XSS-/Sanitizer-Tests; Base-Sanitizer und oeffentliche Icon-Renderpfade gespiegelt.
+- Verified: Admin kombiniert 72 Tests/485 Assertions; Nested-RBAC 4/75; Admin-Icon-XSS 3/17; Sanitizer 15/25. PHP-Lint 26 Dateien und scoped `git diff --check` bestanden.
+- Artifacts: none
+- Next: Gesamtlauf/Finalgate durch Root-Agent; bei Produktions-Rollout bestehende unsichere Iconwerte optional bereinigen, Rendern ist bereits fail-closed.
+
+## 2026-08-13T16:15:37Z | Codex -> all | status
+
+- Message: Started: globale Admin-Konten gegen delegierte users.manage-Statusmutationen schützen
+
+## 2026-08-13T16:22:24Z | Codex admin_user_guard_final -> all | handoff
+
+- Task: Globale Admin-Konten gegen delegierte Einzel-, Profil- und Bulk-Statusmutationen absichern.
+- Status: completed
+- Changed: `app/Services/Admin/UserStatusService.php`, `app/Livewire/Admin/Users.php`, `app/Livewire/Admin/UserProfile.php`, `tests/Feature/Promotion/UserStatusAuthorizationTest.php`, `.lmzdev/*`.
+- Verified: Gesamter Ordner `tests/Feature/Promotion` 50 Tests/368 Assertions; fokussierter Guard 7/26; vier PHP-Lints, Scoped-Diff-Check und Pint fuer neue Service-/Testdatei bestanden.
+- Artifacts: none
+- Next: Nach Abschluss der parallelen Nested-RBAC-Arbeit die gemeinsame Promotion-Suite einmal final wiederholen.
+
+## 2026-08-13T16:36:57Z | Codex -> all | status
+
+- Message: Started: DB-gesteuerte Promotion-Konfiguration ohne PROMOTION env
+
+## 2026-08-13T17:10:00Z | Codex promotion_db_settings_core -> all | handoff
+
+- Task: Promotion-Konfiguration ohne PROMOTION-Umgebungswerte zentral in der gemeinsamen Datenbank speichern.
+- Status: completed
+- Changed: gespiegeltes Model/Settings-Service, alle Admin-Consumer, env-Beispiel, Promotion-Testschemas und Rollout-Handoff.
+- Verified: gesamter Admin-Promotion-Ordner 67 Tests/538 Assertions; relevante PHP-Lints und Diff-Check bestanden.
+- Security: alle Consumer verifizieren verschluesseltes Secret und Konfigurations-MAC fail-closed; das Secret wird weder im UI noch in Logs oder Snapshots ausgegeben.
+- Next: Base-Migration ausrollen, Einstellungen im Volladmin-Bereich speichern und erst nach Smoke-Test aktivieren.
+
+## 2026-08-13T16:37:08Z | Codex -> all | status
+
+- Message: Started: Promotion-Einstellungen im AdminConfig-Bereich ohne env
+
+## 2026-08-13T16:37:24Z | Codex -> all | status
+
+- Message: Started: legacy security P1 fixes Jetstream deletion and WebPage hardening
+
+## 2026-08-13T16:46:46Z | Codex promotion_settings_admin_ui -> all | handoff
+
+- Message: Completed global-admin-only Promotion settings UI inside AdminConfig: database-backed enable/email/redemption URL/QR TTL/retention, locked status fields, hidden auto-generated audit secret, revoke-safe boot/mount/hydrate/save, production HTTPS and local-only HTTP validation. Verified dedicated Livewire suite: 7 tests, 45 assertions; Pint, PHP lint and scoped diff-check passed. Root/Core own final combined Promotion run after legacy schema sync.
+
+## 2026-08-13T16:47:02Z | Codex -> all | handoff
+
+- Message: Legacy-P1 abgeschlossen: Jetstream Account-Deletion UI plus serverseitig gesperrt; WebPage Head-Code global-admin-only mit echten Livewire/DB-Tests; Admin 7 Tests/51 Assertions, lint/Pint/diff gruen. Gesamt-Promotiongate temporaer durch parallele DB-Settings-Testintegration rot.
+
+## 2026-08-13T16:56:18Z | Codex -> all | status
+
+- Message: Started: mirror audit-anchor command hardening
+
+## 2026-08-13T16:56:26Z | Codex -> all | status
+
+- Message: Started: Blog Rich-HTML serverseitig gegen persistentes XSS haerten
+
+## 2026-08-13T16:58:22Z | Codex audit_retention_disabled_fix -> all | start
+
+- Task: Den gespiegelten Admin-Auditanker deaktivierungsunabhaengig und fuer bereits verankerte Koepfe fail-closed machen.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Der Admin-Command beendet sich bei deaktivierter Promotion und selektiert nur pending Koepfe; dadurch bleiben historische verankerte Ketten ungeprueft.
+- Artifacts: none
+- Next: Gueltige signierte DB-Settings direkt pruefen, alle Koepfe verifizieren und fokussierte Regressionen ausfuehren.
+
+## 2026-08-13T17:00:49Z | Codex audit_retention_disabled_fix -> all | handoff
+
+- Task: Admin-Auditanker deaktivierungsunabhaengig und fuer bereits verankerte Koepfe fail-closed machen.
+- Status: completed
+- Changed: `app/Console/Commands/AnchorPromotionAudit.php`, `tests/Feature/Promotion/AdminPromotionSecurityTest.php`.
+- Verified: 31 Tests/181 Assertions; zwei PHP-Lints; Pint fuer den Command; `git diff --check` erfolgreich.
+- Artifacts: none
+- Next: Root-Agent fuehrt das kombinierte Gesamtgate beider Promotion-Suites aus.
+
+## 2026-08-13T17:04:16Z | Codex blog_html_xss_fix -> all | handoff
+
+- Message: Completed: Blog Rich-HTML beim Admin-Speichern sanitisiert; DOM-Allowlist gegen persistentes XSS; Admin 3 Tests/48 Assertions gruen
+
+## 2026-08-13T17:04:24Z | Codex blog_html_xss_fix -> all | handoff
+
+- Task: Persistentes XSS ueber delegiert gepflegtes Blog-Rich-HTML verhindern.
+- Status: completed
+- Changed: `app/Support/BlogHtmlSanitizer.php`, `app/Livewire/Admin/Cms/WebContent/Blog/BlogEditCreate.php`, `tests/Unit/BlogHtmlSanitizerTest.php`, `tests/Feature/BlogHtmlSanitizationTest.php`.
+- Verified: 3 Tests/48 Assertions; echter Livewire-Speicherweg; identischer Sanitizer-Hash mit Base; PHP-Lint und Pint-Test bestanden.
+- Artifacts: none
+- Next: Root-Agent fuehrt den kombinierten Sicherheits-/Promotion-Gesamtlauf aus.
+
+## 2026-08-13T17:15:02Z | Codex -> all | handoff
+
+- Message: Final integration: promotion settings global-admin-only and DB-backed, no PROMOTION env; 390px issue/fulfillment flow passed; final Admin security suite 90 tests/634 assertions; lint, routes, parity and diff checks passed.
+
+## 2026-08-13T17:19:09Z | Codex -> all | handoff
+
+- Message: Legacy full suite additionally executed safely on SQLite memory: 156 passed/1022 assertions, 25 failed, 5 skipped; failures are pre-existing schema/scaffold/news UI tests outside Promotion. New final security suite remains 90/634 green.
+
+## 2026-08-13T18:28:11Z | Codex:simplify_promotion_core -> all | status
+
+- Message: Started: Promotion-Kern auf reinen Webrequest-Betrieb vereinfachen
+
+## 2026-08-13T18:28:15Z | Codex-admin-webflow -> all | status
+
+- Message: Started: Promotion admin UI ohne Commands oder Jobs vereinfachen
+
+## 2026-08-13T18:30:00Z | Codex simplify_admin_webflow -> all | start
+
+- Task: Promotion-Einstellungen, Mitarbeiteranlage und Admin-Handoff auf ausschliessliche UI-/Webaktionen vereinfachen.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Laravel 10 und Livewire 3; Promotion-Kernservice, Models und Command-Dateien sind dem parallel arbeitenden Core-Agenten zugeordnet.
+- Artifacts: none
+- Next: UI-Vertrag und Mitarbeiter-Webaktionen an die vereinfachten Settings und automatische Promotion-Teamhaertung anpassen.
+
+## 2026-08-13T18:55:00Z | Codex simplify_admin_webflow -> all | handoff
+
+- Task: Promotion-Einstellungen, Mitarbeiteranlage und Admin-Handoff auf ausschliessliche UI-/Webaktionen vereinfachen.
+- Status: completed
+- Changed: `app/Livewire/Admin/Config/PromotionSettings.php`, `resources/views/livewire/admin/config/promotion-settings.blade.php`, `resources/views/livewire/admin-config.blade.php`, `app/Support/Rbac/StaffInvitationService.php`, `app/Livewire/Admin/Employees.php`, `resources/views/livewire/admin/employees.blade.php`, fokussierte Promotion-Tests und `.lmzdev/HANDOFF_PROMOTION.md`.
+- Verified: gesamter `tests/Feature/Promotion`-Ordner 68 Tests/544 Assertions; Settings-UI 7/47; PHP-Lint, Pint-Test und Repository-Diff-Check bestanden.
+- Artifacts: none
+- Next: Root-Agent liefert das bereits an den vereinfachten Webbetrieb angepasste und visuell gepruefte Erklaerungs-PDF aus.
+
+## 2026-08-13T18:29:09Z | Codex simplify_promotion_core -> all | start
+
+- Task: Gemeinsame Promotion-Settings, Auditkette und Schema in Base/Admin auf reinen Webrequest-Betrieb vereinfachen.
+- Status: in-progress
+- Changed: `.lmzdev/TASKS.md`, `.lmzdev/COMMUNICATION.md`
+- Verified: Admin-Livewire-Settings und Mitarbeiter-/Einladungsfluss sind dem parallelen Agenten zugeordnet; bestehende Nicht-Promotion-Scheduler bleiben ausserhalb dieses Scopes.
+- Artifacts: none
+- Next: Settings-/Audit-/Command-Abhaengigkeiten exakt inventarisieren und gespiegelten Vertrag patchen.
+
+## 2026-08-13T18:39:00Z | Codex simplify_promotion_core -> all | handoff
+
+- Task: Promotion-Kern in Base/Admin auf ausschliesslich direkte Webrequests reduzieren.
+- Status: completed
+- Changed: gespiegelte `PromotionSettingsService`/`PromotionSetting`; Admin `PromotionAuditChain`, Auditkopf/-event und WinService-Import; Promotion-Commands, Mail und Zugriffskontextmodelle geloescht; Admin-Scheduler-Kommentar entfernt; AuditIntegrity-Testschema angepasst.
+- Verified: Admin AuditIntegrity 5 Tests/55 Assertions; Base Promotion 35/212; PHP-Lint der geaenderten Kerndateien; Settings-Service/Model byte-identisch.
+- Security: Synchrone HMAC-Kette, Einmal-QR, Kontingent-/Transaktionssperren und fail-closed Settings bleiben.
+- Incident: Der separate lokale Base-DB-Verlust ist vollstaendig in Base `.lmzdev/COMMUNICATION.md` dokumentiert und Root gemeldet.
+- Next: Admin-UI-Agent abschliessen; Root-Agent fuehrt Integration und Guard-Haertung durch.
+
+## 2026-08-13T18:35:56Z | Codex simplify_admin_webflow -> all | handoff
+
+- Message: Completed web-only Promotion admin flow; 68 tests/544 assertions, lint, Pint, diff check green; PDF delivery next.
+## 2026-08-13T18:45:00Z | Codex -> all | completion
+
+- Task: Promotion auf direkten Webbetrieb vereinfachen und Erklaerungs-PDF erstellen.
+- Status: completed; lokaler Datenbankvorfall im Base-Handoff dokumentiert.
+- Changed: Admin-Settings nur Freigabe, Einloeseadresse und QR-TTL; Promotion-Team wird bei Einladung/Hochstufung in der Webaktion angelegt/gehaertet; keine Promotion-Commands oder Betriebsnebenwege; destruktive DB-Commands ausserhalb SQLite `:memory:` blockiert.
+- Verified: Admin Promotion + Guard 69 Tests/546 Assertions; alle PHP-Dateien lintfrei; zwei Promotion-Webrouten; keine registrierten `promotion:*`-Commands; PDF mit 10 A4-Seiten gerendert und visuell geprueft.
+- Artifacts: `C:\xampp\htdocs\regulierungs-check\output\pdf\Promotion-Gluecksrad-Technik-und-Mitarbeiteranleitung.pdf`.
+- Next: Lokale DB vor weiterer datenbankgestuetzter Arbeit aus einem vom Nutzer benannten Backup wiederherstellen oder bewusst neu migrieren.

@@ -2,11 +2,19 @@
 
 namespace App\Livewire\Admin\RatingStructure\RatingQuestion;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\RatingQuestion;
 
 class RatingQuestionCreateEdit extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public $questionId;
     public $title;
     public $question_text;

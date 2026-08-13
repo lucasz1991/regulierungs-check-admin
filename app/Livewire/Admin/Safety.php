@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Activitylog\Models\Activity;
@@ -9,7 +10,13 @@ use App\Models\User;
 
 class Safety extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'audit.view';
+    }
 
     public $search = '';
     public $filterMode = 'all'; 

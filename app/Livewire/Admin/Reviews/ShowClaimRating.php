@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reviews;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\ClaimRating;
 use App\Jobs\ClaimRatingAIEval;
@@ -9,6 +10,13 @@ use Livewire\Attributes\On;
 
 class ShowClaimRating extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'reviews.manage';
+    }
+
     public $ratingId;
     public $rating;
 

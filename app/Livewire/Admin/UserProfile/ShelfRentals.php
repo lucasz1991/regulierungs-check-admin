@@ -2,12 +2,20 @@
 
 namespace App\Livewire\Admin\UserProfile;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\ShelfRental;
 use App\Models\User;
 
 class ShelfRentals extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'users.manage';
+    }
+
     public $shelfRentals; // Variable für Daten
     public $userId;
 

@@ -3,15 +3,17 @@
     <!-- Tabs Navigation -->
     <div x-data="{ activeTab: 'none' }">
         <div class="border-b mb-6">
-            <nav class="-mb-px flex space-x-8">
-                <button 
+            <nav class="-mb-px flex flex-wrap gap-x-8 gap-y-3">
+                <button
+                    type="button"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm"
                     :class="{ 'border-blue-500 text-blue-600': activeTab === 'none', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'none' }"
                     @click="activeTab = 'none'"
                 >
                     Übersicht
                 </button>
-                <button 
+                <button
+                    type="button"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm"
                     :class="{ 'border-blue-500 text-blue-600': activeTab === 'basis', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'basis' }"
                     @click="activeTab = 'basis'"
@@ -19,20 +21,32 @@
                     Basis
                 </button>
                 
-                <button 
+                <button
+                    type="button"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm"
                     :class="{ 'border-blue-500 text-blue-600': activeTab === 'mails', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'mails' }"
                     @click="activeTab = 'mails'"
                 >
                     Mail's
                 </button>
-                <button 
+                <button
+                    type="button"
                     class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm"
                     :class="{ 'border-blue-500 text-blue-600': activeTab === 'api', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'api' }"
                     @click="activeTab = 'api'"
                 >
                     Api's
                 </button>
+                @if (auth()->user()?->isAdmin())
+                    <button
+                        type="button"
+                        class="whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm"
+                        :class="{ 'border-blue-500 text-blue-600': activeTab === 'promotion', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab !== 'promotion' }"
+                        @click="activeTab = 'promotion'"
+                    >
+                        Promotion
+                    </button>
+                @endif
             </nav>
         </div>
         <!-- Tab Content -->
@@ -73,6 +87,17 @@
                             </p>
                             <a @click="activeTab = 'api'" class="text-blue-500 mt-3 inline-block font-medium cursor-pointer">API-Einstellungen →</a>
                         </div>
+                        @if (auth()->user()?->isAdmin())
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                                <h3 class="text-lg font-semibold text-gray-700">Promotion-Glücksrad</h3>
+                                <p class="text-sm text-gray-600 mt-2">
+                                    Freigabe, öffentliche Einlöseadresse und QR-Gültigkeit direkt im Adminbereich verwalten.
+                                </p>
+                                <button type="button" @click="activeTab = 'promotion'" class="text-blue-500 mt-3 inline-block font-medium">
+                                    Promotion-Einstellungen &rarr;
+                                </button>
+                            </div>
+                        @endif
                     </div>
                     <div class="mt-6">
                         <p class="text-sm text-gray-500 text-center">
@@ -307,7 +332,11 @@
                     </x-settings-collapse>
                     @livewire('admin.config.grapes-js-settings')
                 </div>
+                @if (auth()->user()?->isAdmin())
+                    <div x-show="activeTab === 'promotion'" x-cloak class="space-y-10" x-collapse.duration.400ms>
+                        @livewire('admin.config.promotion-settings')
+                    </div>
+                @endif
             </div>
         </div>
 </div>
-

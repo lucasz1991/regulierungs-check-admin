@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\RatingStructure\InsuranceSubtypes;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Illuminate\Http\Request;
@@ -12,6 +13,13 @@ use App\Models\InsuranceType;
 
 class InsuranceSubtypesCreateEdit extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     use WithFileUploads;
 
     public $showModal = false;

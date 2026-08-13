@@ -12,8 +12,11 @@ class DeleteUser implements DeletesUsers
      */
     public function delete(User $user): void
     {
-        $user->deleteProfilePhoto();
-        $user->tokens->each->delete();
-        $user->delete();
+        // Jetstream registriert die Livewire-Komponente auch dann, wenn das
+        // sichtbare Account-Deletion-Feature deaktiviert ist. Dieser zweite,
+        // serverseitige Schutz verhindert daher auch direkte bzw. alte
+        // Livewire-Snapshots, die sonst audit-referenzierte Benutzer hart
+        // loeschen koennten.
+        abort(403, 'Die Kontoloeschung ist im Adminbereich deaktiviert.');
     }
 }

@@ -2,6 +2,24 @@
 
 Record durable decisions with date, context, decision, and consequences.
 
+## 2026-08-13 | Promotion laeuft ausschliesslich in direkten Webrequests
+
+- Gewinn-QR, Bindung, Teilnehmerbestaetigung, Ausgabe und Korrektur bleiben transaktionale Webaktionen; es gibt keine Promotion-Commands, Jobs oder Scheduler-Eintraege.
+- Die HMAC-Auditkette wird synchron in derselben Fachtransaktion geschrieben und verifiziert. Externe Auditmails, Ankerstatus und getrennte IP-/User-Agent-Zugriffskontexte entfallen.
+- Admin-Einstellungen enthalten nur Aktivierung, Einloese-Basis-URL und QR-Gueltigkeit; Auditschluessel und Konfigurations-MAC bleiben intern erzeugt und verschluesselt.
+
+## 2026-08-13 | Promotion arbeitet ausschliesslich durch direkte Webaktionen
+
+- Der Volladmin pflegt nur Freigabe, oeffentliche Einloeseadresse und QR-Gueltigkeit; der HMAC-Schluessel wird intern automatisch erzeugt.
+- Einladung und Hochstufung erstellen beziehungsweise haerten das Promotion-Team atomar in derselben Webaktion. Ein vorbereitender Command ist nicht erforderlich.
+- Gewinnanlage, Scan/Verknuepfung und synchrones Audit benoetigen weder Promotion-Commands noch Queue-Jobs oder Scheduler.
+
+## 2026-08-13 | Auditverankerung ist kein Feature-Toggle
+
+- `enabled=false` verhindert neue Promotionvorgaenge, aber nicht Verifikation und externe Verankerung historischer Events.
+- Der Command verwendet `PromotionAuditChain` direkt, weil fachliche Win-Mutationen weiterhin korrekt am Aktivschalter haengen.
+- Korrupter Settings-MAC oder ungueltige Kontrolladresse endet mit Failure ohne E-Mail; auch bereits verankerte Koepfe werden geprueft.
+
 ## 2026-08-05 | News social-image CTA removal
 
 - Removed the complete graphical article CTA instead of hiding only its text.
@@ -31,3 +49,21 @@ Record durable decisions with date, context, decision, and consequences.
 - Anchor controls to the visual element they affect; keep side spacing once at the left edge and bottom spacing once at the lower image edge.
 - Open every control by hover, keyboard focus, or tap, with the mobile side marker moved inside the image so its complete 36 px target remains available.
 - Execute the previously pending nullable JSON migration after runtime schema evidence proved the production-like local database did not yet contain the column.
+
+## 2026-08-13 | Global-admin target guard for user status changes
+
+- Centralize every user activation/deactivation from `Users` and `UserProfile` in one transaction service instead of maintaining divergent component checks.
+- Lock the complete global-admin set before actor and target rows so concurrent requests cannot both pass the last-active-admin check.
+- Treat every Livewire target ID as untrusted, reject a delegated action atomically when any target is a global admin, and lock the profile target property against snapshot tampering.
+
+## 2026-08-13 | Fail-closed account deletion and WebPage executable fields
+
+- Disable Jetstream account deletion in the Admin UI and keep a server-side 403 guard because Jetstream still registers its Livewire component when the feature is hidden.
+- Treat WebPage CSS, JavaScript and free custom meta as privileged executable head configuration available only to a global admin; delegated editors neither receive nor persist these properties.
+- Sanitize WebPage SVG on preview, storage and public legacy rendering, and reject HTML in public page titles.
+
+## 2026-08-13 | Blog Rich-HTML bleibt formatiert, aber passiv
+
+- Die Toast-UI-Formatierung bleibt ueber eine enge DOM-Allowlist erhalten: Ueberschriften, Textauszeichnung, Zitate, Listen samt deaktivierten Aufgaben-Checkboxen, Tabellen und Links.
+- Bilder, Styles, beliebige Klassen, Formulare sowie aktive/einbettende Elemente werden entfernt; Links erlauben nur interne Ziele sowie HTTP(S), Mail und Telefon, externe HTTP(S)-Links erhalten `noopener noreferrer`.
+- Admin und Base verwenden byte-identischen Sanitizer-Code, damit Speicherung und Ausgabe nicht auseinanderlaufen.

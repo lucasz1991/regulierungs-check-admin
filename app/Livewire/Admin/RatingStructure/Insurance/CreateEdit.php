@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\RatingStructure\Insurance;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Insurance;
 use App\Models\InsuranceType;
@@ -13,6 +14,13 @@ use Illuminate\Support\Str;
 
 class CreateEdit extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
 
      use WithFileUploads;
 

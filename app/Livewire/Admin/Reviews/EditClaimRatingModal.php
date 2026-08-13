@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reviews;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Attributes\On;
 use Livewire\Component;
 use Illuminate\Validation\Rule;
@@ -12,6 +13,13 @@ use App\Models\Insurance;
 
 class EditClaimRatingModal extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'reviews.manage';
+    }
+
     public bool $showFormModal = false;
 
     public ?int $ratingId = null;

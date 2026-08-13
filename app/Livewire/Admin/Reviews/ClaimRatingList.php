@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Reviews;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ClaimRating;
@@ -10,7 +11,13 @@ use Illuminate\Support\Facades\Log;
 
 class ClaimRatingList extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'reviews.manage';
+    }
 
     public $search = '';
     public $sortBy = 'created_at';

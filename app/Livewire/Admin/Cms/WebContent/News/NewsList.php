@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Cms\WebContent\News;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Post;
 use App\Models\Setting;
 use App\Support\NewsCacheVersion;
@@ -11,6 +12,12 @@ use Livewire\WithPagination;
 
 class NewsList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'content.news.manage';
+    }
     use WithPagination;
 
     public bool $newsEnabled = false;

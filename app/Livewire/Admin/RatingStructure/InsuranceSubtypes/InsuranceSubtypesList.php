@@ -2,11 +2,19 @@
 
 namespace App\Livewire\Admin\RatingStructure\InsuranceSubtypes;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\InsuranceSubtype;
 
 class InsuranceSubtypesList extends Component
 {
+    use RequiresRbacPermission;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'ratings.structure.manage';
+    }
+
     public $subtypes = [];
 
     protected $listeners = [

@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Contacts;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Http\Controllers\Admin\ContactController;
 use Livewire\WithFileUploads;
@@ -12,7 +13,13 @@ use App\Models\Contact;
 
 class SearchContactsForm extends Component
 {
+    use RequiresRbacPermission;
     use WithFileUploads;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'contacts.manage';
+    }
 
     public $showModal = false;
     public $file;

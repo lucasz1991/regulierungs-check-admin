@@ -2,13 +2,20 @@
 
 namespace App\Livewire\Admin;
 
+use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use App\Models\Contact;
 use Livewire\WithPagination;
 
 class ManageContacts extends Component
 {
+    use RequiresRbacPermission;
     use WithPagination;
+
+    protected function requiredRbacPermission(): string
+    {
+        return 'contacts.manage';
+    }
 
     public $name, $company, $email, $phone, $address, $city, $postal_code, $country, $category, $additional_data;
     public $contactId;

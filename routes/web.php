@@ -45,7 +45,7 @@ Route::middleware(['guest', SensitiveBearerPageHeaders::class])->group(function 
     Route::get('/mitarbeiter/einladung/{token}', [StaffInvitationController::class, 'show'])->name('staff-invitations.show');
 });
 
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified', 'account.active'])->group(function (): void {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'account.active'])->group(function (): void {
     Route::middleware(['promotion.enabled', 'can:promotion.wins.record'])->group(function (): void {
         Route::get('/promotion', PromotionConsole::class)->name('promotion.console');
     });

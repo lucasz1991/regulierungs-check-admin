@@ -67,3 +67,9 @@ Record durable decisions with date, context, decision, and consequences.
 - Die Toast-UI-Formatierung bleibt ueber eine enge DOM-Allowlist erhalten: Ueberschriften, Textauszeichnung, Zitate, Listen samt deaktivierten Aufgaben-Checkboxen, Tabellen und Links.
 - Bilder, Styles, beliebige Klassen, Formulare sowie aktive/einbettende Elemente werden entfernt; Links erlauben nur interne Ziele sowie HTTP(S), Mail und Telefon, externe HTTP(S)-Links erhalten `noopener noreferrer`.
 - Admin und Base verwenden byte-identischen Sanitizer-Code, damit Speicherung und Ausgabe nicht auseinanderlaufen.
+
+## 2026-08-14 | E-Mail-Verifikation ist im Adminsystem optional
+
+- Admin- und Promotion-Mitarbeiterzugang erfordern Anmeldung, aktiven Kontostatus und die jeweiligen RBAC-Rechte, aber keinen gesetzten `email_verified_at`-Zeitstempel.
+- Fortify-Verifikationsrouten, die gebrandete Verify-Seite und der Mailversand bleiben als freiwillige Funktion bestehen.
+- Die getrennte Teilnehmerpruefung vor einer Gewinnausgabe bleibt im Promotion-Domainservice erhalten; sie ist kein Zugangsgate fuer Admins oder Mitarbeiter.

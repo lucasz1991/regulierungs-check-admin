@@ -32,7 +32,7 @@ return [
     // The admin runtime shares its user/session tables with the public app.
     // Jetstream profile routes must therefore stay global-admin-only; in
     // particular Promotion staff may access only /promotion and logout.
-    'middleware' => ['web', 'auth:sanctum', AuthenticateSession::class, 'verified', 'account.active', 'can:admin.dashboard.view'],
+    'middleware' => ['web', 'auth:sanctum', AuthenticateSession::class, 'account.active', 'can:admin.dashboard.view'],
 
     'auth_session' => AuthenticateSession::class,
 

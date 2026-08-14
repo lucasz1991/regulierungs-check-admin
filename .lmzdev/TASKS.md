@@ -20,3 +20,5 @@
 | Auditanker bei deaktivierter Promotion weiterfuehren und verifizieren | Codex / audit_retention_disabled_fix | completed | 2026-08-13T17:00:49Z |
 | Blog-Rich-HTML beim Speichern gegen persistentes XSS sanitizieren | Codex / blog_html_xss_fix | completed | 2026-08-13T17:04:24Z |
 | Promotion-Adminbedienung auf reine Webaktionen ohne Commands oder Jobs vereinfachen | Codex / simplify_admin_webflow | completed | 2026-08-13T18:55:00Z |
+| Admin-E-Mail-Verifikation erklaeren und altes Minia-Template durch Regulierungs-CHECK-Ansicht ersetzen | Codex | completed | 2026-08-14T19:02:40Z |
+| E-Mail-Verifikation im gesamten Admin- und Promotion-Mitarbeiterbereich optional machen | Codex | completed | 2026-08-14T20:50:49Z |

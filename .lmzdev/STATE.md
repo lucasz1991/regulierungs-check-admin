@@ -2,6 +2,9 @@
 
 ## Confirmed
 
+- Weder globale Admins noch Promotion-Mitarbeiter benoetigen im Adminsystem eine bestaetigte E-Mail-Adresse. Der gemeinsame Admin-/Promotion-Routenblock und Jetstream enthalten kein `verified`-Middleware mehr; aktive Konten, Sessionpruefung und RBAC bleiben unveraendert verpflichtend.
+- Die Admin-Verifikationsseite verwendet ein einzelnes responsives Regulierungs-CHECK-Layout mit lokalem Logo, deutschem Text, erneutem Versand und Logout. Minia, Themesbrand, Swiper, Demo-Avatare und der nicht erreichbare Profil-Link sind entfernt.
+- Admin-Verifikationsmails erzeugen ihren signierten Link ueber die Admin-Anwendung und sind nicht mehr von Promotion-Einstellungen oder der oeffentlichen Einloeseadresse abhaengig.
 - Gemeinsamer Promotion-Kern ist auf direkten Webrequest-Betrieb reduziert: keine Promotion-Commands, Auditmail/Ankerfelder oder separaten Zugriffskontexte; synchrone HMAC-Auditkette bleibt.
 - Blog-Rich-HTML wird im Admin vor jeder Erstellung und Aktualisierung mit einer engen, editorgerechten DOM-Allowlist sanitisiert. Aktive Inhalte, beliebige Styles/Klassen, Event-Attribute und unsichere URL-Schemata gelangen nicht mehr in `posts.body`.
 - LMZ Dev workspace initialized.
@@ -24,6 +27,10 @@
 
 ## Verification
 
+- Optionale Admin-E-Mail-Verifikation: 6 Tests/28 Assertions bestanden. Darin sind die middlewarefreie Admin-/Staff-Routenmatrix, Branding, Resend, signierter Link und ungueltiger Hash abgedeckt.
+- Kompletter Admin-Promotion-Sicherheitsordner nach Entfernen der Verifikationspflicht: 69 Tests/567 Assertions bestanden. Unverifizierte Admins und Staff koennen sich anmelden; in der Runtime-Routenliste ist kein `EnsureEmailIsVerified` registriert.
+- Kompletter Admin-Promotion-Sicherheitsordner nach der Auth-Aenderung: 68 Tests/544 Assertions bestanden. Pint fuer die drei PHP-Scope-Dateien, PHP-Lint und `git diff --check` bestanden.
+- Mobile Browser-QA bei 390 x 844: Logo geladen, Karte 358 px breit, Button vollstaendig sichtbar, kein horizontaler Overflow.
 - Admin-Auditkern fokussiert: 5 Tests/55 Assertions bestanden. Gemeinsamer Settings-Service und -Model sind byte-identisch mit Base; PHP-Lint der geaenderten Kerndateien bestanden.
 - Blog-HTML-Sicherheit: Admin 3 Tests/48 Assertions bestanden; echter Livewire-Speicherweg, erlaubte Formatierung, externe/interne Links und verschleierte aktive Payloads sind abgedeckt. PHP-Lint und Pint-Test der eng geaenderten PHP-Dateien bestanden.
 - Auditanker-Fokus: `AdminPromotionSecurityTest` mit 31 Tests/181 Assertions bestanden; zwei PHP-Lints, Pint fuer den Command und `git diff --check` bestanden.

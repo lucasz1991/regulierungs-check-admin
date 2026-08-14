@@ -113,7 +113,7 @@ class AdminPromotionSecurityTest extends TestCase
             ->assertDontSee($issued['token']);
     }
 
-    public function test_unverified_promoted_staff_can_receive_base_verification_link(): void
+    public function test_unverified_promoted_staff_can_receive_admin_verification_link(): void
     {
         Notification::fake();
         $staff = User::create([
@@ -218,7 +218,7 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertDatabaseHas('team_user', ['team_id' => $team->id, 'user_id' => $staff->id, 'role' => 'team_access']);
         $this->assertNotNull($invitation->fresh()->accepted_at);
 
-        auth()->logout();
+        auth('web')->logout();
         $this->withSession(['staff_invitation_token' => $issued['token']])->post(route('staff-invitations.store'), [
             'name' => 'Doppelt', 'password' => 'Strong-password-123!', 'password_confirmation' => 'Strong-password-123!',
         ])->assertSessionHasErrors('email');
@@ -329,6 +329,7 @@ class AdminPromotionSecurityTest extends TestCase
         foreach ($expected as $routeName => $permission) {
             $middleware = app('router')->getRoutes()->getByName($routeName)->gatherMiddleware();
             $this->assertContains('can:'.$permission, $middleware, $routeName);
+            $this->assertNotContains('verified', $middleware, $routeName.' must not require email verification');
         }
     }
 
@@ -378,21 +379,35 @@ class AdminPromotionSecurityTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_staff_can_login_but_regular_user_cannot_use_admin_login(): void
+    public function test_unverified_staff_can_use_admin_login_but_regular_user_cannot(): void
     {
         $admin = $this->admin();
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
+        $staff->forceFill(['email_verified_at' => null])->save();
 
         $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
             ->assertRedirect(route('promotion.console'));
         $this->assertAuthenticatedAs($staff);
+        $this->get(route('promotion.console'))->assertOk();
 
-        auth()->logout();
+        auth('web')->logout();
+        app('auth')->forgetGuards();
+        $this->flushSession();
         $guest = User::create(['name' => 'Guest', 'email' => 'guest@example.test', 'password' => Hash::make('password'), 'role' => 'guest', 'status' => true, 'email_verified_at' => now()]);
         $this->post('/login', ['email' => $guest->email, 'password' => 'password'])
             ->assertSessionHasErrors('email');
         $this->assertGuest();
+    }
+
+    public function test_unverified_admin_login_does_not_redirect_to_email_verification(): void
+    {
+        $admin = $this->admin();
+        $admin->forceFill(['email_verified_at' => null])->save();
+
+        $this->post('/login', ['email' => $admin->email, 'password' => 'password'])
+            ->assertRedirect(route('admin.index'));
+        $this->assertAuthenticatedAs($admin);
     }
 
     public function test_only_admin_can_promote_an_existing_account_and_verification_is_not_forged(): void

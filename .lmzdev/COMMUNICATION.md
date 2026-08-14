@@ -373,3 +373,29 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: Admin Promotion + Guard 69 Tests/546 Assertions; alle PHP-Dateien lintfrei; zwei Promotion-Webrouten; keine registrierten `promotion:*`-Commands; PDF mit 10 A4-Seiten gerendert und visuell geprueft.
 - Artifacts: `C:\xampp\htdocs\regulierungs-check\output\pdf\Promotion-Gluecksrad-Technik-und-Mitarbeiteranleitung.pdf`.
 - Next: Lokale DB vor weiterer datenbankgestuetzter Arbeit aus einem vom Nutzer benannten Backup wiederherstellen oder bewusst neu migrieren.
+
+## 2026-08-14T18:51:29Z | Codex -> all | status
+
+- Message: Started: Admin Email-Verify Weiterleitung und Minia-Template beheben
+
+## 2026-08-14T19:02:40Z | Codex -> all | handoff
+
+- Task: Unerwartete Admin-Weiterleitung und altes Minia-E-Mail-Verify-Template beheben.
+- Status: completed
+- Changed: rollenbewusster `verified`-Alias (globale Admins passieren, Staff bleibt verifikationspflichtig), vollstaendig gebrandete responsive Verify-View, von Promotion-Settings entkoppelte Admin-Verifikationsmail und selbststaendige Regressionstests.
+- Verified: EmailVerificationTest 6 Tests/27 Assertions; kompletter `tests/Feature/Promotion`-Ordner 68/544; PHP-Lint, Pint-Test, `git diff --check`; mobile Browser-QA 390 x 844 ohne Overflow.
+- Artifact: `C:\Users\L. Zacharias\.codex\visualizations\2026\08\12\019ff74a-87a6-71b3-a312-c31fc094c2b3\admin-email-verification-mobile.png`.
+- Next: Admin-Anwendung deployen und den Laravel-View-/Config-Cache im normalen Deployment neu aufbauen, damit die alte kompilierte Minia-View auf Produktion verschwindet.
+
+## 2026-08-14T20:47:45Z | Codex -> all | status
+
+- Message: Started: E-Mail-Verifikation im gesamten Adminbereich optional machen
+
+## 2026-08-14T20:50:49Z | Codex -> all | handoff
+
+- Task: E-Mail-Verifikation im gesamten Admin- und Promotion-Mitarbeiterbereich optional machen.
+- Status: completed
+- Changed: `verified` aus dem gemeinsamen Admin-/Promotion-Routenblock und Jetstream entfernt; den nicht mehr benoetigten rollenbasierten Middleware-Wrapper vollstaendig zurueckgenommen; optionale gebrandete Verify-Seite und Admin-Mail bleiben erhalten; Regressionstests auf die neue Regel umgestellt.
+- Verified: kompletter `tests/Feature/Promotion`-Ordner 69 Tests/567 Assertions; EmailVerificationTest 6/28 im kombinierten Fokus; sechs PHP-Lints, Pint-Test, `git diff --check`; Runtime-Route-Audit ohne `EnsureEmailIsVerified`.
+- Security: `auth`, Session, `account.active` und alle RBAC-Gates bleiben erhalten. Nur die E-Mail-Verifikationspflicht wurde entfernt; Teilnehmerverifikation vor Gewinnausgabe bleibt unveraendert.
+- Next: Admin-Anwendung deployen und Route-/Config-/View-Cache im normalen Deploymentablauf neu aufbauen.

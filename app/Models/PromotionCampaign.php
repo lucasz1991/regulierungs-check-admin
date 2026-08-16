@@ -11,10 +11,15 @@ class PromotionCampaign extends Model
 
     protected $table = 'campaigns';
 
-    protected $fillable = ['name', 'code', 'starts_at', 'ends_at', 'is_active', 'created_by'];
+    protected $fillable = [
+        'name', 'landing_headline', 'landing_text', 'rules_text', 'code', 'starts_at', 'ends_at',
+        'quota_exhaustion_policy', 'is_active', 'is_public', 'public_slot', 'created_by',
+    ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_public' => 'boolean',
+        'quota_exhaustion_policy' => \App\Enums\PromotionQuotaPolicy::class,
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];
@@ -33,6 +38,11 @@ class PromotionCampaign extends Model
     {
         return $this->hasMany(PromotionWin::class, 'campaign_id');
     }
+
+    public function tickets() { return $this->hasMany(PromotionTicket::class, 'campaign_id'); }
+    public function turns() { return $this->hasMany(PromotionTurn::class, 'campaign_id'); }
+    public function spinResults() { return $this->hasMany(PromotionSpinResult::class, 'campaign_id'); }
+    public function promotionState() { return $this->hasOne(PromotionCampaignState::class, 'campaign_id'); }
 
     public function isOpen(): bool
     {

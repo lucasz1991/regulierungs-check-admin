@@ -4,14 +4,17 @@ namespace Tests\Feature\Promotion;
 
 use App\Livewire\Admin\PromotionAdministration;
 use App\Livewire\Promotion\PromotionConsole;
+use App\Models\Customer;
 use App\Models\PromotionCampaign;
 use App\Models\PromotionPrize;
 use App\Models\PromotionWin;
 use App\Models\PromotionWinEvent;
 use App\Models\Team;
 use App\Models\User;
-use App\Services\Promotion\PromotionQrCodeService;
 use App\Services\Promotion\PromotionSettingsService;
+use App\Services\Promotion\PromotionTicketQrSigner;
+use App\Services\Promotion\PromotionTicketService;
+use App\Services\Promotion\PromotionTurnService;
 use App\Services\Promotion\PromotionWinService;
 use App\Support\Rbac\PromotionTeamService;
 use App\Support\Rbac\RbacCatalog;
@@ -62,6 +65,17 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertFalse($staff->hasRbacPermission('promotion.fulfillment.external'));
         $this->assertFalse($staff->hasRbacPermission('roles.manage'));
         $this->assertSame(RbacCatalog::promotionTeamMatrix(), $team->fresh()->permissionMatrix());
+
+        $guest = User::query()->create([
+            'name' => 'Guest in Promotion Team',
+            'email' => 'guest-promotion-team@example.test',
+            'password' => Hash::make('password'),
+            'role' => 'guest',
+            'status' => true,
+            'current_team_id' => $team->id,
+        ]);
+        $team->users()->attach($guest->id, ['role' => 'team_access']);
+        $this->assertFalse($guest->hasRbacPermission('promotion.wins.record'));
     }
 
     public function test_staff_can_only_open_promotion_console_and_admin_remains_global(): void
@@ -69,6 +83,7 @@ class AdminPromotionSecurityTest extends TestCase
         $admin = $this->admin();
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
+        $this->publishV2Campaign($admin);
 
         $this->actingAs($staff)->get('/promotion')->assertOk();
         $this->actingAs($staff)->get('/admin')->assertForbidden();
@@ -147,48 +162,49 @@ class AdminPromotionSecurityTest extends TestCase
         app(PromotionWinService::class)->issue($campaign, $prize, $admin);
     }
 
-    public function test_qr_is_local_svg_and_staff_view_masks_identity(): void
+    public function test_personal_ticket_scan_lists_the_participant_masked_for_staff(): void
     {
         $admin = $this->admin();
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
-        $participant = User::create([
+        $participant = $this->participant($admin, [
             'name' => 'Max Mustermann', 'email' => 'max.mustermann@example.test',
-            'password' => Hash::make('password'), 'role' => 'guest', 'status' => true, 'email_verified_at' => now(),
         ]);
-        $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'PROMO', 'is_active' => true, 'created_by' => $admin->id]);
-        $prize = $this->prize($campaign, 'P1', PromotionPrize::FULFILLMENT_ONSITE, 2);
-        $issued = app(PromotionWinService::class)->issue($campaign, $prize, $staff);
-        $participation = app(PromotionWinService::class)->bindToken($issued->plainToken, $participant);
+        $campaign = $this->publishV2Campaign($admin);
+        $ticket = app(PromotionTicketService::class)->ensureTicket($participant, $campaign);
+        $payload = app(PromotionTicketQrSigner::class)->payload($ticket);
+        $this->assertStringNotContainsString($participant->name, $payload);
+        $this->assertStringNotContainsString($participant->email, $payload);
 
-        $svg = app(PromotionQrCodeService::class)->svg('https://base.example.test/promotion/einloesen/token');
-        $this->assertStringContainsString('<svg', $svg);
-        $this->assertStringNotContainsString('http://api.', $svg);
+        $turns = app(PromotionTurnService::class);
+        $turn = $turns->scanTicket($payload, $staff);
+        $field = $campaign->prizes()->where('outcome_type', 'no_win')->firstOrFail();
+        $turns->recordResult($turn, $field, 'no_win', $staff);
 
         Livewire::actingAs($staff)->test(PromotionConsole::class)
-            ->assertSee($participation->public_id)
-            ->assertSee('M** M********')
+            ->assertSee($ticket->participation->public_id)
+            ->assertSee('M** M*********')
             ->assertDontSee('max.mustermann@example.test');
     }
 
     public function test_verified_confirmed_onsite_win_renders_fulfillment_action_without_blade_artifacts(): void
     {
-        [, $staff, $participant, $campaign] = $this->promotionActors();
+        [$admin, $staff, $participant, $campaign] = $this->promotionActors();
         $prize = $this->prize($campaign, 'ONSITE', PromotionPrize::FULFILLMENT_ONSITE, 1);
-        $service = app(PromotionWinService::class);
-        $issued = $service->issue($campaign, $prize, $staff);
-        $participation = $service->bindToken($issued->plainToken, $participant);
-        $service->confirmParticipation($participation, $participant);
-        $snapshot = (string) $issued->win->fresh()->prize_name_snapshot;
+        app(PromotionTicketService::class)->publishCampaign($campaign, $admin);
+        $ticket = app(PromotionTicketService::class)->ensureTicket($participant, $campaign);
+        $turns = app(PromotionTurnService::class);
+        $turn = $turns->scanTicket(app(PromotionTicketQrSigner::class)->payload($ticket), $staff);
+        $result = $turns->recordResult($turn, $prize, 'prize', $staff);
+        $snapshot = (string) $result->label_snapshot;
         $renamedPrize = 'Nachtraeglich umbenannter Gewinn';
         $prize->update(['name' => $renamedPrize]);
 
         Livewire::actingAs($staff)
             ->test(PromotionConsole::class)
             ->assertSee($snapshot)
-            ->assertSeeHtml('<span class="text-xs text-slate-500">'.$snapshot.'</span>')
-            ->assertDontSeeHtml('<span class="text-xs text-slate-500">'.$renamedPrize.'</span>')
-            ->assertSee('Ausgeben')
+            ->assertSeeHtml('<p class="text-sm font-bold text-slate-900">'.$snapshot.'</p>')
+            ->assertSee('Als ausgehändigt markieren')
             ->assertDontSee('@elseGesperrt');
     }
 
@@ -384,6 +400,7 @@ class AdminPromotionSecurityTest extends TestCase
         $admin = $this->admin();
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
+        $this->publishV2Campaign($admin);
         $staff->forceFill(['email_verified_at' => null])->save();
 
         $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
@@ -451,7 +468,9 @@ class AdminPromotionSecurityTest extends TestCase
         $this->actingAs($admin)->get(route('admin.promotion'))->assertOk();
         $staff = $this->staff(app(PromotionTeamService::class)->ensure($admin));
         $this->flushSession();
-        $this->actingAs($staff)->get(route('promotion.console'))->assertStatus(503);
+        $this->actingAs($staff)->get(route('promotion.console'))
+            ->assertOk()
+            ->assertSee('Teilnehmer aufrufen');
     }
 
     public function test_first_invitation_creates_and_hardens_promotion_team_without_command(): void
@@ -496,7 +515,7 @@ class AdminPromotionSecurityTest extends TestCase
         $this->actingAs($staff)->get(route('promotion.console'))->assertForbidden();
     }
 
-    public function test_campaign_starts_inactive_with_the_three_physical_wheel_prizes(): void
+    public function test_campaign_starts_as_an_empty_inactive_draft_without_hardcoded_prizes(): void
     {
         $admin = $this->admin();
 
@@ -509,11 +528,8 @@ class AdminPromotionSecurityTest extends TestCase
 
         $campaign = PromotionCampaign::query()->where('code', 'STRASSE26')->firstOrFail();
         $this->assertFalse($campaign->is_active);
-        $this->assertEqualsCanonicalizing(
-            ['AMAZON20', 'AMAZON5', 'SURPRISE'],
-            $campaign->prizes()->pluck('code')->all(),
-        );
-        $this->assertTrue($campaign->prizes()->where('quota', 0)->where('is_active', false)->count() === 3);
+        $this->assertFalse($campaign->is_public);
+        $this->assertCount(0, $campaign->prizes);
     }
 
     public function test_campaign_and_prize_configuration_are_hmac_audited(): void
@@ -527,13 +543,16 @@ class AdminPromotionSecurityTest extends TestCase
             ->assertHasNoErrors();
 
         $campaign = PromotionCampaign::query()->where('code', 'AUDIT26')->firstOrFail();
-        $surprise = $campaign->prizes()->where('code', 'SURPRISE')->firstOrFail();
-
-        $component->call('editPrize', $surprise->id)
+        $component
+            ->set('prizeCode', 'FREIERGEWINN')
+            ->set('prizeName', 'Frei konfigurierter Gewinn')
+            ->set('prizeOutcomeType', 'prize')
+            ->set('prizeFulfillmentMode', PromotionPrize::FULFILLMENT_ONSITE)
             ->set('prizeQuota', 5)
             ->set('prizeIsActive', true)
             ->call('savePrize')
             ->assertHasNoErrors();
+        $surprise = $campaign->prizes()->where('code', 'FREIERGEWINN')->firstOrFail();
 
         $service = app(PromotionWinService::class);
         $this->assertTrue($service->verifyAuditChain($campaign)['valid']);
@@ -569,7 +588,7 @@ class AdminPromotionSecurityTest extends TestCase
             $this->assertStringContainsString('nicht verifiziert', $exception->getMessage());
         }
 
-        $this->assertSame('Surprise', $surprise->fresh()->name);
+        $this->assertSame('Frei konfigurierter Gewinn', $surprise->fresh()->name);
         $this->assertSame(99, $surprise->fresh()->quota);
         $this->assertSame($eventCount, PromotionWinEvent::query()->where('campaign_id', $campaign->id)->count());
         $this->assertFalse($service->verifyAuditChain($campaign)['valid']);
@@ -712,18 +731,7 @@ class AdminPromotionSecurityTest extends TestCase
 
         $this->assertTrue($campaign->fresh()->is_active);
         $this->assertSame(1, PromotionWinEvent::query()->where('campaign_id', $campaign->id)->where('event_type', 'campaign.configured')->count());
-        $this->assertSame(3, PromotionWinEvent::query()->where('campaign_id', $campaign->id)->where('event_type', 'prize.configured')->count());
-
-        $configuredPrizeIds = PromotionWinEvent::query()
-            ->where('campaign_id', $campaign->id)
-            ->where('event_type', 'prize.configured')
-            ->get()
-            ->map(fn (PromotionWinEvent $event): int => (int) data_get($event->payload, 'prize.id'))
-            ->sort()
-            ->values()
-            ->all();
-
-        $this->assertSame($campaign->prizes()->orderBy('id')->pluck('id')->all(), $configuredPrizeIds);
+        $this->assertSame(0, PromotionWinEvent::query()->where('campaign_id', $campaign->id)->where('event_type', 'prize.configured')->count());
         $this->assertTrue(app(\App\Services\Promotion\PromotionAuditChain::class)->verify($campaign->fresh()));
     }
 
@@ -757,28 +765,34 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertDatabaseCount('win_events', 0);
     }
 
-    public function test_amazon_prizes_are_always_external_and_invalid_modes_block_campaign_activation(): void
+    public function test_arbitrary_prize_modes_are_allowed_but_publication_requires_complete_landing_content(): void
     {
         $admin = $this->admin();
-        $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'AMAZON', 'is_active' => false, 'created_by' => $admin->id]);
-        $amazon20 = $this->prize($campaign, 'AMAZON20', PromotionPrize::FULFILLMENT_EXTERNAL, 5);
+        $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'ARBITRARY', 'is_active' => false, 'created_by' => $admin->id]);
+        $amazon20 = $this->prize($campaign, 'FREIE-WAHL', PromotionPrize::FULFILLMENT_EXTERNAL, 5);
 
         $this->savePrizeThroughLivewire($admin, $amazon20, quota: 5, mode: PromotionPrize::FULFILLMENT_ONSITE)
-            ->assertHasErrors(['prizeFulfillmentMode']);
-        $this->assertSame(PromotionPrize::FULFILLMENT_EXTERNAL, $amazon20->fresh()->fulfillment_mode);
+            ->assertHasNoErrors();
+        $this->assertSame(PromotionPrize::FULFILLMENT_ONSITE, $amazon20->fresh()->fulfillment_mode);
 
-        $amazon20->forceFill(['fulfillment_mode' => PromotionPrize::FULFILLMENT_ONSITE])->save();
-        $this->prize($campaign, 'AMAZON5', PromotionPrize::FULFILLMENT_EXTERNAL, 5);
-        $surprise = $this->prize($campaign, 'SURPRISE', PromotionPrize::FULFILLMENT_ONSITE, 5);
-        $surprise->forceFill(['configuration' => ['mode_confirmed' => true]])->save();
-
-        Livewire::actingAs($admin)->test(PromotionAdministration::class)
+        $component = Livewire::actingAs($admin)->test(PromotionAdministration::class)
             ->call('editCampaign', $campaign->id)
             ->set('campaignIsActive', true)
+            ->set('campaignIsPublic', true)
             ->call('saveCampaign')
-            ->assertHasErrors(['campaignIsActive']);
+            ->assertHasErrors(['campaignIsPublic']);
 
         $this->assertFalse($campaign->fresh()->is_active);
+
+        $component
+            ->set('campaignLandingHeadline', 'Drehen und gewinnen')
+            ->set('campaignLandingText', 'Erklärung der Kampagne')
+            ->set('campaignRulesText', 'Eine Teilnahme je Konto')
+            ->call('saveCampaign')
+            ->assertHasNoErrors();
+
+        $this->assertTrue($campaign->fresh()->is_active);
+        $this->assertTrue($campaign->fresh()->is_public);
     }
 
     /** @return array{User, User, User, PromotionCampaign} */
@@ -787,10 +801,43 @@ class AdminPromotionSecurityTest extends TestCase
         $admin = $this->admin();
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
-        $participant = User::create(['name' => 'Participant', 'email' => uniqid('p').'@example.test', 'password' => Hash::make('password'), 'role' => 'guest', 'status' => true, 'email_verified_at' => now()]);
+        $participant = $this->participant($admin);
         $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'PROMO', 'is_active' => true, 'created_by' => $admin->id]);
 
         return [$admin, $staff, $participant, $campaign];
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function participant(User $owner, array $attributes = []): User
+    {
+        $team = Team::query()->where('name', 'Benutzer')->first();
+        if (! $team) {
+            $team = new Team;
+            $team->forceFill([
+                'user_id' => $owner->id,
+                'name' => 'Benutzer',
+                'personal_team' => false,
+                'rbac_permissions' => [],
+            ])->save();
+        }
+        $user = User::query()->create(array_merge([
+            'name' => 'Participant',
+            'email' => uniqid('participant-', true).'@example.test',
+            'password' => Hash::make('password'),
+            'role' => 'guest',
+            'status' => true,
+            'email_verified_at' => now(),
+            'current_team_id' => $team->id,
+        ], $attributes));
+        Customer::query()->create([
+            'user_id' => $user->id,
+            'first_name' => '',
+            'last_name' => '',
+            'username' => $user->name,
+        ]);
+        $team->users()->attach($user->id, ['role' => 'guest']);
+
+        return $user->fresh();
     }
 
     private function prize(PromotionCampaign $campaign, string $code, string $mode, int $quota): PromotionPrize
@@ -867,6 +914,28 @@ class AdminPromotionSecurityTest extends TestCase
         return $staff;
     }
 
+    private function publishV2Campaign(User $admin): PromotionCampaign
+    {
+        $campaign = PromotionCampaign::create([
+            'name' => 'Öffentliche Testkampagne',
+            'landing_headline' => 'Drehe am Glücksrad',
+            'landing_text' => 'Melde dich an und zeige dein persönliches Ticket vor.',
+            'rules_text' => 'Pro Konto und Kampagne ist genau eine Teilnahme möglich.',
+            'code' => 'V2-'.str()->upper(str()->random(8)),
+            'quota_exhaustion_policy' => 'block',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+        $this->prize($campaign, 'NO-WIN', PromotionPrize::FULFILLMENT_ONSITE, 0)
+            ->forceFill(['outcome_type' => 'no_win', 'awarded_count' => 0])
+            ->save();
+
+        $audit = app(\App\Services\Promotion\PromotionAuditChain::class);
+        $audit->appendConfiguration($campaign, 'campaign.configured', $audit->configurationPayload($campaign), $admin);
+
+        return app(PromotionTicketService::class)->publishCampaign($campaign, $admin);
+    }
+
     private function createSchema(): void
     {
         Schema::create('users', function (Blueprint $t): void {
@@ -897,6 +966,22 @@ class AdminPromotionSecurityTest extends TestCase
             $t->timestamps();
             $t->unique(['team_id', 'user_id']);
         });
+        Schema::create('customers', function (Blueprint $t): void {
+            $t->id();
+            $t->unsignedBigInteger('user_id');
+            $t->string('first_name');
+            $t->string('last_name');
+            $t->string('username');
+            $t->string('profile_picture')->nullable();
+            $t->string('phone_number')->nullable();
+            $t->string('street')->nullable();
+            $t->string('city')->nullable();
+            $t->string('state')->nullable();
+            $t->string('postal_code')->nullable();
+            $t->string('country')->nullable();
+            $t->softDeletes();
+            $t->timestamps();
+        });
         Schema::create('staff_invitations', function (Blueprint $t): void {
             $t->id();
             $t->string('email');
@@ -912,10 +997,16 @@ class AdminPromotionSecurityTest extends TestCase
         Schema::create('campaigns', function (Blueprint $t): void {
             $t->id();
             $t->string('name');
+            $t->string('landing_headline')->nullable();
+            $t->text('landing_text')->nullable();
+            $t->text('rules_text')->nullable();
             $t->string('code')->unique();
             $t->dateTime('starts_at')->nullable();
             $t->dateTime('ends_at')->nullable();
+            $t->string('quota_exhaustion_policy', 32)->default('block');
             $t->boolean('is_active');
+            $t->boolean('is_public')->default(false);
+            $t->unsignedTinyInteger('public_slot')->nullable()->unique();
             $t->unsignedBigInteger('created_by')->nullable();
             $t->timestamps();
         });
@@ -924,9 +1015,11 @@ class AdminPromotionSecurityTest extends TestCase
             $t->unsignedBigInteger('campaign_id');
             $t->string('code');
             $t->string('name');
+            $t->string('outcome_type', 32)->default('prize');
             $t->string('fulfillment_mode');
             $t->unsignedInteger('quota');
             $t->unsignedInteger('reserved_count')->default(0);
+            $t->unsignedInteger('awarded_count')->default(0);
             $t->boolean('is_active');
             $t->unsignedInteger('sort_order')->default(0);
             $t->json('configuration')->nullable();
@@ -957,6 +1050,67 @@ class AdminPromotionSecurityTest extends TestCase
             } $t->text('cancellation_reason')->nullable();
             $t->timestamps();
         });
+        Schema::create('promotion_tickets', function (Blueprint $t): void {
+            $t->id();
+            $t->unsignedBigInteger('participation_id')->unique();
+            $t->unsignedBigInteger('campaign_id');
+            $t->unsignedBigInteger('user_id')->nullable();
+            $t->string('status', 20);
+            $t->dateTime('issued_at');
+            $t->dateTime('activated_at')->nullable();
+            $t->dateTime('completed_at')->nullable();
+            $t->dateTime('cancelled_at')->nullable();
+            $t->timestamps();
+            $t->unique(['campaign_id', 'user_id']);
+        });
+        Schema::create('promotion_turns', function (Blueprint $t): void {
+            $t->id();
+            $t->unsignedBigInteger('ticket_id');
+            $t->unsignedBigInteger('campaign_id');
+            $t->unsignedBigInteger('started_by')->nullable();
+            $t->unsignedBigInteger('completed_by')->nullable();
+            $t->unsignedBigInteger('released_by')->nullable();
+            $t->string('status', 20);
+            $t->dateTime('started_at');
+            $t->dateTime('completed_at')->nullable();
+            $t->dateTime('released_at')->nullable();
+            $t->string('release_reason', 120)->nullable();
+            $t->timestamps();
+        });
+        Schema::create('promotion_campaign_states', function (Blueprint $t): void {
+            $t->unsignedBigInteger('campaign_id')->primary();
+            $t->unsignedBigInteger('active_turn_id')->nullable()->unique();
+            $t->boolean('sticker_required')->default(false);
+            $t->dateTime('sticker_acknowledged_at')->nullable();
+            $t->unsignedBigInteger('sticker_acknowledged_by')->nullable();
+            $t->timestamps();
+        });
+        Schema::create('promotion_spin_results', function (Blueprint $t): void {
+            $t->id();
+            $t->unsignedBigInteger('turn_id');
+            $t->unsignedBigInteger('ticket_id');
+            $t->unsignedBigInteger('campaign_id');
+            $t->unsignedBigInteger('prize_id')->nullable();
+            $t->unsignedSmallInteger('sequence');
+            $t->string('outcome_type_snapshot', 32);
+            $t->string('label_snapshot');
+            $t->string('fulfillment_mode_snapshot', 32)->nullable();
+            $t->boolean('is_final')->default(false);
+            $t->unsignedBigInteger('recorded_by')->nullable();
+            $t->dateTime('recorded_at');
+            $t->unsignedBigInteger('corrects_result_id')->nullable();
+            $t->dateTime('superseded_at')->nullable();
+            $t->string('correction_reason', 255)->nullable();
+            $t->string('mail_status', 20)->default('not_required');
+            $t->dateTime('mail_sent_at')->nullable();
+            $t->dateTime('mail_failed_at')->nullable();
+            $t->dateTime('mail_last_attempted_at')->nullable();
+            $t->char('mail_error_digest', 64)->nullable();
+            $t->unsignedBigInteger('fulfilled_by')->nullable();
+            $t->dateTime('fulfilled_at')->nullable();
+            $t->timestamps();
+            $t->unique(['turn_id', 'sequence']);
+        });
         Schema::create('promotion_audit_heads', function (Blueprint $t): void {
             $t->unsignedBigInteger('campaign_id')->primary();
             $t->unsignedBigInteger('last_sequence')->default(0);
@@ -968,6 +1122,9 @@ class AdminPromotionSecurityTest extends TestCase
             $t->unsignedBigInteger('campaign_id');
             $t->unsignedBigInteger('sequence');
             $t->unsignedBigInteger('win_id')->nullable();
+            $t->unsignedBigInteger('ticket_id')->nullable();
+            $t->unsignedBigInteger('turn_id')->nullable();
+            $t->unsignedBigInteger('spin_result_id')->nullable();
             $t->unsignedBigInteger('participation_id')->nullable();
             $t->char('actor_ref', 64)->nullable();
             $t->string('event_type');
@@ -978,12 +1135,36 @@ class AdminPromotionSecurityTest extends TestCase
         });
         Schema::create('promotion_settings', function (Blueprint $t): void {
             $t->unsignedTinyInteger('id')->primary();
+            $t->unsignedBigInteger('public_campaign_id')->nullable();
             $t->boolean('enabled')->default(false);
             $t->string('redemption_base_url', 2048)->nullable();
             $t->unsignedSmallInteger('qr_ttl_minutes')->default(30);
             $t->text('audit_secret_encrypted');
             $t->char('configuration_mac', 64);
             $t->timestamps();
+        });
+        Schema::create('social_auth_provider_settings', function (Blueprint $t): void {
+            $t->id();
+            $t->string('provider', 32)->unique();
+            $t->boolean('enabled')->default(false);
+            $t->string('client_id')->nullable();
+            $t->text('client_secret_encrypted')->nullable();
+            $t->string('redirect_uri', 2048)->nullable();
+            $t->string('apple_team_id', 64)->nullable();
+            $t->string('apple_key_id', 64)->nullable();
+            $t->dateTime('client_secret_expires_at')->nullable();
+            $t->char('configuration_mac', 64)->nullable();
+            $t->timestamps();
+        });
+        Schema::create('social_accounts', function (Blueprint $t): void {
+            $t->id();
+            $t->unsignedBigInteger('user_id');
+            $t->string('provider', 32);
+            $t->string('provider_user_id');
+            $t->string('provider_email')->nullable();
+            $t->timestamps();
+            $t->unique(['provider', 'provider_user_id']);
+            $t->unique(['user_id', 'provider']);
         });
         Schema::create('activity_log', function (Blueprint $t): void {
             $t->bigIncrements('id');

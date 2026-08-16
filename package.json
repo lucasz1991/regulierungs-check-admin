@@ -4,6 +4,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build && node -e \"const fs=require('fs');const from='public/build/.vite/manifest.json';const to='public/build/manifest.json';if(fs.existsSync(from)){fs.renameSync(from,to);}fs.rmSync('public/build/.vite',{recursive:true,force:true});\"",
+        "check:promotion-scanner": "node scripts/check-promotion-scanner-contract.mjs",
         "check:news-template-contract": "node scripts/check-news-tailwind-contract.mjs",
         "check:news-tailwind-contract": "npm run check:news-template-contract"
     },
@@ -37,6 +38,7 @@
         "@popperjs/core": "^2.11.6",
         "@simonwep/pickr": "^1.8.1",
         "@tailwindcss/forms": "^0.5.0",
+        "@zxing/browser": "^0.1.5",
         "admin-resources": "git+https://github.com/themesbrand/admin-resources#master",
         "alertifyjs": "^1.13.1",
         "alpinejs": "^3.14.3",

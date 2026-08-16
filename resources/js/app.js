@@ -1,13 +1,16 @@
 import './bootstrap';
 import 'trix';
 import collapse from '@alpinejs/collapse';
+import focus from '@alpinejs/focus';
 import mask from '@alpinejs/mask';
 import resize from '@alpinejs/resize';
 import intersect from '@alpinejs/intersect';
 import sort from '@alpinejs/sort';
 import adminDashboard from './dashboard/admin-dashboard';
+import promotionScanner from './promotion-scanner';
 
 Alpine.plugin(collapse);
+Alpine.plugin(focus);
 Alpine.plugin(mask);
 Alpine.plugin(resize);
 Alpine.plugin(intersect);
@@ -17,6 +20,7 @@ Alpine.plugin(sort);
 // diese Datei laeuft vorher, `alpine:init` greift also noch.
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('adminDashboard', adminDashboard);
+    window.Alpine.data('promotionScanner', promotionScanner);
 });
 
 let sidebarCollapseTimer = null;

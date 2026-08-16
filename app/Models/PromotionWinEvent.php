@@ -2,37 +2,49 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 
 class PromotionWinEvent extends Model
 {
-    use HasFactory;
-
     public $timestamps = false;
 
     protected $table = 'win_events';
 
-    protected $fillable = [
-        'campaign_id', 'win_id', 'participation_id', 'actor_ref', 'sequence', 'event_type', 'payload',
-        'previous_hash', 'event_hash', 'occurred_at',
-    ];
+    protected $guarded = [];
 
-    protected $casts = ['payload' => 'array', 'occurred_at' => 'datetime', 'sequence' => 'integer'];
+    protected $casts = ['payload' => 'array', 'sequence' => 'integer', 'occurred_at' => 'immutable_datetime'];
 
-    public function campaign()
+    protected static function booted(): void
+    {
+        static::updating(static fn (): never => throw new LogicException('Promotion audit events are immutable.'));
+        static::deleting(static fn (): never => throw new LogicException('Promotion audit events are immutable.'));
+    }
+
+    public function campaign(): BelongsTo
     {
         return $this->belongsTo(PromotionCampaign::class, 'campaign_id');
     }
 
-    public function win()
+    public function win(): BelongsTo
     {
         return $this->belongsTo(PromotionWin::class, 'win_id');
     }
 
-    protected static function booted(): void
+    public function ticket(): BelongsTo
     {
-        static::updating(static fn (): never => throw new \LogicException('Promotion audit events are immutable.'));
-        static::deleting(static fn (): never => throw new \LogicException('Promotion audit events are immutable.'));
+        return $this->belongsTo(PromotionTicket::class, 'ticket_id');
     }
+
+    public function turn(): BelongsTo
+    {
+        return $this->belongsTo(PromotionTurn::class, 'turn_id');
+    }
+
+    public function spinResult(): BelongsTo
+    {
+        return $this->belongsTo(PromotionSpinResult::class, 'spin_result_id');
+    }
+
 }

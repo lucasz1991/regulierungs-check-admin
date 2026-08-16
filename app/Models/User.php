@@ -125,6 +125,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return true;
         }
 
+        if (! $this->isStaff()) {
+            return false;
+        }
+
         if (RbacCatalog::isAdminOnly($permission)) {
             return false;
         }

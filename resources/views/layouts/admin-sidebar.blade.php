@@ -13,7 +13,7 @@
 
         @can('promotion.campaigns.manage')
             <x-menu.sidebar-nav label="Promotion">
-                <x-menu.sidebar-nav-link :href="route('admin.promotion')" icon="gift" :active="request()->routeIs('admin.promotion')">Kampagnen &amp; Audit</x-menu.sidebar-nav-link>
+                <x-menu.sidebar-nav-link :href="route('admin.promotion')" icon="gift" :active="request()->routeIs('admin.promotion')">Glücksrad-Kampagnen</x-menu.sidebar-nav-link>
             </x-menu.sidebar-nav>
         @endcan
 

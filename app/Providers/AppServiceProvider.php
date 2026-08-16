@@ -39,8 +39,12 @@ class AppServiceProvider extends ServiceProvider
                 return;
             }
 
+            if (app()->environment('testing') && preg_match('/_test\z/i', $database) === 1) {
+                return;
+            }
+
             throw new RuntimeException(sprintf(
-                'Destruktiver Datenbankbefehl blockiert: %s darf nur mit SQLite :memory: ausgefuehrt werden; aktiv ist %s/%s.',
+                'Destruktiver Datenbankbefehl blockiert: %s darf nur mit SQLite :memory: oder im Testing-Modus mit einer auf _test endenden Datenbank ausgefuehrt werden; aktiv ist %s/%s.',
                 $event->command,
                 $connection,
                 $database,

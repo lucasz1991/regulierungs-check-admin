@@ -4,21 +4,24 @@ namespace App\Services\Promotion;
 
 use App\Models\PromotionAuditHead;
 use App\Models\PromotionCampaign;
+use App\Models\PromotionCampaignState;
 use App\Models\PromotionParticipation;
+use App\Models\PromotionSpinResult;
+use App\Models\PromotionTicket;
+use App\Models\PromotionTurn;
 use App\Models\PromotionWin;
 use App\Models\PromotionWinEvent;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 final class PromotionAuditChain
 {
     public const GENESIS_HASH = '0000000000000000000000000000000000000000000000000000000000000000';
 
-    public function __construct(private readonly PromotionSettingsService $settings)
-    {
-    }
+    public function __construct(private readonly PromotionSettingsService $settings) {}
 
     public function append(
         PromotionCampaign $campaign,
@@ -28,6 +31,9 @@ final class PromotionAuditChain
         ?User $actor,
         array $payload = [],
         array $context = [],
+        ?PromotionTicket $ticket = null,
+        ?PromotionTurn $turn = null,
+        ?PromotionSpinResult $spinResult = null,
     ): PromotionWinEvent {
         $key = $this->key();
 
@@ -61,8 +67,28 @@ final class PromotionAuditChain
             $payload['participation_state'] = $this->participationState($participation, $key);
         }
 
+        if ($ticket) {
+            $payload['ticket_state'] = $this->ticketState($ticket, $key);
+        }
+
+        if ($turn) {
+            $payload['turn_state'] = $this->turnState($turn, $key);
+        }
+
+        if ($spinResult) {
+            $payload['spin_result_state'] = $this->spinResultState($spinResult, $key);
+        }
+
+        $campaignState = Schema::hasTable('promotion_campaign_states')
+            ? PromotionCampaignState::query()->find($campaign->getKey())
+            : null;
+        if ($campaignState) {
+            $payload['campaign_state'] = $this->campaignRuntimeState($campaignState, $key);
+        }
+
         $payload = $this->canonicalize($payload);
-        $material = $this->canonicalJson([
+
+        $materialData = [
             'campaign_id' => (int) $campaign->getKey(),
             'event_type' => $eventType,
             'occurred_at' => $occurredAt,
@@ -70,10 +96,18 @@ final class PromotionAuditChain
             'previous_hash' => $head->last_hash,
             'sequence' => $sequence,
             'win_id' => $win?->getKey(),
-        ]);
+        ];
+        if ($ticket || $turn || $spinResult) {
+            $materialData += [
+                'ticket_id' => $ticket?->getKey(),
+                'turn_id' => $turn?->getKey(),
+                'spin_result_id' => $spinResult?->getKey(),
+            ];
+        }
+        $material = $this->canonicalJson($materialData);
         $eventHash = hash_hmac('sha256', $material, $key);
 
-        $event = PromotionWinEvent::query()->create([
+        $eventData = [
             'campaign_id' => $campaign->getKey(),
             'sequence' => $sequence,
             'win_id' => $win?->getKey(),
@@ -84,11 +118,47 @@ final class PromotionAuditChain
             'previous_hash' => $head->last_hash,
             'event_hash' => $eventHash,
             'occurred_at' => Carbon::createFromFormat('Y-m-d\TH:i:s\Z', $occurredAt, 'UTC'),
-        ]);
+        ];
+        if (Schema::hasColumn('win_events', 'ticket_id')) {
+            $eventData += [
+                'ticket_id' => $ticket?->getKey(),
+                'turn_id' => $turn?->getKey(),
+                'spin_result_id' => $spinResult?->getKey(),
+            ];
+        }
 
-        $head->forceFill(['last_sequence' => $sequence, 'last_hash' => $eventHash])->save();
+        $event = PromotionWinEvent::query()->create($eventData);
+
+        $head->forceFill([
+            'last_sequence' => $sequence,
+            'last_hash' => $eventHash,
+        ])->save();
 
         return $event;
+    }
+
+    public function appendV2(
+        PromotionCampaign $campaign,
+        string $eventType,
+        ?PromotionParticipation $participation,
+        ?User $actor,
+        array $payload = [],
+        ?PromotionTicket $ticket = null,
+        ?PromotionTurn $turn = null,
+        ?PromotionSpinResult $spinResult = null,
+    ): PromotionWinEvent {
+        return $this->append(
+            $campaign,
+            $eventType,
+            null,
+            $participation,
+            $actor,
+            $payload,
+            [],
+            $ticket,
+            $turn,
+            $spinResult,
+        );
     }
 
     public function verify(PromotionCampaign $campaign): bool
@@ -102,6 +172,7 @@ final class PromotionAuditChain
 
         return $this->verifyWinStates((int) $campaign->getKey(), $key)
             && $this->verifyPrizeCounters((int) $campaign->getKey())
+            && $this->verifyV2States((int) $campaign->getKey(), $key)
             && $this->verifyLatestConfiguration($campaign, $head->last_sequence > 0);
     }
 
@@ -115,6 +186,17 @@ final class PromotionAuditChain
         return $this->append($campaign, $eventType, null, null, $actor, $payload, $context);
     }
 
+    /** @return array{campaign: array<string, mixed>, prizes: array<int, array<string, mixed>>} */
+    public function configurationPayload(PromotionCampaign $campaign): array
+    {
+        $campaign = PromotionCampaign::query()->with('prizes')->findOrFail($campaign->getKey());
+
+        return [
+            'campaign' => $this->campaignState($campaign),
+            'prizes' => $campaign->prizes->sortBy('id')->map(fn ($prize): array => $this->prizeState($prize))->values()->all(),
+        ];
+    }
+
     private function verifyHashChain(int $campaignId, PromotionAuditHead $head, string $key): bool
     {
         $previousHash = self::GENESIS_HASH;
@@ -125,12 +207,16 @@ final class PromotionAuditChain
                 return false;
             }
 
+            // Die DB speichert diesen Wert bewusst als UTC-Sekunde ohne Offset.
+            // Ein normaler Eloquent-Datetime-Cast wuerde ihn in der App-Zeitzone
+            // interpretieren und dadurch das kanonische Hashmaterial verschieben.
             $occurredAt = Carbon::createFromFormat(
                 'Y-m-d H:i:s',
                 (string) $event->getRawOriginal('occurred_at'),
                 'UTC',
             )->format('Y-m-d\TH:i:s\Z');
-            $material = $this->canonicalJson([
+
+            $materialData = [
                 'campaign_id' => $campaignId,
                 'event_type' => $event->event_type,
                 'occurred_at' => $occurredAt,
@@ -138,7 +224,15 @@ final class PromotionAuditChain
                 'previous_hash' => $event->previous_hash,
                 'sequence' => $event->sequence,
                 'win_id' => $event->win_id,
-            ]);
+            ];
+            if ($event->ticket_id !== null || $event->turn_id !== null || $event->spin_result_id !== null) {
+                $materialData += [
+                    'ticket_id' => $event->ticket_id,
+                    'turn_id' => $event->turn_id,
+                    'spin_result_id' => $event->spin_result_id,
+                ];
+            }
+            $material = $this->canonicalJson($materialData);
 
             if (! hash_equals($event->event_hash, hash_hmac('sha256', $material, $key))) {
                 return false;
@@ -154,7 +248,10 @@ final class PromotionAuditChain
 
     private function verifyWinStates(int $campaignId, string $key): bool
     {
-        $events = PromotionWinEvent::query()->where('campaign_id', $campaignId)->orderBy('sequence')->get();
+        $events = PromotionWinEvent::query()
+            ->where('campaign_id', $campaignId)
+            ->orderBy('sequence')
+            ->get();
         $events = $events->whereNotNull('win_id')->values();
         $wins = PromotionWin::query()->where('campaign_id', $campaignId)->get()->keyBy('id');
         $eventWinIds = $events->whereNotNull('win_id')->pluck('win_id')->map(static fn (mixed $id): int => (int) $id)->unique()->sort()->values();
@@ -165,7 +262,9 @@ final class PromotionAuditChain
         }
 
         foreach ($wins as $win) {
-            if (! $this->verifyWinState($win, $events->where('win_id', $win->getKey())->values(), $campaignId, $key)) {
+            $winEvents = $events->where('win_id', $win->getKey())->values();
+
+            if (! $this->verifyWinState($win, $winEvents, $campaignId, $key)) {
                 return false;
             }
         }
@@ -178,20 +277,157 @@ final class PromotionAuditChain
         foreach (\App\Models\PromotionPrize::query()->where('campaign_id', $campaignId)->cursor() as $prize) {
             $actual = PromotionWin::query()
                 ->where('prize_id', $prize->getKey())
-                ->where('status', '<>', PromotionWin::STATUS_CANCELLED)
+                ->where('status', '<>', 'cancelled')
                 ->count();
 
             if ((int) $prize->reserved_count !== $actual || (int) $prize->quota < $actual) {
                 return false;
             }
 
-            if (in_array(mb_strtoupper((string) $prize->code), ['AMAZON20', 'AMAZON5'], true)
-                && (string) $prize->fulfillment_mode !== \App\Models\PromotionPrize::FULFILLMENT_EXTERNAL) {
+            if (Schema::hasColumn('prizes', 'awarded_count')) {
+                $v2Awarded = Schema::hasTable('promotion_spin_results')
+                    ? PromotionSpinResult::query()
+                        ->where('prize_id', $prize->getKey())
+                        ->where('outcome_type_snapshot', 'prize')
+                        ->where('is_final', true)
+                        ->whereNull('superseded_at')
+                        ->count()
+                    : 0;
+                $expectedAwarded = $actual + $v2Awarded;
+                if ((int) $prize->awarded_count !== $expectedAwarded || (int) $prize->quota < $expectedAwarded) {
+                    return false;
+                }
+            }
+
+        }
+
+        return true;
+    }
+
+    private function verifyV2States(int $campaignId, string $key): bool
+    {
+        if (! Schema::hasTable('promotion_tickets') || ! Schema::hasColumn('win_events', 'ticket_id')) {
+            return true;
+        }
+
+        $events = PromotionWinEvent::query()->where('campaign_id', $campaignId)->orderBy('sequence')->get();
+        $latestTicketEvents = [];
+        $latestTurnEvents = [];
+        $latestSpinResultEvents = [];
+        $latestParticipationEvents = [];
+        $latestCampaignStateEvent = null;
+        $hasRuntimeEventEvidence = false;
+
+        foreach ($events as $event) {
+            if ($event->participation_id !== null) {
+                $latestParticipationEvents[(int) $event->participation_id] = $event;
+            }
+
+            if ($event->ticket_id !== null) {
+                $latestTicketEvents[(int) $event->ticket_id] = $event;
+                $hasRuntimeEventEvidence = true;
+            }
+
+            if ($event->turn_id !== null) {
+                $latestTurnEvents[(int) $event->turn_id] = $event;
+                $hasRuntimeEventEvidence = true;
+            }
+
+            if ($event->spin_result_id !== null) {
+                $latestSpinResultEvents[(int) $event->spin_result_id] = $event;
+                $hasRuntimeEventEvidence = true;
+            }
+
+            if (is_array(data_get($event->payload, 'campaign_state'))) {
+                $latestCampaignStateEvent = $event;
+                $hasRuntimeEventEvidence = true;
+            }
+        }
+
+        $tickets = PromotionTicket::query()->where('campaign_id', $campaignId)->get();
+        $participations = PromotionParticipation::query()
+            ->whereIn('id', $tickets->pluck('participation_id')->filter()->unique())
+            ->get()
+            ->keyBy('id');
+        $hasTickets = $tickets->isNotEmpty();
+        foreach ($tickets as $ticket) {
+            $event = $latestTicketEvents[(int) $ticket->getKey()] ?? null;
+            $participation = $participations->get((int) $ticket->participation_id);
+            $participationEvent = $latestParticipationEvents[(int) $ticket->participation_id] ?? null;
+            if (! $event || ! is_array(data_get($event->payload, 'ticket_state'))
+                || $this->canonicalize(data_get($event->payload, 'ticket_state')) !== $this->canonicalize($this->ticketState($ticket, $key))
+                || ! $participation
+                || ! $participationEvent
+                || ! is_array(data_get($participationEvent->payload, 'participation_state'))
+                || (int) $event->participation_id !== (int) $ticket->participation_id
+                || (int) $participationEvent->participation_id !== (int) $participation->getKey()
+                || (int) $participation->campaign_id !== $campaignId
+                || (int) $ticket->campaign_id !== (int) $participation->campaign_id
+                || (int) $ticket->user_id !== (int) $participation->user_id
+                || $this->canonicalize(data_get($participationEvent->payload, 'participation_state')) !== $this->canonicalize($this->participationState($participation, $key))) {
                 return false;
             }
         }
 
-        return true;
+        $hasTurns = false;
+        foreach (PromotionTurn::query()->where('campaign_id', $campaignId)->cursor() as $turn) {
+            $hasTurns = true;
+            $event = $latestTurnEvents[(int) $turn->getKey()] ?? null;
+            if (! $event || ! is_array(data_get($event->payload, 'turn_state'))
+                || $this->canonicalize(data_get($event->payload, 'turn_state')) !== $this->canonicalize($this->turnState($turn, $key))) {
+                return false;
+            }
+        }
+
+        $hasSpinResults = false;
+        foreach (PromotionSpinResult::query()->where('campaign_id', $campaignId)->cursor() as $result) {
+            $hasSpinResults = true;
+            $event = $latestSpinResultEvents[(int) $result->getKey()] ?? null;
+            if (! $event || ! is_array(data_get($event->payload, 'spin_result_state'))
+                || $this->canonicalize(data_get($event->payload, 'spin_result_state')) !== $this->canonicalize($this->spinResultState($result, $key))) {
+                return false;
+            }
+        }
+
+        $state = PromotionCampaignState::query()->find($campaignId);
+        $hasRuntimeEvidence = $hasTickets || $hasTurns || $hasSpinResults || $hasRuntimeEventEvidence;
+        if (! $state) {
+            return ! $hasRuntimeEvidence;
+        }
+
+        if (! $latestCampaignStateEvent
+            || $this->canonicalize(data_get($latestCampaignStateEvent->payload, 'campaign_state')) !== $this->canonicalize($this->campaignRuntimeState($state, $key))) {
+            return false;
+        }
+
+        $activeTurns = PromotionTurn::query()
+            ->where('campaign_id', $campaignId)
+            ->where('status', 'active')
+            ->get();
+        $activeTickets = PromotionTicket::query()
+            ->where('campaign_id', $campaignId)
+            ->where('status', 'active')
+            ->get();
+        if ($activeTurns->count() > 1 || $activeTickets->count() > 1 || $activeTurns->count() !== $activeTickets->count()) {
+            return false;
+        }
+
+        if ($activeTurns->isEmpty()) {
+            return $state->active_turn_id === null;
+        }
+
+        $activeTurn = $activeTurns->first();
+        $activeTicket = $activeTickets->first();
+
+        return (int) $state->active_turn_id === (int) $activeTurn->getKey()
+            && (int) $activeTurn->ticket_id === (int) $activeTicket->getKey()
+            && (int) $activeTurn->campaign_id === $campaignId
+            && (int) $activeTicket->campaign_id === $campaignId
+            && $activeTicket->activated_at !== null
+            && $activeTurn->completed_at === null
+            && $activeTurn->released_at === null
+            && $activeTicket->completed_at === null
+            && $activeTicket->cancelled_at === null;
     }
 
     private function verifyLatestConfiguration(PromotionCampaign $campaign, bool $hasAuditEvents): bool
@@ -213,13 +449,14 @@ final class PromotionAuditChain
         }
 
         $expected = $this->canonicalize((array) data_get($campaignEvent->payload, 'campaign', []));
-        if ($expected !== $this->canonicalize($this->campaignState($campaign))) {
+        $currentCampaignState = $this->canonicalize($this->campaignState($campaign));
+        if ($expected !== array_intersect_key($currentCampaignState, $expected)) {
             return false;
         }
 
         $configurationEvents = PromotionWinEvent::query()
             ->where('campaign_id', $campaign->getKey())
-            ->where('event_type', 'prize.configured')
+            ->whereIn('event_type', ['prize.configured', 'prize.removed'])
             ->where('sequence', '>', $campaignEvent->sequence)
             ->orderBy('sequence')
             ->get();
@@ -229,14 +466,34 @@ final class PromotionAuditChain
             ->mapWithKeys(fn (array $state): array => [(int) $state['id'] => $this->canonicalize($state)]);
 
         foreach ($configurationEvents as $event) {
-            $state = (array) data_get($event->payload, 'prize', []);
-            $prizeId = (int) ($state['id'] ?? 0);
+            $payload = (array) $event->payload;
+            $singleState = data_get($payload, 'prize');
+            if (is_array($singleState)) {
+                $prizeId = (int) ($singleState['id'] ?? 0);
 
-            if ($prizeId <= 0) {
+                if ($prizeId <= 0) {
+                    return false;
+                }
+
+                $expectedPrizes->put($prizeId, $this->canonicalize($singleState));
+
+                continue;
+            }
+
+            if (! array_key_exists('prizes', $payload) || ! is_array($payload['prizes'])) {
                 return false;
             }
 
-            $expectedPrizes->put($prizeId, $this->canonicalize($state));
+            $replacement = collect($payload['prizes'])
+                ->filter(static fn (mixed $state): bool => is_array($state))
+                ->mapWithKeys(fn (array $state): array => [(int) ($state['id'] ?? 0) => $this->canonicalize($state)]);
+
+            if ($replacement->count() !== count($payload['prizes'])
+                || $replacement->keys()->contains(static fn (mixed $id): bool => (int) $id <= 0)) {
+                return false;
+            }
+
+            $expectedPrizes = $replacement;
         }
 
         $currentPrizes = \App\Models\PromotionPrize::query()
@@ -251,17 +508,12 @@ final class PromotionAuditChain
         foreach ($currentPrizes as $prizeId => $prize) {
             $expected = $expectedPrizes->get((int) $prizeId);
             $current = $this->canonicalize($this->prizeState($prize));
+            unset($expected['reserved_count'], $current['reserved_count'], $expected['awarded_count'], $current['awarded_count']);
+            $current = array_intersect_key($current, $expected);
 
-            // Reservation changes are already bound to immutable win
-            // events and reconciled separately, so compare config only.
-            unset($expected['reserved_count'], $current['reserved_count']);
             if ($expected !== $current) {
                 return false;
             }
-        }
-
-        if ($campaign->is_active && $expectedPrizes->isEmpty()) {
-            return false;
         }
 
         return true;
@@ -277,6 +529,12 @@ final class PromotionAuditChain
             'starts_at' => $campaign->getRawOriginal('starts_at'),
             'ends_at' => $campaign->getRawOriginal('ends_at'),
             'is_active' => (bool) $campaign->is_active,
+            'is_public' => (bool) ($campaign->is_public ?? false),
+            'public_slot' => $campaign->public_slot === null ? null : (int) $campaign->public_slot,
+            'quota_exhaustion_policy' => (string) ($campaign->getRawOriginal('quota_exhaustion_policy') ?? 'block'),
+            'landing_headline_digest' => hash('sha256', (string) ($campaign->landing_headline ?? '')),
+            'landing_text_digest' => hash('sha256', (string) ($campaign->landing_text ?? '')),
+            'rules_text_digest' => hash('sha256', (string) ($campaign->rules_text ?? '')),
         ];
     }
 
@@ -290,6 +548,8 @@ final class PromotionAuditChain
             'fulfillment_mode' => (string) $prize->getRawOriginal('fulfillment_mode'),
             'quota' => (int) $prize->quota,
             'reserved_count' => (int) $prize->reserved_count,
+            'awarded_count' => (int) ($prize->awarded_count ?? 0),
+            'outcome_type' => (string) ($prize->getRawOriginal('outcome_type') ?? 'prize'),
             'is_active' => (bool) $prize->is_active,
             'sort_order' => (int) $prize->sort_order,
             'configuration_digest' => hash('sha256', json_encode($prize->configuration, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)),
@@ -552,20 +812,24 @@ final class PromotionAuditChain
         ?int $expectedParticipationId,
         array $seen,
     ): bool {
-        if ((string) $win->getRawOriginal('status') !== $expectedStatus
+        $status = $win->getRawOriginal('status');
+
+        if ((string) $status !== $expectedStatus
             || ($expectedPrizeId !== null && (int) $win->prize_id !== $expectedPrizeId)
             || ($win->participation_id === null ? null : (int) $win->participation_id) !== $expectedParticipationId) {
             return false;
         }
 
-        foreach ([
+        $timestampEvents = [
             'bound' => 'bound_at',
             'confirmed' => 'confirmed_at',
             'disputed' => 'disputed_at',
             'fulfilled' => 'fulfilled_at',
             'expired' => 'expired_at',
             'cancelled' => 'cancelled_at',
-        ] as $eventStatus => $column) {
+        ];
+
+        foreach ($timestampEvents as $eventStatus => $column) {
             if (isset($seen[$eventStatus]) !== ($win->getRawOriginal($column) !== null)) {
                 return false;
             }
@@ -587,6 +851,92 @@ final class PromotionAuditChain
         }
 
         return true;
+    }
+
+    /** @return array<string, mixed> */
+    private function ticketState(PromotionTicket $ticket, string $key): array
+    {
+        $raw = static fn (string $column): mixed => $ticket->getRawOriginal($column);
+
+        return [
+            'id' => (int) $ticket->getKey(),
+            'participation_id' => (int) $ticket->participation_id,
+            'campaign_id' => (int) $ticket->campaign_id,
+            'user_ref' => $ticket->user_id === null ? null : hash_hmac('sha256', 'participant-user:'.$ticket->user_id, $key),
+            'status' => (string) $raw('status'),
+            'issued_at' => $raw('issued_at') === null ? null : (string) $raw('issued_at'),
+            'activated_at' => $raw('activated_at') === null ? null : (string) $raw('activated_at'),
+            'completed_at' => $raw('completed_at') === null ? null : (string) $raw('completed_at'),
+            'cancelled_at' => $raw('cancelled_at') === null ? null : (string) $raw('cancelled_at'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function turnState(PromotionTurn $turn, string $key): array
+    {
+        $raw = static fn (string $column): mixed => $turn->getRawOriginal($column);
+        $userRef = static fn (mixed $id): ?string => $id === null ? null : hash_hmac('sha256', 'user:'.$id, $key);
+
+        return [
+            'id' => (int) $turn->getKey(),
+            'ticket_id' => (int) $turn->ticket_id,
+            'campaign_id' => (int) $turn->campaign_id,
+            'started_by_ref' => $userRef($turn->started_by),
+            'completed_by_ref' => $userRef($turn->completed_by),
+            'released_by_ref' => $userRef($turn->released_by),
+            'status' => (string) $raw('status'),
+            'started_at' => $raw('started_at') === null ? null : (string) $raw('started_at'),
+            'completed_at' => $raw('completed_at') === null ? null : (string) $raw('completed_at'),
+            'released_at' => $raw('released_at') === null ? null : (string) $raw('released_at'),
+            'release_reason_digest' => $raw('release_reason') === null ? null : hash('sha256', (string) $raw('release_reason')),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function spinResultState(PromotionSpinResult $result, string $key): array
+    {
+        $raw = static fn (string $column): mixed => $result->getRawOriginal($column);
+        $userRef = static fn (mixed $id): ?string => $id === null ? null : hash_hmac('sha256', 'user:'.$id, $key);
+        $digest = static fn (mixed $value): ?string => $value === null || $value === '' ? null : hash('sha256', (string) $value);
+
+        return [
+            'id' => (int) $result->getKey(),
+            'turn_id' => (int) $result->turn_id,
+            'ticket_id' => (int) $result->ticket_id,
+            'campaign_id' => (int) $result->campaign_id,
+            'prize_id' => $result->prize_id === null ? null : (int) $result->prize_id,
+            'sequence' => (int) $result->sequence,
+            'outcome_type_snapshot' => (string) $raw('outcome_type_snapshot'),
+            'label_snapshot_digest' => $digest($raw('label_snapshot')),
+            'fulfillment_mode_snapshot' => $raw('fulfillment_mode_snapshot') === null ? null : (string) $raw('fulfillment_mode_snapshot'),
+            'is_final' => (bool) $result->is_final,
+            'recorded_by_ref' => $userRef($result->recorded_by),
+            'recorded_at' => $raw('recorded_at') === null ? null : (string) $raw('recorded_at'),
+            'corrects_result_id' => $result->corrects_result_id === null ? null : (int) $result->corrects_result_id,
+            'superseded_at' => $raw('superseded_at') === null ? null : (string) $raw('superseded_at'),
+            'correction_reason_digest' => $digest($raw('correction_reason')),
+            'mail_status' => (string) $raw('mail_status'),
+            'mail_sent_at' => $raw('mail_sent_at') === null ? null : (string) $raw('mail_sent_at'),
+            'mail_failed_at' => $raw('mail_failed_at') === null ? null : (string) $raw('mail_failed_at'),
+            'mail_last_attempted_at' => $raw('mail_last_attempted_at') === null ? null : (string) $raw('mail_last_attempted_at'),
+            'mail_error_digest' => $raw('mail_error_digest') === null ? null : (string) $raw('mail_error_digest'),
+            'fulfilled_by_ref' => $userRef($result->fulfilled_by),
+            'fulfilled_at' => $raw('fulfilled_at') === null ? null : (string) $raw('fulfilled_at'),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function campaignRuntimeState(PromotionCampaignState $state, string $key): array
+    {
+        return [
+            'campaign_id' => (int) $state->campaign_id,
+            'active_turn_id' => $state->active_turn_id === null ? null : (int) $state->active_turn_id,
+            'sticker_required' => (bool) $state->sticker_required,
+            'sticker_acknowledged_at' => $state->getRawOriginal('sticker_acknowledged_at') === null ? null : (string) $state->getRawOriginal('sticker_acknowledged_at'),
+            'sticker_acknowledged_by_ref' => $state->sticker_acknowledged_by === null
+                ? null
+                : hash_hmac('sha256', 'user:'.$state->sticker_acknowledged_by, $key),
+        ];
     }
 
     /** @return array<string, int|string|null> */

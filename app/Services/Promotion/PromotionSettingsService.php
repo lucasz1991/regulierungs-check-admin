@@ -47,6 +47,7 @@ final class PromotionSettingsService
 
         DB::transaction(function () use ($validated): void {
             $setting = PromotionSetting::query()->whereKey(1)->lockForUpdate()->first();
+            $supportsPublicCampaign = Schema::hasColumn('promotion_settings', 'public_campaign_id');
 
             if (! $setting) {
                 $setting = new PromotionSetting(['id' => 1]);
@@ -65,18 +66,28 @@ final class PromotionSettingsService
             }
 
             $secret = $this->decryptSecret($encryptedSecret);
+            $publicCampaignId = $supportsPublicCampaign && $validated['public_campaign_id_present']
+                ? $validated['public_campaign_id']
+                : ($supportsPublicCampaign && $setting->public_campaign_id !== null ? (int) $setting->public_campaign_id : null);
 
-            $setting->forceFill([
+            $updates = [
                 'enabled' => $validated['enabled'],
                 'redemption_base_url' => $validated['redemption_base_url'],
                 'qr_ttl_minutes' => $validated['qr_ttl_minutes'],
                 'audit_secret_encrypted' => $encryptedSecret,
                 'configuration_mac' => $this->configurationMac([
                     'enabled' => $validated['enabled'],
+                    'public_campaign_id' => $publicCampaignId,
                     'redemption_base_url' => $validated['redemption_base_url'],
                     'qr_ttl_minutes' => $validated['qr_ttl_minutes'],
                 ], $secret),
-            ])->save();
+            ];
+
+            if ($supportsPublicCampaign) {
+                $updates['public_campaign_id'] = $publicCampaignId;
+            }
+
+            $setting->forceFill($updates)->save();
         }, 3);
 
         return $this->get();
@@ -85,6 +96,13 @@ final class PromotionSettingsService
     public function isEnabled(): bool
     {
         return $this->get()['enabled'] === true;
+    }
+
+    public function isLegacyWinFlowEnabled(): bool
+    {
+        $snapshot = $this->get();
+
+        return $snapshot['requested_enabled'] === true && $snapshot['base_configured'] === true;
     }
 
     public function auditKey(): string
@@ -117,6 +135,49 @@ final class PromotionSettingsService
         return $value;
     }
 
+    public function publicCampaignId(): ?int
+    {
+        if (! Schema::hasColumn('promotion_settings', 'public_campaign_id')) {
+            return null;
+        }
+
+        $value = $this->requireSetting()->public_campaign_id;
+
+        return $value === null ? null : (int) $value;
+    }
+
+    /**
+     * Updates the singleton selection under a row lock. When called from an
+     * outer transaction the lock remains held until the complete publish flow
+     * (settings, campaign flags and audit events) commits.
+     */
+    public function setPublicCampaignId(?int $campaignId): void
+    {
+        if (! Schema::hasColumn('promotion_settings', 'public_campaign_id')) {
+            throw new RuntimeException('Die Datenbankmigration fuer die oeffentliche Promotion-Kampagne fehlt.');
+        }
+
+        if ($campaignId !== null && ($campaignId < 1 || ! DB::table('campaigns')->where('id', $campaignId)->exists())) {
+            throw new RuntimeException('Die ausgewaehlte oeffentliche Kampagne existiert nicht.');
+        }
+
+        DB::transaction(function () use ($campaignId): void {
+            $setting = PromotionSetting::query()->whereKey(1)->lockForUpdate()->firstOrFail();
+            $secret = $this->decryptSecret((string) $setting->getRawOriginal('audit_secret_encrypted'));
+            $this->assertConfigurationMac($setting, $secret);
+
+            $setting->forceFill([
+                'public_campaign_id' => $campaignId,
+                'configuration_mac' => $this->configurationMac([
+                    'enabled' => (bool) $setting->enabled,
+                    'public_campaign_id' => $campaignId,
+                    'qr_ttl_minutes' => (int) $setting->qr_ttl_minutes,
+                    'redemption_base_url' => (string) $setting->redemption_base_url,
+                ], $secret),
+            ])->save();
+        }, 3);
+    }
+
     /** @return array<string, bool|int|string|null> */
     private function snapshot(PromotionSetting $setting): array
     {
@@ -139,15 +200,39 @@ final class PromotionSettingsService
             $error = 'Die QR-Gueltigkeitsdauer der Promotion-Einstellungen ist ungueltig.';
         }
 
-        $isConfigured = $error === null;
+        $baseConfigured = $error === null;
+        $isConfigured = $baseConfigured;
         $requestedEnabled = (bool) $setting->enabled;
+        $supportsPublicCampaign = Schema::hasColumn('promotion_settings', 'public_campaign_id')
+            && Schema::hasColumn('campaigns', 'is_public')
+            && Schema::hasColumn('campaigns', 'public_slot');
+        if ($supportsPublicCampaign && $error === null && $requestedEnabled) {
+            $publicCampaignId = $setting->public_campaign_id === null ? null : (int) $setting->public_campaign_id;
+            $campaign = $publicCampaignId === null ? null : DB::table('campaigns')->where('id', $publicCampaignId)->first();
+            $publicCount = DB::table('campaigns')->where('is_public', true)->where('public_slot', 1)->count();
+            $now = now();
+            $campaignOpen = $campaign
+                && (bool) $campaign->is_active
+                && (bool) $campaign->is_public
+                && (int) $campaign->public_slot === 1
+                && ($campaign->starts_at === null || $now->gte($campaign->starts_at))
+                && ($campaign->ends_at === null || $now->lte($campaign->ends_at));
+            if (! $campaignOpen || $publicCount !== 1) {
+                $error = 'Es ist keine eindeutig ausgewaehlte, oeffentliche und aktuell laufende Kampagne vorhanden.';
+                $isConfigured = false;
+            }
+        }
 
         return [
             'enabled' => $requestedEnabled && $isConfigured,
             'requested_enabled' => $requestedEnabled,
+            'public_campaign_id' => $supportsPublicCampaign && $setting->public_campaign_id !== null
+                ? (int) $setting->public_campaign_id
+                : null,
             'redemption_base_url' => $redemptionBaseUrl,
             'qr_ttl_minutes' => $qrTtl,
             'audit_key_configured' => $auditKeyConfigured,
+            'base_configured' => $baseConfigured,
             'is_configured' => $isConfigured,
             'configuration_error' => $error,
         ];
@@ -159,20 +244,30 @@ final class PromotionSettingsService
         return [
             'enabled' => false,
             'requested_enabled' => false,
+            'public_campaign_id' => null,
             'redemption_base_url' => '',
             'qr_ttl_minutes' => 30,
             'audit_key_configured' => false,
+            'base_configured' => false,
             'is_configured' => false,
             'configuration_error' => $error,
         ];
     }
 
-    /** @return array{enabled: bool, redemption_base_url: string, qr_ttl_minutes: int} */
+    /** @return array{enabled: bool, public_campaign_id: ?int, public_campaign_id_present: bool, redemption_base_url: string, qr_ttl_minutes: int} */
     private function validate(array $values): array
     {
         $url = rtrim(trim((string) ($values['redemption_base_url'] ?? '')), '/');
         $ttl = filter_var($values['qr_ttl_minutes'] ?? null, FILTER_VALIDATE_INT);
         $errors = [];
+        $publicCampaignIdPresent = array_key_exists('public_campaign_id', $values);
+        $publicCampaignId = null;
+        if ($publicCampaignIdPresent && $values['public_campaign_id'] !== null && $values['public_campaign_id'] !== '') {
+            $publicCampaignId = filter_var($values['public_campaign_id'], FILTER_VALIDATE_INT);
+            if ($publicCampaignId === false || $publicCampaignId < 1 || ! DB::table('campaigns')->where('id', $publicCampaignId)->exists()) {
+                $errors['public_campaign_id'] = 'Die ausgewaehlte oeffentliche Kampagne ist ungueltig.';
+            }
+        }
 
         if (($urlError = $this->redemptionUrlError($url)) !== null) {
             $errors['redemption_base_url'] = $urlError;
@@ -193,6 +288,8 @@ final class PromotionSettingsService
 
         return [
             'enabled' => (bool) $enabled,
+            'public_campaign_id' => $publicCampaignId === false ? null : $publicCampaignId,
+            'public_campaign_id_present' => $publicCampaignIdPresent,
             'redemption_base_url' => $url,
             'qr_ttl_minutes' => (int) $ttl,
         ];
@@ -245,14 +342,22 @@ final class PromotionSettingsService
 
     private function assertConfigurationMac(PromotionSetting $setting, string $secret): void
     {
+        $publicCampaignId = Schema::hasColumn('promotion_settings', 'public_campaign_id') && $setting->public_campaign_id !== null
+            ? (int) $setting->public_campaign_id
+            : null;
         $stored = (string) $setting->getRawOriginal('configuration_mac');
         $expected = $this->configurationMac([
             'enabled' => (bool) $setting->enabled,
+            'public_campaign_id' => $publicCampaignId,
             'redemption_base_url' => rtrim(trim((string) $setting->redemption_base_url), '/'),
             'qr_ttl_minutes' => (int) $setting->qr_ttl_minutes,
         ], $secret);
 
-        if (preg_match('/\A[a-f0-9]{64}\z/', $stored) !== 1 || ! hash_equals($stored, $expected)) {
+        $legacyExpected = $this->legacyConfigurationMac($setting, $secret);
+        $matchesLegacy = $publicCampaignId === null && hash_equals($stored, $legacyExpected);
+
+        if (preg_match('/\A[a-f0-9]{64}\z/', $stored) !== 1
+            || (! hash_equals($stored, $expected) && ! $matchesLegacy)) {
             throw new RuntimeException('Die Promotion-Einstellungen wurden ausserhalb des geschuetzten Admin-Ablaufs veraendert.');
         }
     }
@@ -262,6 +367,7 @@ final class PromotionSettingsService
     {
         $material = [
             'enabled' => (bool) $values['enabled'],
+            'public_campaign_id' => $values['public_campaign_id'] === null ? null : (int) $values['public_campaign_id'],
             'qr_ttl_minutes' => (int) $values['qr_ttl_minutes'],
             'redemption_base_url' => rtrim(trim((string) $values['redemption_base_url']), '/'),
         ];
@@ -271,6 +377,15 @@ final class PromotionSettingsService
             json_encode($material, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
             $secret,
         );
+    }
+
+    private function legacyConfigurationMac(PromotionSetting $setting, string $secret): string
+    {
+        return hash_hmac('sha256', json_encode([
+            'enabled' => (bool) $setting->enabled,
+            'qr_ttl_minutes' => (int) $setting->qr_ttl_minutes,
+            'redemption_base_url' => rtrim(trim((string) $setting->redemption_base_url), '/'),
+        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $secret);
     }
 
     private function redemptionUrlError(string $url): ?string

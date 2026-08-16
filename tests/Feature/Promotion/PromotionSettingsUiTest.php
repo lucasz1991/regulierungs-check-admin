@@ -30,7 +30,8 @@ class PromotionSettingsUiTest extends TestCase
         Livewire::actingAs($admin)
             ->test(PromotionSettings::class)
             ->assertSee('Promotion-Glücksrad')
-            ->assertSee('Noch nicht eingerichtet')
+            ->assertSee('Google-Anmeldung')
+            ->assertSee('Apple-Anmeldung')
             ->assertSee('Alles Notwendige wird direkt hier verwaltet')
             ->assertDontSee('.env')
             ->assertDontSee('Command')
@@ -46,7 +47,7 @@ class PromotionSettingsUiTest extends TestCase
             ->assertSet('isConfigured', true)
             ->assertSet('auditKeyConfigured', true)
             ->assertSee('Aktiv und freigegeben')
-            ->assertSee('Eingerichtet');
+            ->assertSee('/gluecksrad');
 
         $stored = PromotionSetting::query()->findOrFail(1);
         $this->assertTrue($stored->enabled);
@@ -111,8 +112,7 @@ class PromotionSettingsUiTest extends TestCase
         $admin = $this->user('Admin', 'promotion-secret-admin@example.test', 'admin');
 
         $component = Livewire::actingAs($admin)
-            ->test(PromotionSettings::class)
-            ->assertSee('der Schlüssel wird niemals angezeigt.');
+            ->test(PromotionSettings::class);
 
         $serialized = json_encode([
             'html' => $component->html(),
@@ -229,6 +229,20 @@ class PromotionSettingsUiTest extends TestCase
             $table->unsignedSmallInteger('qr_ttl_minutes')->default(30);
             $table->text('audit_secret_encrypted');
             $table->char('configuration_mac', 64);
+            $table->timestamps();
+        });
+
+        Schema::create('social_auth_provider_settings', function (Blueprint $table): void {
+            $table->id();
+            $table->string('provider', 32)->unique();
+            $table->boolean('enabled')->default(false);
+            $table->string('client_id')->nullable();
+            $table->text('client_secret_encrypted')->nullable();
+            $table->string('redirect_uri', 2048)->nullable();
+            $table->string('apple_team_id', 64)->nullable();
+            $table->string('apple_key_id', 64)->nullable();
+            $table->dateTime('client_secret_expires_at')->nullable();
+            $table->char('configuration_mac', 64)->nullable();
             $table->timestamps();
         });
 

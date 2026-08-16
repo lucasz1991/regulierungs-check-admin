@@ -22,3 +22,6 @@
 | Promotion-Adminbedienung auf reine Webaktionen ohne Commands oder Jobs vereinfachen | Codex / simplify_admin_webflow | completed | 2026-08-13T18:55:00Z |
 | Admin-E-Mail-Verifikation erklaeren und altes Minia-Template durch Regulierungs-CHECK-Ansicht ersetzen | Codex | completed | 2026-08-14T19:02:40Z |
 | E-Mail-Verifikation im gesamten Admin- und Promotion-Mitarbeiterbereich optional machen | Codex | completed | 2026-08-14T20:50:49Z |
+| Glücksrad V2 gespiegelter Domainkern und atomare Ticket-/Dreh-Services | Codex / v2_domain_core | completed | 2026-08-16T08:42:18Z |
+| Glücksrad V2 Mitarbeiter-Scanner, Kampagnenverwaltung, Social Settings und Profilintegration | Codex / v2_admin_scanner | completed | 2026-08-16T08:29:47Z |
+| Glücksrad V2 Integration, Gesamtgate und Browser-Screenshots | Codex-root | in-progress | 2026-08-16T07:20:00Z |

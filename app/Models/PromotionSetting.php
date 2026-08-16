@@ -19,4 +19,9 @@ class PromotionSetting extends Model
         'enabled' => 'boolean',
         'qr_ttl_minutes' => 'integer',
     ];
+
+    public function publicCampaign()
+    {
+        return $this->belongsTo(PromotionCampaign::class, 'public_campaign_id');
+    }
 }

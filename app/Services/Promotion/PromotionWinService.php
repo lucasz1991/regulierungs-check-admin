@@ -14,6 +14,7 @@ use App\Support\Promotion\ParticipationId;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
@@ -90,7 +91,11 @@ final class PromotionWinService
                 throw ValidationException::withMessages(['prize' => 'Das Kontingent dieses Gewinns ist erschoepft.']);
             }
 
-            $lockedPrize->increment('reserved_count');
+            $prizeCounters = ['reserved_count' => $lockedPrize->reserved_count + 1];
+            if (Schema::hasColumn('prizes', 'awarded_count')) {
+                $prizeCounters['awarded_count'] = $lockedPrize->awarded_count + 1;
+            }
+            $lockedPrize->forceFill($prizeCounters)->save();
 
             $win = PromotionWin::create([
                 'campaign_id' => $lockedCampaign->id,
@@ -311,7 +316,11 @@ final class PromotionWinService
                 'cancellation_reason' => $reason,
             ])->save();
 
-            $prize->forceFill(['reserved_count' => max(0, $prize->reserved_count - 1)])->save();
+            $prizeCounters = ['reserved_count' => max(0, $prize->reserved_count - 1)];
+            if (Schema::hasColumn('prizes', 'awarded_count')) {
+                $prizeCounters['awarded_count'] = max(0, $prize->awarded_count - 1);
+            }
+            $prize->forceFill($prizeCounters)->save();
 
             $this->appendEvent($lockedWin, 'win.cancelled', [
                 'reason_digest' => hash('sha256', $reason),
@@ -469,7 +478,7 @@ final class PromotionWinService
 
     private function ensureEnabled(): void
     {
-        if (! $this->settings->isEnabled()) {
+        if (! $this->settings->isLegacyWinFlowEnabled()) {
             throw new RuntimeException('Promotion ist nicht vollstaendig und sicher konfiguriert.');
         }
     }

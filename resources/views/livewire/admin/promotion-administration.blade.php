@@ -1,58 +1,206 @@
-<div class="space-y-6">
-    <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div><p class="text-xs font-bold uppercase tracking-wider text-teal-700">Nur Volladmin</p><h1 class="mt-1 text-2xl font-bold text-gray-900">Promotion verwalten</h1><p class="mt-1 text-sm text-gray-500">Kampagnen, Preise, Korrekturen und die kryptografische Auditkette.</p></div>
-        <a href="{{ route('promotion.console') }}" class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold">Zur Promotion-Konsole</a>
-    </div>
-    @if(session('status'))<div class="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{{ session('status') }}</div>@endif
-    <div class="grid gap-5 xl:grid-cols-[260px_1fr]">
-        <aside class="rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-            <button wire:click="newCampaign" class="mb-3 w-full rounded-lg bg-teal-700 px-3 py-2 text-sm font-semibold text-white">Neue Kampagne</button>
-            @foreach($campaigns as $entry)<button wire:click="editCampaign({{ $entry->id }})" class="mb-1 w-full rounded-lg px-3 py-2 text-left text-sm {{ $campaignId === $entry->id ? 'bg-teal-50 font-semibold text-teal-800' : 'hover:bg-gray-50' }}"><span class="block">{{ $entry->name }}</span><span class="text-xs font-normal text-gray-500">{{ $entry->code }} · {{ $entry->isOpen() ? 'Aktiv' : 'Inaktiv' }}</span></button>@endforeach
-        </aside>
-        <div class="space-y-5">
-            <form wire:submit="saveCampaign" class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 class="font-bold text-gray-900">Kampagne</h2>
-                <div class="mt-4 grid gap-4 md:grid-cols-2">
-                    <label class="text-sm font-medium">Code<input wire:model="campaignCode" class="mt-1 w-full rounded-lg border-gray-300" required>@error('campaignCode')<span class="block text-xs text-red-600">{{ $message }}</span>@enderror</label>
-                    <label class="text-sm font-medium">Name<input wire:model="campaignName" class="mt-1 w-full rounded-lg border-gray-300" required>@error('campaignName')<span class="block text-xs text-red-600">{{ $message }}</span>@enderror</label>
-                    <label class="text-sm font-medium">Start<input type="datetime-local" wire:model="campaignStartsAt" class="mt-1 w-full rounded-lg border-gray-300"></label>
-                    <label class="text-sm font-medium">Ende<input type="datetime-local" wire:model="campaignEndsAt" class="mt-1 w-full rounded-lg border-gray-300">@error('campaignEndsAt')<span class="block text-xs text-red-600">{{ $message }}</span>@enderror</label>
-                    <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" wire:model="campaignIsActive" class="rounded border-gray-300 text-teal-700">Kampagne aktiviert</label>
-                </div>
-                <button class="mt-4 rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white">Kampagne speichern</button>
-            </form>
-            @if($selectedCampaign)
-                <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    @foreach(['issued' => 'Offene QR-Codes', 'expired' => 'Abgelaufen', 'cancelled' => 'Storniert', 'disputed' => 'Beanstandet'] as $metricStatus => $metricLabel)
-                        <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"><p class="text-xs font-semibold uppercase tracking-wider text-gray-500">{{ $metricLabel }}</p><p class="mt-2 text-3xl font-bold text-gray-900">{{ (int) ($statusCounts[$metricStatus] ?? 0) }}</p></div>
-                    @endforeach
-                </section>
-                <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-                    <div class="border-b border-gray-200 px-5 py-4"><h2 class="font-bold text-gray-900">Auffälligkeiten nach Mitarbeiter</h2><p class="mt-1 text-xs text-gray-500">Erfasste Vorgänge mit Verfall, Storno und Beanstandung im Vergleich.</p></div>
-                    <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead><tr class="text-left text-xs uppercase text-gray-500"><th class="px-5 py-3">Mitarbeiter</th><th>Erfasst</th><th>Abgelaufen</th><th>Storniert</th><th>Beanstandet</th></tr></thead><tbody class="divide-y divide-gray-100">@forelse($staffRows as $row)<tr><td class="px-5 py-3 font-semibold">{{ $staffNames[$row->issued_by] ?? 'Gelöschtes Konto' }}</td><td>{{ $row->total }}</td><td>{{ $row->expired_total }}</td><td>{{ $row->cancelled_total }}</td><td>{{ $row->disputed_total }}</td></tr>@empty<tr><td colspan="5" class="px-5 py-6 text-center text-gray-500">Noch keine Vorgänge.</td></tr>@endforelse</tbody></table></div>
-                </section>
-                <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <div class="flex items-center justify-between"><h2 class="font-bold text-gray-900">Preise</h2><span class="text-xs text-gray-500">Keine Gutscheincodes werden gespeichert</span></div>
-                    <div class="mt-4 grid gap-4 md:grid-cols-2">
-                        <label class="text-sm font-medium">Code<input wire:model="prizeCode" class="mt-1 w-full rounded-lg border-gray-300"></label>
-                        <label class="text-sm font-medium">Bezeichnung<input wire:model="prizeName" class="mt-1 w-full rounded-lg border-gray-300"></label>
-                        <label class="text-sm font-medium">Ausgabeart<select wire:model="prizeFulfillmentMode" class="mt-1 w-full rounded-lg border-gray-300"><option value="onsite_staff">Vor Ort durch Mitarbeiter</option><option value="external_admin">Extern durch Volladmin</option></select></label>
-                        <label class="text-sm font-medium">Gesamtkontingent<input type="number" min="1" wire:model="prizeQuota" class="mt-1 w-full rounded-lg border-gray-300"></label>
-                        <label class="text-sm font-medium">Sortierung<input type="number" min="0" wire:model="prizeSortOrder" class="mt-1 w-full rounded-lg border-gray-300"></label>
-                        <label class="flex items-center gap-2 self-end pb-3 text-sm font-medium"><input type="checkbox" wire:model="prizeIsActive" class="rounded border-gray-300 text-teal-700">Aktiv</label>
-                    </div>
-                    @error('prizeQuota')<p class="mt-2 text-sm text-red-600">{{ $message }}</p>@enderror
-                    <div class="mt-4 flex gap-3"><button wire:click.prevent="savePrize" class="rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white">Preis speichern</button>@if($prizeId)<button type="button" wire:click="resetPrizeForm" class="rounded-lg border border-gray-300 px-4 py-2 font-semibold">Abbrechen</button>@endif</div>
-                    <div class="mt-5 divide-y divide-gray-100 border-t border-gray-200">@foreach($selectedCampaign->prizes as $prize)<button wire:click="editPrize({{ $prize->id }})" class="flex w-full items-center justify-between py-3 text-left text-sm"><span><strong class="block">{{ $prize->name }}</strong><span class="text-xs text-gray-500">{{ $prize->code }} · {{ $prize->fulfillment_mode }}</span></span><span class="text-xs">{{ $prize->reserved_count }}/{{ $prize->quota }} reserviert</span></button>@endforeach</div>
-                </section>
-                <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="font-bold text-gray-900">Audit &amp; Korrekturen</h2><p class="text-xs text-gray-500">Stornierungen ersetzen keine Historie, sondern erzeugen ein neues Hashketten-Ereignis.</p></div><button wire:click="verifyAudit" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold">Auditkette pruefen</button></div>
-                    @if($auditResult)<div class="mt-3 rounded-lg px-3 py-2 text-sm {{ $auditResult['valid'] ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800' }}">{{ $auditResult['valid'] ? 'Kette gueltig' : 'Manipulationsverdacht' }} · {{ $auditResult['checked'] }} Ereignisse geprueft</div>@endif
-                    <label class="mt-4 block text-sm font-medium text-gray-700">Nach Teilnahme-ID, Name oder E-Mail suchen<input wire:model.live.debounce.300ms="winSearch" class="mt-1 w-full rounded-lg border-gray-300" placeholder="RC-STR26-… oder Konto"></label>
-                    <div class="mt-4 overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead><tr class="text-left text-xs uppercase text-gray-500"><th class="py-2">ID</th><th>Teilnahme / Konto</th><th>Preis</th><th>Erfasst von</th><th>Status</th><th></th></tr></thead><tbody class="divide-y divide-gray-100">@forelse($recentWins as $win)<tr><td class="py-2">#{{ $win->id }}</td><td><span class="block font-mono text-xs">{{ $win->participation?->public_id }}</span><span class="text-xs text-gray-500">{{ $win->participation?->user?->name }} · {{ $win->participation?->user?->email }}</span></td><td>{{ $win->prize_name_snapshot }}</td><td>{{ $win->issuedBy?->name ?? 'System' }}</td><td>{{ $win->status }}</td><td class="text-right">@if(!in_array($win->status, ['fulfilled','cancelled'], true))<button wire:click="prepareCorrection({{ $win->id }})" class="font-semibold text-red-700">Stornieren</button>@endif</td></tr>@empty<tr><td colspan="6" class="py-6 text-center text-gray-500">Keine passenden Vorgänge.</td></tr>@endforelse</tbody></table></div>
-                    @if($correctionWinId)<form wire:submit="cancelWin" class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4"><label class="text-sm font-semibold text-red-900">Stornogrund fuer Vorgang #{{ $correctionWinId }}<select wire:model="correctionReason" class="mt-1 w-full rounded-lg border-red-300 bg-white" required><option value="">Bitte auswaehlen</option><option value="issued_in_error">Gewinn irrtuemlich erfasst</option><option value="participant_dispute_upheld">Beanstandung des Teilnehmers bestaetigt</option><option value="campaign_cancelled">Kampagne abgebrochen</option><option value="technical_duplicate">Technisches Duplikat</option><option value="expired_reservation_released">Abgelaufene Reservierung freigeben</option></select></label><p class="mt-2 text-xs text-red-800">Keine Namen, E-Mail-Adressen oder Gutscheincodes eingeben; es werden ausschliesslich feste Grundcodes gespeichert.</p>@error('correctionReason')<p class="text-sm text-red-700">{{ $message }}</p>@enderror<button class="mt-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white">Unwiderruflich stornieren</button></form>@endif
-                </section>
-            @endif
+@php
+    $outcomeLabels = ['prize' => 'Gewinn', 'no_win' => 'Niete', 'retry' => 'Zusatzdreh', 'quota_reroll' => 'Kontingent-Neudrehung'];
+    $mailLabels = ['pending' => 'Versand offen', 'sent' => 'Versendet', 'failed' => 'Fehlgeschlagen', 'not_required' => 'Keine E-Mail'];
+    $ticketStatusLabels = ['ready' => 'Bereit', 'active' => 'Am Rad', 'completed' => 'Abgeschlossen', 'cancelled' => 'Storniert'];
+@endphp
+
+<div x-data="{ tab: 'overview' }" class="space-y-6">
+    <header class="flex flex-col gap-4 rounded-3xl bg-[#07363c] p-6 text-white shadow-xl shadow-teal-950/10 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Promotion</p>
+            <h1 class="mt-2 text-3xl font-black tracking-tight">Glücksrad verwalten</h1>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-teal-50/75">Kampagne veröffentlichen, Radfelder pflegen und jeden beobachteten Dreh nachvollziehen.</p>
         </div>
-    </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <select wire:change="editCampaign($event.target.value)" class="min-w-56 rounded-xl border-white/15 bg-white/10 text-sm text-white focus:border-teal-300 focus:ring-teal-300">
+                <option class="text-slate-900" value="">Kampagne wählen</option>
+                @foreach ($campaigns as $entry)
+                    <option class="text-slate-900" value="{{ $entry->id }}" @selected($entry->id === $campaignId)>{{ $entry->name }}</option>
+                @endforeach
+            </select>
+            <button wire:click="newCampaign" x-on:click="tab = 'campaign'" class="rounded-xl bg-[#ffd166] px-5 py-3 text-sm font-black text-[#07363c] hover:bg-[#ffdc82]">Neue Kampagne</button>
+        </div>
+    </header>
+
+    @if (session('status'))
+        <div role="status" class="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-900">{{ session('status') }}</div>
+    @endif
+
+    @if ($errors->any())
+        <div role="alert" class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">{{ $errors->first() }}</div>
+    @endif
+
+    <nav aria-label="Promotion-Bereiche" class="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:grid-cols-4">
+        @foreach (['overview' => 'Übersicht', 'campaign' => 'Kampagne', 'fields' => 'Radfelder', 'history' => 'Verlauf'] as $key => $label)
+            <button type="button" x-on:click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'" class="rounded-xl px-4 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200">{{ $label }}</button>
+        @endforeach
+    </nav>
+
+    <section x-show.important="tab === 'overview'" x-cloak class="space-y-5">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Tickets</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $ticketCount }}</p><p class="mt-1 text-xs text-slate-500">{{ $readyTicketCount }} bereit zum Scan</p></article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Drehungen heute</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $todayTurnCount }}</p><p class="mt-1 text-xs text-slate-500">inklusive Zusatz- und Neudrehungen</p></article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Öffentliche Kampagne</p><p class="mt-2 truncate text-lg font-black text-slate-950">{{ $campaigns->firstWhere('is_public', true)?->name ?? 'Keine' }}</p><p class="mt-1 text-xs text-slate-500">Es kann immer nur eine veröffentlicht sein.</p></article>
+            <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Drehplatz</p><p class="mt-2 text-lg font-black {{ $selectedCampaign?->promotionState?->active_turn_id ? 'text-amber-700' : 'text-emerald-700' }}">{{ $selectedCampaign?->promotionState?->active_turn_id ? 'Belegt' : 'Frei' }}</p><p class="mt-1 text-xs text-slate-500">Pro Kampagne genau ein aktiver Teilnehmer.</p></article>
+        </div>
+
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_24rem]">
+            <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-teal-700">Dauerhafter Poster-Link</p>
+                <h2 class="mt-2 text-xl font-black text-slate-950">Ein QR-Code für alle Kampagnen</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">Dieser Link bleibt dauerhaft gleich. Welche Kampagne dort erscheint, steuern Sie ausschließlich über „Veröffentlichen“.</p>
+                @if ($posterUrl)
+                    <div x-data="{ copied: false }" class="mt-5 flex flex-col gap-2 sm:flex-row">
+                        <code class="min-w-0 flex-1 overflow-x-auto rounded-xl bg-slate-950 px-4 py-3 text-sm text-teal-200">{{ $posterUrl }}</code>
+                        <button type="button" x-on:click="navigator.clipboard.writeText(@js($posterUrl)); copied = true; setTimeout(() => copied = false, 1600)" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-800 hover:bg-slate-50" x-text="copied ? 'Kopiert' : 'Link kopieren'"></button>
+                    </div>
+                @else
+                    <div class="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Zuerst die öffentliche Teilnehmer-Adresse unter Einstellungen speichern.</div>
+                @endif
+            </article>
+
+            <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="font-black text-slate-950">Kontingente</h2>
+                <div class="mt-4 space-y-4">
+                    @forelse ($selectedCampaign?->prizes?->where('outcome_type.value', 'prize') ?? collect() as $field)
+                        @php($percent = $field->quota > 0 ? min(100, round(($field->awarded_count / $field->quota) * 100)) : 0)
+                        <div>
+                            <div class="flex justify-between gap-3 text-xs"><span class="truncate font-bold text-slate-700">{{ $field->name }}</span><span class="text-slate-500">{{ $field->awarded_count }}/{{ $field->quota }}</span></div>
+                            <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $percent >= 100 ? 'bg-red-500' : 'bg-teal-600' }}" style="width: {{ $percent }}%"></div></div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">Noch keine Gewinnfelder.</p>
+                    @endforelse
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section x-show.important="tab === 'campaign'" x-cloak class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-xl font-black text-slate-950">Kampagnendaten</h2><p class="mt-1 text-sm text-slate-500">Texte erscheinen auf der mobilen Teilnehmerseite.</p></div>@if ($campaignIsPublic)<span class="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">Öffentlich</span>@endif</div>
+        <form wire:submit="saveCampaign" class="mt-6 space-y-5">
+            <div class="grid gap-5 md:grid-cols-2">
+                <div><label for="campaign-name" class="block text-sm font-bold text-slate-700">Name</label><input id="campaign-name" wire:model="campaignName" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
+                <div><label for="campaign-code" class="block text-sm font-bold text-slate-700">Interner Code</label><input id="campaign-code" wire:model="campaignCode" class="mt-1 block w-full rounded-xl border-slate-300 font-mono uppercase focus:border-teal-600 focus:ring-teal-600" placeholder="STRASSE26"></div>
+                <div><label for="campaign-start" class="block text-sm font-bold text-slate-700">Start</label><input id="campaign-start" type="datetime-local" wire:model="campaignStartsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
+                <div><label for="campaign-end" class="block text-sm font-bold text-slate-700">Ende</label><input id="campaign-end" type="datetime-local" wire:model="campaignEndsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
+            </div>
+            <div><label for="campaign-headline" class="block text-sm font-bold text-slate-700">Landingpage-Überschrift</label><input id="campaign-headline" wire:model="campaignLandingHeadline" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600" placeholder="Dreh dein Glück!"></div>
+            <div class="grid gap-5 lg:grid-cols-2">
+                <div><label for="campaign-text" class="block text-sm font-bold text-slate-700">Erklärung</label><textarea id="campaign-text" rows="6" wire:model="campaignLandingText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
+                <div><label for="campaign-rules" class="block text-sm font-bold text-slate-700">Teilnahmebedingungen</label><textarea id="campaign-rules" rows="6" wire:model="campaignRulesText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
+            </div>
+            <fieldset><legend class="text-sm font-bold text-slate-700">Wenn ein Gewinnkontingent erschöpft ist</legend><div class="mt-2 grid gap-3 md:grid-cols-2"><label class="flex gap-3 rounded-xl border border-slate-200 p-4"><input type="radio" wire:model="campaignQuotaPolicy" value="block" class="mt-1 text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Neue Drehungen sperren</strong><span class="mt-1 block text-xs text-slate-500">Scanner bleibt bis zur Anpassung blockiert.</span></span></label><label class="flex gap-3 rounded-xl border border-slate-200 p-4"><input type="radio" wire:model="campaignQuotaPolicy" value="sticker_continue" class="mt-1 text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Nach Sticker-Hinweis weiter</strong><span class="mt-1 block text-xs text-slate-500">Mitarbeiter bestätigt abgeklebt Felder vor dem nächsten Scan.</span></span></label></div></fieldset>
+            <div class="grid gap-3 md:grid-cols-2"><label class="flex gap-3 rounded-xl bg-slate-50 p-4"><input type="checkbox" wire:model="campaignIsActive" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Kampagne aktiv</strong><span class="mt-1 block text-xs text-slate-500">Zeitraum und interne Nutzung freigeben.</span></span></label><label class="flex gap-3 rounded-xl bg-teal-50 p-4"><input type="checkbox" wire:model="campaignIsPublic" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Auf /gluecksrad veröffentlichen</strong><span class="mt-1 block text-xs text-slate-500">Entfernt automatisch jede andere öffentliche Kampagne.</span></span></label></div>
+            <div class="flex justify-end"><button type="submit" wire:loading.attr="disabled" class="rounded-xl bg-teal-700 px-6 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50">Kampagne speichern</button></div>
+        </form>
+    </section>
+
+    <section x-show.important="tab === 'fields'" x-cloak class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
+        <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <header class="border-b border-slate-100 p-5 sm:p-6"><h2 class="text-xl font-black text-slate-950">Radfelder</h2><p class="mt-1 text-sm text-slate-500">Reihenfolge entspricht der Ergebnisauswahl im Mitarbeiter-Scanner.</p></header>
+            <div class="divide-y divide-slate-100">
+                @forelse ($selectedCampaign?->prizes ?? collect() as $field)
+                    @php($fieldOutcome = $field->outcome_type->value)
+                    <article wire:key="admin-field-{{ $field->id }}" class="grid gap-4 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-6">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-black {{ $fieldOutcome === 'prize' ? 'bg-teal-100 text-teal-800' : ($fieldOutcome === 'retry' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700') }}">{{ $field->sort_order }}</span>
+                        <div><div class="flex flex-wrap gap-2"><strong class="text-slate-950">{{ $field->name }}</strong><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">{{ $outcomeLabels[$fieldOutcome] }}</span>@unless($field->is_active)<span class="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">Inaktiv</span>@endunless</div><p class="mt-1 text-xs text-slate-500">{{ $field->code }}@if($fieldOutcome === 'prize') · {{ $field->awarded_count }} von {{ $field->quota }} vergeben · {{ $field->fulfillment_mode === 'external_admin' ? 'extern durch Admin' : 'vor Ort' }}@endif</p></div>
+                        <div class="flex gap-3 text-sm"><button wire:click="editPrize({{ $field->id }})" class="font-bold text-teal-700 hover:text-teal-900">Bearbeiten</button><button wire:click="deletePrize({{ $field->id }})" wire:confirm="Dieses unbenutzte Radfeld wirklich löschen?" class="font-bold text-red-600 hover:text-red-800">Löschen</button></div>
+                    </article>
+                @empty
+                    <p class="p-8 text-center text-sm text-slate-500">Noch keine Radfelder angelegt.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <form wire:submit="savePrize" class="h-fit space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex justify-between gap-3"><div><h2 class="font-black text-slate-950">{{ $prizeId ? 'Radfeld bearbeiten' : 'Radfeld hinzufügen' }}</h2><p class="mt-1 text-xs text-slate-500">Gewinne, Nieten oder Zusatzdrehs.</p></div>@if($prizeId)<button type="button" wire:click="resetPrizeForm" class="text-xs font-bold text-slate-500">Abbrechen</button>@endif</div>
+            <div><label class="block text-xs font-bold text-slate-600">Ergebnistyp</label><select wire:model.live="prizeOutcomeType" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"><option value="prize">Gewinn</option><option value="no_win">Niete</option><option value="retry">Zusatzdreh</option></select></div>
+            <div><label class="block text-xs font-bold text-slate-600">Bezeichnung</label><input wire:model="prizeName" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
+            <div><label class="block text-xs font-bold text-slate-600">Code</label><input wire:model="prizeCode" class="mt-1 block w-full rounded-xl border-slate-300 font-mono text-sm uppercase focus:border-teal-600 focus:ring-teal-600"></div>
+            @if ($prizeOutcomeType === 'prize')
+                <div><label class="block text-xs font-bold text-slate-600">Kontingent</label><input type="number" min="1" wire:model="prizeQuota" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
+                <div><label class="block text-xs font-bold text-slate-600">Ausgabe</label><select wire:model="prizeFulfillmentMode" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"><option value="onsite_staff">Vor Ort durch Mitarbeiter</option><option value="external_admin">Extern durch Volladmin</option></select></div>
+            @endif
+            <div><label class="block text-xs font-bold text-slate-600">Sortierung</label><input type="number" min="0" wire:model="prizeSortOrder" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
+            <label class="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm font-bold"><input type="checkbox" wire:model="prizeIsActive" class="rounded text-teal-700 focus:ring-teal-600">Im Scanner anzeigen</label>
+            <button type="submit" @disabled(! $campaignId) class="w-full rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-40">Radfeld speichern</button>
+        </form>
+    </section>
+
+    <section x-show.important="tab === 'history'" x-cloak class="space-y-5">
+        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+                <input wire:model.live.debounce.350ms="historySearch" class="rounded-xl border-slate-300 text-sm xl:col-span-2" placeholder="Teilnahme-ID, Name, E-Mail, Ergebnis">
+                <select wire:model.live="historyOutcome" class="rounded-xl border-slate-300 text-sm"><option value="">Alle Ergebnisse</option>@foreach($outcomeLabels as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>
+                <select wire:model.live="historyStaffId" class="rounded-xl border-slate-300 text-sm"><option value="">Alle Mitarbeiter</option>@foreach($staff as $employee)<option value="{{ $employee->id }}">{{ $employee->name }}</option>@endforeach</select>
+                <input type="date" wire:model.live="historyFrom" class="rounded-xl border-slate-300 text-sm" aria-label="Von Datum">
+                <input type="date" wire:model.live="historyTo" class="rounded-xl border-slate-300 text-sm" aria-label="Bis Datum">
+            </div>
+        </div>
+
+        <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-slate-200 text-sm">
+                    <thead class="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500"><tr><th class="px-5 py-3">Zeit / Ticket</th><th class="px-5 py-3">Teilnehmer</th><th class="px-5 py-3">Ergebnis</th><th class="px-5 py-3">Mitarbeiter</th><th class="px-5 py-3">Mail / Ausgabe</th><th class="px-5 py-3">Aktion</th></tr></thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @forelse ($results as $result)
+                            @php($outcome = $result->outcome_type_snapshot->value)
+                            @php($mailStatus = $result->mail_status->value)
+                            @php($mode = $result->fulfillment_mode_snapshot instanceof \BackedEnum ? $result->fulfillment_mode_snapshot->value : $result->fulfillment_mode_snapshot)
+                            <tr class="{{ $result->superseded_at ? 'bg-slate-50 text-slate-500' : '' }}">
+                                <td class="whitespace-nowrap px-5 py-4"><span class="block text-xs text-slate-500">{{ $result->recorded_at?->format('d.m.Y H:i:s') }}</span><span class="mt-1 block font-mono text-xs font-bold text-teal-800">{{ $result->ticket?->participation?->public_id }}</span></td>
+                                <td class="px-5 py-4"><strong class="block text-slate-900">{{ $result->ticket?->user?->name ?? 'Nicht belegt' }}</strong><span class="text-xs">{{ $result->ticket?->user?->email }}</span></td>
+                                <td class="px-5 py-4">
+                                    <strong class="block">{{ $result->label_snapshot }}</strong>
+                                    <span class="text-xs">
+                                        {{ $outcomeLabels[$outcome] ?? $outcome }}
+                                        @if ($result->corrects_result_id)
+                                            · Korrektur
+                                        @endif
+                                        @if ($result->superseded_at)
+                                            · ersetzt
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="px-5 py-4">{{ $result->recordedBy?->name ?? 'System' }}</td>
+                                <td class="px-5 py-4"><span class="block text-xs font-semibold {{ $mailStatus === 'failed' ? 'text-red-700' : 'text-slate-600' }}">{{ $mailLabels[$mailStatus] ?? $mailStatus }}</span><span class="mt-1 block text-xs text-slate-500">{{ $result->fulfilled_at ? 'Ausgegeben '.$result->fulfilled_at->format('d.m.Y H:i') : 'Nicht ausgegeben' }}</span></td>
+                                <td class="px-5 py-4">
+                                    <div class="flex flex-col items-start gap-2 text-xs font-bold">
+                                        @if ($result->is_final && ! $result->superseded_at && ! $result->fulfilled_at)
+                                            <button wire:click="prepareCounterbook({{ $result->id }})" class="text-amber-700 hover:text-amber-900">Gegenbuchen</button>
+                                            @if ($outcome === 'prize')
+                                                <button wire:click="fulfill({{ $result->id }})" wire:confirm="Ausgabe wirklich einmalig dokumentieren?" class="text-teal-700 hover:text-teal-900">{{ $mode === 'external_admin' ? 'Extern zugestellt' : 'Vor Ort ausgegeben' }}</button>
+                                            @endif
+                                        @endif
+                                        @if ($mailStatus === 'failed')
+                                            <button wire:click="resendMail({{ $result->id }})" class="text-red-700 hover:text-red-900">Mail erneut senden</button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="6" class="px-5 py-12 text-center text-slate-500">Keine Drehungen für diese Filter.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if ($legacyWins->isNotEmpty())
+            <details class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><summary class="cursor-pointer font-bold text-slate-800">Legacy-Gewinnvorgänge ({{ $legacyWins->count() }})</summary><div class="mt-4 divide-y divide-slate-100">@foreach($legacyWins as $legacy)<div class="grid gap-2 py-3 text-sm sm:grid-cols-3"><span class="font-mono text-xs">{{ $legacy->participation?->public_id }}</span><span>{{ $legacy->prize_name_snapshot }}</span><span class="sm:text-right">{{ $legacy->status }} · {{ $legacy->created_at?->format('d.m.Y H:i') }}</span></div>@endforeach</div></details>
+        @endif
+    </section>
+
+    @if ($counterbookResultId)
+        <div class="fixed inset-0 z-[10000] grid place-items-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="counterbook-title">
+            <form wire:submit="counterbook" class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+                <h2 id="counterbook-title" class="text-xl font-black text-slate-950">Ergebnis gegenbuchen</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">Der vorherige Wert bleibt sichtbar. Kontingente werden transaktional korrigiert und der Teilnehmer erhält eine Korrekturmail.</p>
+                <div class="mt-5"><label class="block text-sm font-bold text-slate-700">Neues finales Ergebnis</label><select wire:model="counterbookPrizeId" class="mt-1 block w-full rounded-xl border-slate-300 text-sm"><option value="">Bitte Ergebnis wählen</option>@foreach($selectedCampaign?->prizes?->where('is_active', true)->whereIn('outcome_type.value', ['prize','no_win']) ?? collect() as $field)<option value="{{ $field->id }}">{{ $field->name }}</option>@endforeach</select></div>
+                <div class="mt-4"><label class="block text-sm font-bold text-slate-700">Pflichtgrund</label><textarea wire:model="counterbookReason" rows="4" class="mt-1 block w-full rounded-xl border-slate-300 text-sm" placeholder="Mindestens 10 Zeichen"></textarea></div>
+                <div class="mt-5 flex justify-end gap-3"><button type="button" wire:click="cancelCounterbook" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700">Abbrechen</button><button type="submit" class="rounded-xl bg-amber-700 px-5 py-3 text-sm font-black text-white hover:bg-amber-800">Gegenbuchung speichern</button></div>
+            </form>
+        </div>
+    @endif
 </div>

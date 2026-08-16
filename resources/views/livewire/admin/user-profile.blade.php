@@ -1,4 +1,4 @@
-<div  x-data="{ selectedTab: '' }">
+<div x-data="{ selectedTab: 'userDetails' }">
   <!-- Header-Bild -->
   <div class="rounded-t-lg h-32 overflow-hidden bg-gray-200 relative">
         <!-- Status Badge (links oben) -->
@@ -45,14 +45,14 @@
             <svg class="w-6 h-6 fill-current text-blue-900" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
                 <path d="M9 12H1v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-8v2H9v-2zm0-1H0V5c0-1.1.9-2 2-2h4V2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v6h-9V9H9v2zm3-8V2H8v1h4z" />
             </svg>
-            <div class="text-center">{{ $user->likedProducts()->count() }} Produkte geliked</div>
+            <div class="text-center">{{ $likedProductsCount }} Produkte geliked</div>
         </li>
         <li class="flex flex-col items-center justify-around flex-1">
             <svg class="w-6 h-6  text-blue-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10h9.231M6 14h9.231M18 5.086A5.95 5.95 0 0 0 14.615 4c-3.738 0-6.769 3.582-6.769 8s3.031 8 6.769 8A5.94 5.94 0 0 0 18 18.916"/>
             </svg>
 
-            <div class="text-center">{{ number_format($user->customer->earnings() ?? 0, 2) }} € Einkünfte</div>
+            <div class="text-center">{{ number_format($user->customer?->earnings() ?? 0, 2) }} € Einkünfte</div>
         </li>
     </ul>
 
@@ -72,7 +72,7 @@
 
             <!-- Dropdown-Menü -->
             <div 
-                x-show="open" 
+                x-show.important="open"
                 @click.away="open = false" 
                 x-cloak 
                 class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg"
@@ -125,11 +125,21 @@
             </button>
         </li>
 
+        <li class="w-full border-l border-gray-200">
+            <button
+                @click="selectedTab = 'promotion'"
+                :class="{ 'text-teal-700 bg-white border-b-2 border-teal-700': selectedTab === 'promotion' }"
+                class="w-full p-4 transition-all duration-200 bg-gray-100 hover:bg-teal-50 hover:text-teal-700 focus:outline-none"
+            >
+                Promotion
+            </button>
+        </li>
+
     </ul>
 
     <!-- Benutzer- und Kundendetails -->
     <div>
-        <div  x-show="selectedTab === 'userDetails'" x-collapse  x-cloak>
+        <div  x-show.important="selectedTab === 'userDetails'" x-collapse  x-cloak>
             <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Benutzerprofil</h2>
 
@@ -189,7 +199,7 @@
                 @endif
             </div>
         </div>
-        <div  x-show="selectedTab === 'shelfRentals'" x-collapse  x-cloak>
+        <div  x-show.important="selectedTab === 'shelfRentals'" x-collapse  x-cloak>
             <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Buchungen</h2>
                 <livewire:admin.user-profile.shelf-rentals :user-id="$user->id" x-collapse  lazy />
@@ -203,13 +213,103 @@
                 </div>
             </div>
         </div>
-        <div  x-show="selectedTab === 'logs'" x-collapse  x-cloak>
+        <div x-show.important="selectedTab === 'promotion'" x-collapse x-cloak>
+            <div class="mt-4 space-y-5 rounded-2xl bg-slate-100 p-4 shadow sm:p-6">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Glücksrad</p>
+                        <h2 class="mt-1 text-2xl font-black text-slate-950">Promotion-Profil</h2>
+                        <p class="mt-1 text-sm text-slate-600">Tickets, Aufrufe, Drehungen, Korrekturen, E-Mails und Ausgaben dieses Kontos.</p>
+                    </div>
+                    @if ($socialAccounts->isNotEmpty())
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($socialAccounts as $identity)
+                                <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">{{ ucfirst($identity->provider) }} verknüpft</span>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                @forelse ($promotionTickets as $ticket)
+                    @php($ticketStatus = $ticket->status->value)
+                    <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <header class="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                            <div><span class="font-mono text-sm font-black text-teal-800">{{ $ticket->participation?->public_id }}</span><h3 class="mt-1 text-lg font-black text-slate-950">{{ $ticket->campaign?->name }}</h3></div>
+                            <span class="w-fit rounded-full px-3 py-1 text-xs font-bold {{ $ticketStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : ($ticketStatus === 'active' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700') }}">{{ ['ready'=>'Bereit','active'=>'Am Rad','completed'=>'Abgeschlossen','cancelled'=>'Storniert'][$ticketStatus] ?? $ticketStatus }}</span>
+                        </header>
+                        <div class="grid gap-5 p-5 lg:grid-cols-2">
+                            <div>
+                                <h4 class="text-sm font-black text-slate-800">Aufrufe</h4>
+                                <div class="mt-3 space-y-3">
+                                    @forelse ($ticket->turns as $turn)
+                                        @php($turnStatus = $turn->status->value)
+                                        <div class="rounded-xl bg-slate-50 p-3 text-sm">
+                                            <div class="flex justify-between gap-3"><strong>{{ $turn->started_at?->format('d.m.Y H:i:s') }}</strong><span class="text-xs text-slate-500">{{ $turnStatus }}</span></div>
+                                            <p class="mt-1 text-xs text-slate-500">
+                                                Mitarbeiter: {{ $turn->startedBy?->name ?? 'System' }}
+                                                @if ($turn->release_reason)
+                                                    · Abbruch: {{ $turn->release_reason }}
+                                                @endif
+                                            </p>
+                                        </div>
+                                    @empty
+                                        <p class="text-sm text-slate-500">Noch nicht gescannt.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-black text-slate-800">Drehergebnisse &amp; Kommunikation</h4>
+                                <div class="mt-3 space-y-3">
+                                    @forelse ($ticket->results as $result)
+                                        @php($outcome = $result->outcome_type_snapshot->value)
+                                        @php($mail = $result->mail_status->value)
+                                        <div class="rounded-xl border {{ $result->superseded_at ? 'border-slate-200 bg-slate-50 text-slate-500' : 'border-teal-100 bg-teal-50/60' }} p-3 text-sm">
+                                            <div class="flex flex-wrap items-start justify-between gap-2"><strong>{{ $result->label_snapshot }}</strong><span class="text-xs">{{ ['prize'=>'Gewinn','no_win'=>'Niete','retry'=>'Zusatzdreh','quota_reroll'=>'Kontingent-Neudrehung'][$outcome] ?? $outcome }}</span></div>
+                                            <p class="mt-1 text-xs">{{ $result->recorded_at?->format('d.m.Y H:i:s') }} · {{ $result->recordedBy?->name ?? 'System' }}</p>
+                                            <p class="mt-1 text-xs">
+                                                E-Mail: {{ ['pending'=>'offen','sent'=>'versendet','failed'=>'fehlgeschlagen','not_required'=>'nicht erforderlich'][$mail] ?? $mail }}
+                                                · Ausgabe: {{ $result->fulfilled_at?->format('d.m.Y H:i') ?? 'offen' }}
+                                                @if ($result->corrects_result_id)
+                                                    · Korrektur
+                                                @endif
+                                                @if ($result->superseded_at)
+                                                    · ersetzt
+                                                @endif
+                                            </p>
+                                            @if ($mail === 'failed')
+                                                <button wire:click="resendPromotionMail({{ $result->id }})" class="mt-2 text-xs font-bold text-red-700">E-Mail erneut senden</button>
+                                            @endif
+                                        </div>
+                                    @empty
+                                        <p class="text-sm text-slate-500">Noch kein Ergebnis.</p>
+                                    @endforelse
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                @empty
+                    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">Dieses Konto hat noch kein persönliches Glücksrad-Ticket.</div>
+                @endforelse
+
+                @if ($legacyPromotionWins->isNotEmpty())
+                    <details class="rounded-2xl border border-slate-200 bg-white p-5">
+                        <summary class="cursor-pointer font-bold text-slate-800">Legacy-Gewinne ({{ $legacyPromotionWins->count() }})</summary>
+                        <div class="mt-3 divide-y divide-slate-100">
+                            @foreach ($legacyPromotionWins as $legacy)
+                                <div class="grid gap-1 py-3 text-sm sm:grid-cols-3"><span>{{ $legacy->campaign?->name }}</span><strong>{{ $legacy->prize_name_snapshot }}</strong><span class="sm:text-right">{{ $legacy->status }} · {{ $legacy->created_at?->format('d.m.Y H:i') }}</span></div>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
+            </div>
+        </div>
+        <div  x-show.important="selectedTab === 'logs'" x-collapse  x-cloak>
             <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Aktivitäten</h2>
 
             </div>
         </div>
-        <div  x-show="selectedTab === 'payouts'" x-collapse  x-cloak>
+        <div  x-show.important="selectedTab === 'payouts'" x-collapse  x-cloak>
             <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Auszahlungen</h2>
 

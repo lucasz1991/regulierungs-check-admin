@@ -4,8 +4,15 @@ namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Mail;
+use App\Models\PromotionSpinResult;
+use App\Models\PromotionTicket;
+use App\Models\PromotionWin;
+use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Admin\UserStatusService;
+use App\Services\Promotion\PromotionResultMailer;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -20,14 +27,19 @@ class UserProfile extends Component
 
     #[Locked]
     public $userId;
+
     public $user;
 
+    public $showMailModal = false;
 
-    public $showMailModal = false; 
     public $mailUserId = null;
-    public $mailSubject = ''; 
+
+    public $mailSubject = '';
+
     public $mailHeader = '';
+
     public $mailBody = '';
+
     public $mailLink = '';
 
     public function mount($userId)
@@ -79,15 +91,16 @@ class UserProfile extends Component
     public function openMailModal()
     {
         // Prüfen, ob der Benutzer vorhanden ist
-        if (!$this->user) {
+        if (! $this->user) {
             $this->dispatch('showAlert', 'Benutzer nicht gefunden.', 'error');
+
             return;
         }
-    
+
         $this->mailUserId = $this->user->id;
         $this->showMailModal = true;
     }
-    
+
     public function resetMailModal()
     {
         $this->showMailModal = false;
@@ -97,7 +110,7 @@ class UserProfile extends Component
         $this->mailBody = '';
         $this->mailLink = '';
     }
-    
+
     public function sendMail()
     {
         // Validierung mit individuellen Fehlermeldungen
@@ -112,7 +125,7 @@ class UserProfile extends Component
             'mailHeader.max' => 'Die Überschrift darf maximal 255 Zeichen lang sein.',
             'mailBody.required' => 'Bitte geben Sie eine Nachricht ein.',
         ]);
-    
+
         // Inhalte für die Datenbank vorbereiten
         $content = [
             'subject' => $this->mailSubject,
@@ -120,7 +133,7 @@ class UserProfile extends Component
             'body' => $this->mailBody,
             'link' => $this->mailLink, // Link kann optional leer sein
         ];
-    
+
         // Mail an den gespeicherten Benutzer senden
         if ($this->user) {
             Mail::create([
@@ -134,21 +147,56 @@ class UserProfile extends Component
                     ],
                 ],
             ]);
-    
-            $this->dispatch('showAlert', 'E-Mail wurde zur Verarbeitung an ' . $this->user->email . ' vorbereitet.', 'success');
+
+            $this->dispatch('showAlert', 'E-Mail wurde zur Verarbeitung an '.$this->user->email.' vorbereitet.', 'success');
         } else {
             $this->dispatch('showAlert', 'Benutzer nicht gefunden.', 'error');
         }
-    
+
         // Modal zurücksetzen
         $this->resetMailModal();
     }
-    
+
+    public function resendPromotionMail(int $resultId, PromotionResultMailer $mailer): void
+    {
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+        $result = PromotionSpinResult::query()->with('ticket')->findOrFail($resultId);
+        abort_unless((int) $result->ticket?->user_id === (int) $this->userId, 404);
+
+        $sent = $mailer->resend($result, $actor);
+        $this->dispatch('showAlert', $sent ? 'Ergebnis-E-Mail wurde erneut versendet.' : 'Die Ergebnis-E-Mail konnte nicht versendet werden.', $sent ? 'success' : 'error');
+    }
 
     public function render()
     {
+        $promotionReady = Schema::hasTable('promotion_tickets') && Schema::hasTable('promotion_spin_results');
+        $tickets = $promotionReady
+            ? PromotionTicket::query()
+                ->where('user_id', $this->userId)
+                ->with([
+                    'campaign:id,name,code',
+                    'participation:id,public_id',
+                    'turns.startedBy:id,name',
+                    'results.recordedBy:id,name',
+                    'results.fulfilledBy:id,name',
+                ])
+                ->latest('issued_at')
+                ->get()
+            : collect();
+
         return view('livewire.admin.user-profile', [
             'user' => $this->user,
+            'promotionTickets' => $tickets,
+            'legacyPromotionWins' => Schema::hasTable('wins')
+                ? PromotionWin::query()->whereHas('participation', fn ($query) => $query->where('user_id', $this->userId))->with(['campaign', 'prize', 'issuedBy'])->latest()->get()
+                : collect(),
+            'socialAccounts' => Schema::hasTable('social_accounts')
+                ? SocialAccount::query()->where('user_id', $this->userId)->orderBy('provider')->get()
+                : collect(),
+            'likedProductsCount' => Schema::hasTable('liked_products')
+                ? DB::table('liked_products')->where('user_id', $this->userId)->count()
+                : 0,
         ])->layout('layouts.master');
     }
 }

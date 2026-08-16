@@ -16,6 +16,10 @@ class Handler extends ExceptionHandler
         'current_password',
         'password',
         'password_confirmation',
+        'client_secret',
+        'private_key',
+        'google.client_secret',
+        'apple.private_key',
     ];
 
     /**

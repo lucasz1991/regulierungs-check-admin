@@ -35,6 +35,11 @@ class PromotionParticipation extends Model
         return $this->hasMany(PromotionWin::class, 'participation_id');
     }
 
+    public function ticket()
+    {
+        return $this->hasOne(PromotionTicket::class, 'participation_id');
+    }
+
     public function currentWin()
     {
         return $this->hasOne(PromotionWin::class, 'participation_id')->latestOfMany();

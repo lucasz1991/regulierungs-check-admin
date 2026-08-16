@@ -2,17 +2,27 @@
 
 namespace App\Livewire\Admin;
 
+use App\Enums\PromotionOutcomeType;
+use App\Enums\PromotionQuotaPolicy;
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\PromotionCampaign;
+use App\Models\PromotionCampaignState;
 use App\Models\PromotionPrize;
+use App\Models\PromotionSpinResult;
+use App\Models\PromotionTicket;
+use App\Models\PromotionTurn;
 use App\Models\PromotionWin;
 use App\Models\PromotionWinEvent;
 use App\Models\User;
 use App\Services\Promotion\PromotionAuditChain;
-use App\Services\Promotion\PromotionWinService;
+use App\Services\Promotion\PromotionResultMailer;
+use App\Services\Promotion\PromotionSettingsService;
+use App\Services\Promotion\PromotionTicketService;
+use App\Services\Promotion\PromotionTurnService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class PromotionAdministration extends Component
@@ -30,7 +40,17 @@ class PromotionAdministration extends Component
 
     public string $campaignName = '';
 
+    public string $campaignLandingHeadline = '';
+
+    public string $campaignLandingText = '';
+
+    public string $campaignRulesText = '';
+
+    public string $campaignQuotaPolicy = 'block';
+
     public bool $campaignIsActive = false;
+
+    public bool $campaignIsPublic = false;
 
     public ?string $campaignStartsAt = null;
 
@@ -42,6 +62,8 @@ class PromotionAdministration extends Component
 
     public string $prizeName = '';
 
+    public string $prizeOutcomeType = 'prize';
+
     public string $prizeFulfillmentMode = PromotionPrize::FULFILLMENT_ONSITE;
 
     public int $prizeQuota = 1;
@@ -50,18 +72,32 @@ class PromotionAdministration extends Component
 
     public int $prizeSortOrder = 0;
 
-    public ?int $correctionWinId = null;
+    public string $historySearch = '';
 
-    public string $correctionReason = '';
+    public string $historyOutcome = '';
 
-    public ?array $auditResult = null;
+    public ?int $historyStaffId = null;
 
-    public string $winSearch = '';
+    public ?string $historyFrom = null;
+
+    public ?string $historyTo = null;
+
+    #[Locked]
+    public ?int $counterbookResultId = null;
+
+    public ?int $counterbookPrizeId = null;
+
+    public string $counterbookReason = '';
 
     public function mount(): void
     {
         $this->authorize('promotion.campaigns.manage');
-        $this->campaignId = PromotionCampaign::query()->latest()->value('id');
+        $campaign = PromotionCampaign::query()->where('is_public', true)->first()
+            ?? PromotionCampaign::query()->latest()->first();
+
+        if ($campaign) {
+            $this->editCampaign($campaign->id);
+        }
     }
 
     public function editCampaign(int $campaignId): void
@@ -71,75 +107,108 @@ class PromotionAdministration extends Component
         $this->campaignId = $campaign->id;
         $this->campaignCode = $campaign->code;
         $this->campaignName = $campaign->name;
-        $this->campaignIsActive = $campaign->is_active;
+        $this->campaignLandingHeadline = (string) $campaign->landing_headline;
+        $this->campaignLandingText = (string) $campaign->landing_text;
+        $this->campaignRulesText = (string) $campaign->rules_text;
+        $this->campaignQuotaPolicy = $campaign->quota_exhaustion_policy->value;
+        $this->campaignIsActive = (bool) $campaign->is_active;
+        $this->campaignIsPublic = (bool) $campaign->is_public;
         $this->campaignStartsAt = optional($campaign->starts_at)->format('Y-m-d\TH:i');
         $this->campaignEndsAt = optional($campaign->ends_at)->format('Y-m-d\TH:i');
         $this->resetPrizeForm();
+        $this->resetHistoryFilters();
     }
 
     public function newCampaign(): void
     {
         $this->authorize('promotion.campaigns.manage');
-        $this->reset('campaignId', 'campaignCode', 'campaignName', 'campaignStartsAt', 'campaignEndsAt');
+        $this->reset([
+            'campaignId', 'campaignCode', 'campaignName', 'campaignLandingHeadline',
+            'campaignLandingText', 'campaignRulesText', 'campaignStartsAt', 'campaignEndsAt',
+        ]);
+        $this->campaignQuotaPolicy = PromotionQuotaPolicy::Block->value;
         $this->campaignIsActive = false;
+        $this->campaignIsPublic = false;
         $this->resetPrizeForm();
     }
 
-    public function saveCampaign(PromotionAuditChain $audit): void
+    public function saveCampaign(PromotionAuditChain $audit, PromotionTicketService $tickets): void
     {
         $this->authorize('promotion.campaigns.manage');
         $validated = $this->validate([
             'campaignCode' => ['required', 'alpha_dash', 'max:20', Rule::unique('campaigns', 'code')->ignore($this->campaignId)],
             'campaignName' => ['required', 'string', 'max:255'],
+            'campaignLandingHeadline' => ['nullable', 'string', 'max:255'],
+            'campaignLandingText' => ['nullable', 'string', 'max:5000'],
+            'campaignRulesText' => ['nullable', 'string', 'max:10000'],
+            'campaignQuotaPolicy' => ['required', Rule::enum(PromotionQuotaPolicy::class)],
             'campaignIsActive' => ['boolean'],
+            'campaignIsPublic' => ['boolean'],
             'campaignStartsAt' => ['nullable', 'date'],
             'campaignEndsAt' => ['nullable', 'date', 'after:campaignStartsAt'],
         ]);
 
-        $campaign = DB::transaction(function () use ($validated, $audit): PromotionCampaign {
-            $existingCampaign = $this->campaignId
+        $campaign = DB::transaction(function () use ($validated, $audit, $tickets): PromotionCampaign {
+            $campaign = $this->campaignId
                 ? PromotionCampaign::query()->lockForUpdate()->findOrFail($this->campaignId)
-                : null;
+                : new PromotionCampaign;
+            $previousQuotaPolicy = $campaign->exists ? $campaign->quota_exhaustion_policy : null;
 
-            if ($existingCampaign) {
-                $existingCampaign->prizes()->orderBy('id')->lockForUpdate()->get();
-                $this->assertConfigurationIntegrityBeforeMutation($existingCampaign, $audit);
+            if ($campaign->exists) {
+                $campaign->prizes()->orderBy('id')->lockForUpdate()->get();
+                $this->assertConfigurationIntegrityBeforeMutation($campaign, $audit);
             }
 
-            if ($validated['campaignIsActive'] && ! $this->campaignIsReady($existingCampaign)) {
+            $this->assertCampaignTransitionDoesNotStrandTurn(
+                $campaign,
+                (bool) $validated['campaignIsActive'],
+                (bool) $validated['campaignIsPublic'],
+            );
+
+            if ($validated['campaignIsPublic'] && ! $this->campaignCanBePublished($campaign)) {
                 throw ValidationException::withMessages([
-                    'campaignIsActive' => 'Vor der Aktivierung müssen Amazon 20 €, Amazon 5 € und Surprise mit Kontingent eingerichtet sein. Der Ausgabemodus von Surprise muss ausdrücklich gespeichert werden.',
+                    'campaignIsPublic' => 'Vor der Veröffentlichung muss mindestens ein aktives finales Radfeld konfiguriert sein.',
                 ]);
             }
 
-            $campaign = $existingCampaign ?? new PromotionCampaign;
             $campaign->forceFill([
-                'code' => mb_strtoupper($validated['campaignCode']),
+                'code' => mb_strtoupper(trim($validated['campaignCode'])),
                 'name' => trim($validated['campaignName']),
-                'is_active' => $validated['campaignIsActive'],
+                'landing_headline' => trim($validated['campaignLandingHeadline']),
+                'landing_text' => trim($validated['campaignLandingText']),
+                'rules_text' => trim($validated['campaignRulesText']),
+                'quota_exhaustion_policy' => $validated['campaignQuotaPolicy'],
+                'is_active' => (bool) $validated['campaignIsActive'],
                 'starts_at' => $validated['campaignStartsAt'],
                 'ends_at' => $validated['campaignEndsAt'],
-                'created_by' => $existingCampaign?->created_by ?? auth()->id(),
+                'created_by' => $campaign->created_by ?: auth()->id(),
             ])->save();
 
-            if (! $existingCampaign) {
-                $this->createInitialPrizes($campaign);
+            $this->synchronizeStickerRequirement(
+                $campaign,
+                $previousQuotaPolicy !== PromotionQuotaPolicy::StickerContinue
+                    && $campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue,
+            );
+
+            $audit->appendConfiguration(
+                $campaign,
+                'campaign.configured',
+                $audit->configurationPayload($campaign->fresh('prizes')),
+                $this->actor(),
+            );
+
+            if ($validated['campaignIsPublic']) {
+                $tickets->publishCampaign($campaign, $this->actor());
+            } elseif ($campaign->is_public) {
+                $tickets->publishCampaign(null, $this->actor());
             }
 
-            if ($validated['campaignIsActive']) {
-                $this->ensurePrizeConfigurationEvents($campaign, $audit);
-            }
-
-            $audit->appendConfiguration($campaign, 'campaign.configured', [
-                'campaign' => $this->campaignAuditState($campaign->fresh()),
-                'prizes' => $campaign->prizes()->orderBy('id')->get()->map(fn (PromotionPrize $prize): array => $this->prizeAuditState($prize))->all(),
-            ], auth()->user(), $this->accessContext());
-
-            return $campaign;
+            return $campaign->fresh();
         }, 3);
 
         $this->campaignId = $campaign->id;
-        activity('promotion')->causedBy(auth()->user())->performedOn($campaign)->log('Promotion-Kampagne gespeichert');
+        $this->campaignIsPublic = $campaign->is_public;
+        activity('promotion')->causedBy($this->actor())->performedOn($campaign)->log('Promotion-Kampagne gespeichert');
         session()->flash('status', 'Kampagne gespeichert.');
     }
 
@@ -151,9 +220,11 @@ class PromotionAdministration extends Component
         $this->prizeId = $prize->id;
         $this->prizeCode = $prize->code;
         $this->prizeName = $prize->name;
-        $this->prizeFulfillmentMode = $prize->fulfillment_mode;
+        $this->prizeOutcomeType = $prize->outcome_type->value;
+        $mode = $prize->fulfillment_mode;
+        $this->prizeFulfillmentMode = $mode instanceof \BackedEnum ? (string) $mode->value : (string) $mode;
         $this->prizeQuota = $prize->quota;
-        $this->prizeIsActive = $prize->is_active;
+        $this->prizeIsActive = (bool) $prize->is_active;
         $this->prizeSortOrder = $prize->sort_order;
     }
 
@@ -165,287 +236,334 @@ class PromotionAdministration extends Component
         $validated = $this->validate([
             'prizeCode' => ['required', 'alpha_dash', 'max:50', Rule::unique('prizes', 'code')->where('campaign_id', $this->campaignId)->ignore($this->prizeId)],
             'prizeName' => ['required', 'string', 'max:255'],
+            'prizeOutcomeType' => ['required', Rule::in([
+                PromotionOutcomeType::Prize->value,
+                PromotionOutcomeType::NoWin->value,
+                PromotionOutcomeType::Retry->value,
+            ])],
             'prizeFulfillmentMode' => ['required', Rule::in([PromotionPrize::FULFILLMENT_ONSITE, PromotionPrize::FULFILLMENT_EXTERNAL])],
-            'prizeQuota' => ['required', 'integer', 'min:1'],
+            'prizeQuota' => ['required', 'integer', 'min:0'],
             'prizeIsActive' => ['boolean'],
-            'prizeSortOrder' => ['integer', 'min:0'],
+            'prizeSortOrder' => ['integer', 'min:0', 'max:10000'],
         ]);
 
-        $normalizedCode = mb_strtoupper($validated['prizeCode']);
-        if (in_array($normalizedCode, ['AMAZON20', 'AMAZON5'], true)
-            && $validated['prizeFulfillmentMode'] !== PromotionPrize::FULFILLMENT_EXTERNAL) {
-            $this->addError('prizeFulfillmentMode', 'Amazon-Gutscheine dürfen ausschließlich durch Volladmins extern ausgegeben werden.');
-
-            return;
+        if ($validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value && (int) $validated['prizeQuota'] < 1) {
+            throw ValidationException::withMessages(['prizeQuota' => 'Ein Gewinnfeld benötigt ein Kontingent von mindestens 1.']);
         }
 
-        $prize = DB::transaction(function () use ($validated, $normalizedCode, $audit): PromotionPrize {
+        $prize = DB::transaction(function () use ($validated, $audit): PromotionPrize {
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($this->campaignId);
-            $lockedPrizes = $campaign->prizes()->orderBy('id')->lockForUpdate()->get()->keyBy('id');
-            $existing = $this->prizeId ? $lockedPrizes->get($this->prizeId) : null;
+            $campaign->prizes()->orderBy('id')->lockForUpdate()->get();
+            $this->assertCampaignHasNoActiveTurn($campaign);
+            $this->assertConfigurationIntegrityBeforeMutation($campaign, $audit);
+            $prize = $this->prizeId
+                ? PromotionPrize::query()->lockForUpdate()->findOrFail($this->prizeId)
+                : new PromotionPrize(['campaign_id' => $campaign->id, 'reserved_count' => 0, 'awarded_count' => 0]);
+            abort_unless(! $prize->exists || (int) $prize->campaign_id === (int) $campaign->id, 422);
 
-            if ($this->prizeId && ! $existing) {
-                abort(404);
-            }
-
-            $hadAuditBaseline = $this->assertConfigurationIntegrityBeforeMutation($campaign, $audit);
-
-            $actualReservations = 0;
-
-            if ($existing) {
-                abort_unless((int) $existing->campaign_id === (int) $this->campaignId, 422);
-
-                $actualReservations = $existing->wins()
-                    ->where('status', '<>', PromotionWin::STATUS_CANCELLED)
-                    ->count();
-
-                if ((int) $validated['prizeQuota'] < $actualReservations) {
-                    throw ValidationException::withMessages([
-                        'prizeQuota' => 'Das Kontingent darf nicht unter die bereits reservierte Menge fallen.',
-                    ]);
-                }
-
-                $prize = $existing;
-            } else {
-                $prize = new PromotionPrize;
-                $prize->campaign_id = $this->campaignId;
-                $prize->reserved_count = 0;
+            $legacyCount = $prize->exists
+                ? PromotionWin::query()->where('prize_id', $prize->id)->where('status', '<>', 'cancelled')->count()
+                : 0;
+            $v2AwardedCount = $prize->exists
+                ? PromotionSpinResult::query()
+                    ->where('prize_id', $prize->id)
+                    ->where('outcome_type_snapshot', PromotionOutcomeType::Prize->value)
+                    ->where('is_final', true)
+                    ->whereNull('superseded_at')
+                    ->count()
+                : 0;
+            $reservedCount = $prize->exists ? $legacyCount : 0;
+            $awardedCount = $prize->exists ? $legacyCount + $v2AwardedCount : 0;
+            $quota = $validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value
+                ? (int) $validated['prizeQuota']
+                : 0;
+            if ($quota < $awardedCount) {
+                throw ValidationException::withMessages([
+                    'prizeQuota' => 'Das Kontingent darf nicht unter die bereits vergebenen Gewinne fallen.',
+                ]);
             }
 
             $prize->forceFill([
-                'code' => $normalizedCode,
+                'campaign_id' => $campaign->id,
+                'code' => mb_strtoupper(trim($validated['prizeCode'])),
                 'name' => trim($validated['prizeName']),
-                'fulfillment_mode' => $validated['prizeFulfillmentMode'],
-                'quota' => $validated['prizeQuota'],
-                'reserved_count' => $actualReservations,
-                'is_active' => $validated['prizeIsActive'],
-                'sort_order' => $validated['prizeSortOrder'],
-                'configuration' => $this->prizeConfiguration($existing, $normalizedCode),
+                'outcome_type' => $validated['prizeOutcomeType'],
+                'fulfillment_mode' => $validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value
+                    ? $validated['prizeFulfillmentMode']
+                    : PromotionPrize::FULFILLMENT_ONSITE,
+                'quota' => $quota,
+                'reserved_count' => $reservedCount,
+                'awarded_count' => $awardedCount,
+                'is_active' => (bool) $validated['prizeIsActive'],
+                'sort_order' => (int) $validated['prizeSortOrder'],
             ])->save();
 
-            if (! $hadAuditBaseline) {
-                $audit->appendConfiguration($campaign, 'campaign.configured', [
-                    'campaign' => $this->campaignAuditState($campaign->fresh()),
-                    'prizes' => $campaign->prizes()->orderBy('id')->get()->map(fn (PromotionPrize $configuredPrize): array => $this->prizeAuditState($configuredPrize))->all(),
-                ], auth()->user(), $this->accessContext());
-            }
+            $this->synchronizeStickerRequirement(
+                $campaign,
+                $prize->is_active
+                    && $prize->outcome_type === PromotionOutcomeType::Prize
+                    && $prize->awarded_count >= $prize->quota,
+            );
 
-            $audit->appendConfiguration($campaign, 'prize.configured', [
-                'prize' => $this->prizeAuditState($prize->fresh()),
-            ], auth()->user(), $this->accessContext());
+            $audit->appendConfiguration($campaign, 'campaign.configured', $audit->configurationPayload($campaign->fresh('prizes')), $this->actor());
 
-            return $prize;
+            return $prize->fresh();
         }, 3);
 
-        activity('promotion')->causedBy(auth()->user())->performedOn($prize)->log('Promotion-Preis gespeichert');
+        activity('promotion')->causedBy($this->actor())->performedOn($prize)->log('Promotion-Radfeld gespeichert');
         $this->resetPrizeForm();
-        session()->flash('status', 'Preis gespeichert.');
+        session()->flash('status', 'Radfeld gespeichert.');
     }
 
-    public function prepareCorrection(int $winId): void
+    public function deletePrize(int $prizeId, PromotionAuditChain $audit): void
+    {
+        $this->authorize('promotion.prizes.manage');
+
+        DB::transaction(function () use ($prizeId, $audit): void {
+            $prize = PromotionPrize::query()->lockForUpdate()->findOrFail($prizeId);
+            $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($prize->campaign_id);
+            $this->assertCampaignHasNoActiveTurn($campaign);
+            $this->assertConfigurationIntegrityBeforeMutation($campaign, $audit);
+            if ($prize->spinResults()->exists() || $prize->wins()->exists()) {
+                throw ValidationException::withMessages(['prize' => 'Ein bereits verwendetes Radfeld kann nur deaktiviert, nicht gelöscht werden.']);
+            }
+
+            $prize->delete();
+            $this->synchronizeStickerRequirement($campaign);
+            $audit->appendConfiguration($campaign, 'campaign.configured', $audit->configurationPayload($campaign->fresh('prizes')), $this->actor());
+        }, 3);
+
+        $this->resetPrizeForm();
+        session()->flash('status', 'Radfeld gelöscht.');
+    }
+
+    public function prepareCounterbook(int $resultId): void
     {
         $this->authorize('promotion.corrections.manage');
-        $this->correctionWinId = PromotionWin::query()->findOrFail($winId)->id;
-        $this->correctionReason = '';
+        $result = PromotionSpinResult::query()->findOrFail($resultId);
+        $this->counterbookResultId = $result->id;
+        $this->counterbookPrizeId = $result->prize_id;
+        $this->counterbookReason = '';
     }
 
-    public function cancelWin(PromotionWinService $wins): void
+    public function cancelCounterbook(): void
     {
         $this->authorize('promotion.corrections.manage');
-        $validated = $this->validate(['correctionReason' => ['required', Rule::in(PromotionWinService::CANCELLATION_REASONS)]]);
-        $win = PromotionWin::query()->findOrFail($this->correctionWinId);
-        $wins->cancel($win, auth()->user(), trim($validated['correctionReason']), $this->accessContext());
-        $this->reset('correctionWinId', 'correctionReason');
-        session()->flash('status', 'Der Vorgang wurde storniert und protokolliert.');
+        $this->reset('counterbookResultId', 'counterbookPrizeId', 'counterbookReason');
     }
 
-    public function verifyAudit(PromotionWinService $wins): void
+    public function counterbook(PromotionTurnService $turns, PromotionResultMailer $mailer): void
     {
-        $this->authorize('promotion.audit.view');
-        abort_unless($this->campaignId !== null, 422);
-        $this->auditResult = $wins->verifyAuditChain(PromotionCampaign::query()->findOrFail($this->campaignId));
+        $this->authorize('promotion.corrections.manage');
+        $validated = $this->validate([
+            'counterbookResultId' => ['required', 'integer', 'exists:promotion_spin_results,id'],
+            'counterbookPrizeId' => ['required', 'integer', 'exists:prizes,id'],
+            'counterbookReason' => ['required', 'string', 'min:10', 'max:500'],
+        ]);
+        $result = PromotionSpinResult::query()->findOrFail($validated['counterbookResultId']);
+        $field = PromotionPrize::query()->findOrFail($validated['counterbookPrizeId']);
+        abort_if((int) $field->campaign_id !== (int) $result->campaign_id, 422);
+        $outcome = $field->outcome_type->value;
+        $corrected = $turns->counterbookResult($result, $field, $outcome, $this->actor(), trim($validated['counterbookReason']));
+        $mailSent = $mailer->send($corrected, true);
+        $this->reset('counterbookResultId', 'counterbookPrizeId', 'counterbookReason');
+        session()->flash('status', $mailSent
+            ? 'Gegenbuchung gespeichert; der vorherige Stand bleibt im Verlauf erhalten und die Korrekturmail wurde versendet.'
+            : 'Gegenbuchung gespeichert; die Korrekturmail ist fehlgeschlagen und kann im Verlauf erneut versendet werden.');
     }
 
-    public function render()
+    public function fulfill(int $resultId, PromotionTurnService $turns): void
     {
-        $this->authorize('promotion.campaigns.manage');
+        $result = PromotionSpinResult::query()->findOrFail($resultId);
+        $mode = $result->fulfillment_mode_snapshot instanceof \BackedEnum
+            ? (string) $result->fulfillment_mode_snapshot->value
+            : (string) $result->fulfillment_mode_snapshot;
+        $this->authorize($mode === PromotionPrize::FULFILLMENT_EXTERNAL
+            ? 'promotion.fulfillment.external'
+            : 'promotion.fulfillment.onsite');
+        abort_if($mode === PromotionPrize::FULFILLMENT_EXTERNAL && ! $this->actor()->isAdmin(), 403);
+        $turns->fulfill($result, $this->actor());
+        session()->flash('status', 'Ausgabe einmalig dokumentiert.');
+    }
 
-        $winQuery = PromotionWin::query()
-            ->when($this->campaignId, fn ($query) => $query->where('campaign_id', $this->campaignId));
-        $search = trim($this->winSearch);
-        $recentWins = (clone $winQuery)
-            ->when($search !== '', function ($query) use ($search): void {
-                $query->where(function ($query) use ($search): void {
-                    $query->whereHas('participation', fn ($participation) => $participation->where('public_id', 'like', "%{$search}%"))
-                        ->orWhereHas('participation.user', function ($user) use ($search): void {
-                            $user->where('email', 'like', "%{$search}%")
-                                ->orWhere('name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->with(['prize', 'participation.user', 'issuedBy'])
-            ->latest()
-            ->limit(100)
-            ->get();
-        $statusCounts = (clone $winQuery)
-            ->selectRaw('status, COUNT(*) AS total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
-        $staffRows = (clone $winQuery)
-            ->selectRaw("issued_by, COUNT(*) AS total, SUM(CASE WHEN status = 'expired' THEN 1 ELSE 0 END) AS expired_total, SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_total, SUM(CASE WHEN status = 'disputed' THEN 1 ELSE 0 END) AS disputed_total")
-            ->groupBy('issued_by')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
-        $staffNames = User::query()->whereKey($staffRows->pluck('issued_by')->filter())->pluck('name', 'id');
+    public function resendMail(int $resultId, PromotionResultMailer $mailer): void
+    {
+        $this->authorize('promotion.corrections.manage');
+        $sent = $mailer->resend(PromotionSpinResult::query()->findOrFail($resultId), $this->actor());
+        session()->flash('status', $sent ? 'Ergebnis-E-Mail wurde erneut versendet.' : 'Ergebnis gespeichert; die E-Mail konnte erneut nicht versendet werden.');
+    }
 
-        return view('livewire.admin.promotion-administration', [
-            'campaigns' => PromotionCampaign::query()->latest()->get(),
-            'selectedCampaign' => $this->campaignId ? PromotionCampaign::query()->with(['prizes' => fn ($q) => $q->orderBy('sort_order')])->find($this->campaignId) : null,
-            'recentWins' => $recentWins,
-            'statusCounts' => $statusCounts,
-            'staffRows' => $staffRows,
-            'staffNames' => $staffNames,
-        ])->layout('layouts.master');
+    public function resetHistoryFilters(): void
+    {
+        $this->reset('historySearch', 'historyOutcome', 'historyStaffId', 'historyFrom', 'historyTo');
     }
 
     public function resetPrizeForm(): void
     {
         $this->authorize('promotion.prizes.manage');
         $this->reset('prizeId', 'prizeCode', 'prizeName');
+        $this->prizeOutcomeType = PromotionOutcomeType::Prize->value;
         $this->prizeFulfillmentMode = PromotionPrize::FULFILLMENT_ONSITE;
         $this->prizeQuota = 1;
         $this->prizeIsActive = true;
         $this->prizeSortOrder = 0;
     }
 
-    /** @return array{ip_address: string|null, user_agent: string|null} */
-    private function accessContext(): array
+    public function render(PromotionSettingsService $settings)
     {
-        return ['ip_address' => request()->ip(), 'user_agent' => request()->userAgent()];
+        $this->authorize('promotion.campaigns.manage');
+        $campaign = $this->campaignId
+            ? PromotionCampaign::query()->with(['prizes' => fn ($query) => $query->orderBy('sort_order')->orderBy('id'), 'promotionState'])->find($this->campaignId)
+            : null;
+
+        $results = PromotionSpinResult::query()
+            ->when($this->campaignId, fn ($query) => $query->where('campaign_id', $this->campaignId))
+            ->when(trim($this->historySearch) !== '', function ($query): void {
+                $search = trim($this->historySearch);
+                $query->where(function ($query) use ($search): void {
+                    $query->where('label_snapshot', 'like', "%{$search}%")
+                        ->orWhereHas('ticket.participation', fn ($participation) => $participation->where('public_id', 'like', "%{$search}%"))
+                        ->orWhereHas('ticket.user', fn ($user) => $user->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                });
+            })
+            ->when($this->historyOutcome !== '', fn ($query) => $query->where('outcome_type_snapshot', $this->historyOutcome))
+            ->when($this->historyStaffId, fn ($query) => $query->where('recorded_by', $this->historyStaffId))
+            ->when($this->historyFrom, fn ($query) => $query->whereDate('recorded_at', '>=', $this->historyFrom))
+            ->when($this->historyTo, fn ($query) => $query->whereDate('recorded_at', '<=', $this->historyTo))
+            ->with(['ticket.participation', 'ticket.user:id,name,email', 'campaign:id,name', 'prize:id,name', 'recordedBy:id,name', 'fulfilledBy:id,name'])
+            ->latest('recorded_at')
+            ->limit(150)
+            ->get();
+
+        $baseUrl = rtrim((string) ($settings->get()['redemption_base_url'] ?? ''), '/');
+        $turnQuery = PromotionTurn::query()->when($this->campaignId, fn ($query) => $query->where('campaign_id', $this->campaignId));
+        $ticketQuery = PromotionTicket::query()->when($this->campaignId, fn ($query) => $query->where('campaign_id', $this->campaignId));
+
+        return view('livewire.admin.promotion-administration', [
+            'campaigns' => PromotionCampaign::query()->latest()->get(),
+            'selectedCampaign' => $campaign,
+            'posterUrl' => $baseUrl !== '' ? $baseUrl.'/gluecksrad' : null,
+            'ticketCount' => (clone $ticketQuery)->count(),
+            'readyTicketCount' => (clone $ticketQuery)->where('status', 'ready')->count(),
+            'todayTurnCount' => (clone $turnQuery)->whereDate('started_at', today())->count(),
+            'results' => $results,
+            'legacyWins' => PromotionWin::query()
+                ->when($this->campaignId, fn ($query) => $query->where('campaign_id', $this->campaignId))
+                ->with(['participation.user:id,name,email', 'prize:id,name', 'issuedBy:id,name'])
+                ->latest()
+                ->limit(30)
+                ->get(),
+            'staff' => User::query()
+                ->whereIn('id', PromotionSpinResult::query()->select('recorded_by')->whereNotNull('recorded_by'))
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ])->layout('layouts.master');
     }
 
-    private function campaignIsReady(?PromotionCampaign $campaign): bool
+    private function campaignCanBePublished(PromotionCampaign $campaign): bool
     {
-        if (! $campaign) {
+        if (! $this->campaignIsActive) {
             return false;
         }
 
-        $prizes = $campaign->prizes()
-            ->whereIn('code', ['AMAZON20', 'AMAZON5', 'SURPRISE'])
-            ->lockForUpdate()
-            ->get()
-            ->keyBy('code');
-
-        foreach (['AMAZON20', 'AMAZON5', 'SURPRISE'] as $code) {
-            $prize = $prizes->get($code);
-            if (! $prize || ! $prize->is_active || $prize->quota < 1) {
-                return false;
-            }
+        if (trim($this->campaignLandingHeadline) === ''
+            || trim($this->campaignLandingText) === ''
+            || trim($this->campaignRulesText) === '') {
+            return false;
         }
 
-        foreach (['AMAZON20', 'AMAZON5'] as $code) {
-            if ($prizes->get($code)->fulfillment_mode !== PromotionPrize::FULFILLMENT_EXTERNAL) {
-                return false;
-            }
+        if (! $campaign->exists) {
+            return false;
         }
 
-        return (bool) data_get($prizes->get('SURPRISE')->configuration, 'mode_confirmed', false);
-    }
-
-    private function createInitialPrizes(PromotionCampaign $campaign): void
-    {
-        $campaign->prizes()->createMany([
-            ['code' => 'AMAZON20', 'name' => 'Amazon-Gutschein 20 €', 'fulfillment_mode' => PromotionPrize::FULFILLMENT_EXTERNAL, 'quota' => 0, 'is_active' => false, 'sort_order' => 10],
-            ['code' => 'AMAZON5', 'name' => 'Amazon-Gutschein 5 €', 'fulfillment_mode' => PromotionPrize::FULFILLMENT_EXTERNAL, 'quota' => 0, 'is_active' => false, 'sort_order' => 20],
-            ['code' => 'SURPRISE', 'name' => 'Surprise', 'fulfillment_mode' => PromotionPrize::FULFILLMENT_ONSITE, 'quota' => 0, 'is_active' => false, 'sort_order' => 30, 'configuration' => ['mode_confirmed' => false]],
-        ]);
-    }
-
-    private function ensurePrizeConfigurationEvents(PromotionCampaign $campaign, PromotionAuditChain $audit): void
-    {
-        $configuredPrizeIds = PromotionWinEvent::query()
-            ->where('campaign_id', $campaign->id)
-            ->where('event_type', 'prize.configured')
-            ->orderBy('sequence')
-            ->get()
-            ->map(static fn (PromotionWinEvent $event): int => (int) data_get($event->payload, 'prize.id', 0))
-            ->filter()
-            ->unique()
-            ->all();
-
-        $prizes = $campaign->prizes()->orderBy('id')->lockForUpdate()->get();
-
-        foreach ($prizes as $prize) {
-            if (in_array((int) $prize->id, $configuredPrizeIds, true)) {
-                continue;
-            }
-
-            $audit->appendConfiguration($campaign, 'prize.configured', [
-                'prize' => $this->prizeAuditState($prize),
-            ], auth()->user(), $this->accessContext());
-        }
-    }
-
-    private function assertConfigurationIntegrityBeforeMutation(PromotionCampaign $campaign, PromotionAuditChain $audit): bool
-    {
-        $hasAuditEvents = PromotionWinEvent::query()
-            ->where('campaign_id', $campaign->id)
+        return $campaign->prizes()
+            ->where('is_active', true)
+            ->whereIn('outcome_type', [PromotionOutcomeType::Prize->value, PromotionOutcomeType::NoWin->value])
             ->exists();
+    }
 
-        if (! $hasAuditEvents) {
-            if ($campaign->is_active) {
-                throw new \RuntimeException('Eine aktive Kampagne ohne Konfigurations-Audit darf nicht verändert werden.');
-            }
-
-            return false;
-        }
-
-        if (! $audit->verify($campaign)) {
+    private function assertConfigurationIntegrityBeforeMutation(PromotionCampaign $campaign, PromotionAuditChain $audit): void
+    {
+        if (PromotionWinEvent::query()->where('campaign_id', $campaign->id)->exists() && ! $audit->verify($campaign)) {
             throw new \RuntimeException('Die bestehende Promotion-Konfiguration konnte vor der Änderung nicht verifiziert werden.');
         }
-
-        return true;
     }
 
-    /** @return array<string, bool>|null */
-    private function prizeConfiguration(?PromotionPrize $existing, string $code): ?array
+    private function assertCampaignTransitionDoesNotStrandTurn(PromotionCampaign $campaign, bool $willBeActive, bool $willBePublic): void
     {
-        $configuration = $existing?->configuration;
-
-        if (mb_strtoupper($code) === 'SURPRISE') {
-            $configuration = array_merge($configuration ?? [], ['mode_confirmed' => true]);
+        $activeStates = PromotionCampaignState::query()->whereNotNull('active_turn_id')->lockForUpdate()->get();
+        if ($activeStates->isEmpty()) {
+            return;
         }
 
-        return $configuration;
+        $ownStateIsActive = $campaign->exists && $activeStates->contains(
+            static fn (PromotionCampaignState $state): bool => (int) $state->campaign_id === (int) $campaign->id,
+        );
+        if ($ownStateIsActive && (! $willBeActive || ((bool) $campaign->is_public && ! $willBePublic))) {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Die Kampagne kann nicht deaktiviert oder unveröffentlicht werden, solange ein Teilnehmer am Glücksrad aktiv ist.',
+            ]);
+        }
+
+        if ($willBePublic && $activeStates->contains(
+            static fn (PromotionCampaignState $state): bool => ! $campaign->exists || (int) $state->campaign_id !== (int) $campaign->id,
+        )) {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Die öffentliche Kampagne kann nicht gewechselt werden, solange ein Teilnehmer am Glücksrad aktiv ist.',
+            ]);
+        }
     }
 
-    /** @return array<string, mixed> */
-    private function campaignAuditState(PromotionCampaign $campaign): array
+    private function assertCampaignHasNoActiveTurn(PromotionCampaign $campaign): void
     {
-        return [
-            'id' => (int) $campaign->id,
-            'code' => (string) $campaign->code,
-            'name_digest' => hash('sha256', (string) $campaign->name),
-            'starts_at' => $campaign->getRawOriginal('starts_at'),
-            'ends_at' => $campaign->getRawOriginal('ends_at'),
-            'is_active' => (bool) $campaign->is_active,
-        ];
+        $state = PromotionCampaignState::query()->whereKey($campaign->id)->lockForUpdate()->first();
+        if ($state?->active_turn_id !== null) {
+            throw ValidationException::withMessages([
+                'prize' => 'Radfelder können nicht geändert werden, solange ein Teilnehmer am Glücksrad aktiv ist.',
+            ]);
+        }
     }
 
-    /** @return array<string, mixed> */
-    private function prizeAuditState(PromotionPrize $prize): array
+    private function synchronizeStickerRequirement(PromotionCampaign $campaign, bool $forceReacknowledgement = false): void
     {
-        return [
-            'id' => (int) $prize->id,
-            'code' => (string) $prize->code,
-            'name_digest' => hash('sha256', (string) $prize->name),
-            'fulfillment_mode' => (string) $prize->fulfillment_mode,
-            'quota' => (int) $prize->quota,
-            'reserved_count' => (int) $prize->reserved_count,
-            'is_active' => (bool) $prize->is_active,
-            'sort_order' => (int) $prize->sort_order,
-            'configuration_digest' => hash('sha256', json_encode($prize->configuration, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES)),
-        ];
+        $prizes = $campaign->prizes()->orderBy('id')->lockForUpdate()->get();
+        $state = PromotionCampaignState::query()->whereKey($campaign->id)->lockForUpdate()->first();
+        if (! $state) {
+            return;
+        }
+
+        $hasActiveExhaustedPrize = $campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue
+            && $prizes->contains(static fn (PromotionPrize $prize): bool => $prize->is_active
+                && $prize->outcome_type === PromotionOutcomeType::Prize
+                && $prize->awarded_count >= $prize->quota);
+
+        if ($hasActiveExhaustedPrize) {
+            $alreadyAcknowledged = ! $state->sticker_required && $state->sticker_acknowledged_at !== null;
+            if ($forceReacknowledgement || (! $state->sticker_required && ! $alreadyAcknowledged)) {
+                $state->forceFill([
+                    'sticker_required' => true,
+                    'sticker_acknowledged_at' => null,
+                    'sticker_acknowledged_by' => null,
+                ])->save();
+            }
+
+            return;
+        }
+
+        if ($state->sticker_required || $state->sticker_acknowledged_at !== null || $state->sticker_acknowledged_by !== null) {
+            $state->forceFill([
+                'sticker_required' => false,
+                'sticker_acknowledged_at' => null,
+                'sticker_acknowledged_by' => null,
+            ])->save();
+        }
+    }
+
+    private function actor(): User
+    {
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+
+        return $actor;
     }
 }

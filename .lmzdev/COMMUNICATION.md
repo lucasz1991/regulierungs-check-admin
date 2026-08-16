@@ -399,3 +399,35 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: kompletter `tests/Feature/Promotion`-Ordner 69 Tests/567 Assertions; EmailVerificationTest 6/28 im kombinierten Fokus; sechs PHP-Lints, Pint-Test, `git diff --check`; Runtime-Route-Audit ohne `EnsureEmailIsVerified`.
 - Security: `auth`, Session, `account.active` und alle RBAC-Gates bleiben erhalten. Nur die E-Mail-Verifikationspflicht wurde entfernt; Teilnehmerverifikation vor Gewinnausgabe bleibt unveraendert.
 - Next: Admin-Anwendung deployen und Route-/Config-/View-Cache im normalen Deploymentablauf neu aufbauen.
+
+## 2026-08-16T07:19:29Z | Codex-root -> all | status
+
+- Message: Glücksrad V2 implementation started: additive ticket flow, participant landing, staff scanner, campaign UI, social settings/profile and tests.
+
+## 2026-08-16T07:20:48Z | Codex-domain-core -> all | status
+
+- Message: Started: Glücksrad V2 gespiegelte Domainmodelle und Services
+
+## 2026-08-16T07:21:03Z | Codex-v2-admin-scanner -> all | status
+
+- Message: Started: Gluecksrad V2 Admin- und Mitarbeiter-Vertikalschnitt
+
+## 2026-08-16T08:29:47Z | Codex-v2-admin-scanner -> all | handoff
+
+- Task: Gluecksrad V2 Admin- und Mitarbeiter-Vertikalschnitt.
+- Status: completed.
+- Changed: touchoptimierte `/promotion`-Scannerkonsole mit lokalem ZXing, Fullscreen/Fokusfalle, manueller Teilnahme-ID, Debounce, Kamera-Lifecycle und Recovery; vierteilige Kampagnenverwaltung; DB-basierte Google-/Apple-Konfiguration ohne ENV oder persistierte .p8-Datei; Promotion-Tab im Benutzerprofil; Mail-/Korrektur-/Ausgabeaktionen und V2-Regressionstests.
+- Security: RBAC bleibt serverseitig fail-closed; externe Ausgabe, Gegenbuchung, Resend und Providerdaten bleiben Volladmins vorbehalten; Teilnehmerdaten sind fuer Promotion-Staff maskiert; neue Scans sperren bei deaktivierter/beendeter Kampagne, aktive Aufrufe bleiben abschliess- oder freigebbar; aktive Aufrufe sperren Publish-/Konfigurationswechsel.
+- Verified: `tests/Feature/Promotion` plus `EmailVerificationTest` 81 Tests/674 Assertions; eigener V2-Flow 6/79; Scannervertrag 16 Checks einschliesslich verzoegertem Kamera-Init-Abbruch; Produktions-Vite-Build; 40 geaenderte PHP-Dateien lintfrei; Pint und `git diff --check` gruen; keine registrierten `promotion:*`-Commands.
+- Artifacts: gebaute Admin-Vite-Assets; keine QR-Dateien, kein Job, kein Scheduler.
+- Next: Root-Agent fuehrt Cross-App-Gesamtgate, echte Browser-Screenshots und finalen Handoff aus.
+
+## 2026-08-16T08:42:18Z | Codex v2_domain_core -> all | handoff
+
+- Task: Den in Base migrierten Glücksrad-V2-Domainkern für die Admin-Anwendung spiegeln.
+- Status: completed.
+- Changed: identische Ticket-, Aufruf-, Ergebnis-, QR-, Audit-, Settings-, Social-Settings- und Mailstatus-Domainverträge; Legacy-Gewinnzähler und beliebige Radfeldtypen sind V2-kompatibel.
+- Security: Scan prüft Mitarbeiterrecht sowie aktives und verifiziertes Teilnehmerkonto frisch unter Sperren; genau ein aktiver Kampagnenaufruf; Participation-/Ticket-Cross-Links und alle Laufzeitzustände sind auditgebunden; QR-Ausgabe und Scan brechen bei Manipulation ab; Ereignisverifikation ist linear indexiert.
+- Verified: kompletter Admin-Promotionlauf plus EmailVerification 81 Tests/674 Assertions; V2/Admin 6/79; Pint 21 Dateien; `git diff --check`; 20 gespiegelte Domain-/Maildateien SHA-256-identisch mit Base.
+- Artifacts: none.
+- Next: Root-Agent übernimmt Browser-/Geräte-Smoke-Test, Screenshots und finalen Rollout-Handoff.

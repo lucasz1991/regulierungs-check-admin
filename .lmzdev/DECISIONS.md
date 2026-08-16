@@ -73,3 +73,10 @@ Record durable decisions with date, context, decision, and consequences.
 - Admin- und Promotion-Mitarbeiterzugang erfordern Anmeldung, aktiven Kontostatus und die jeweiligen RBAC-Rechte, aber keinen gesetzten `email_verified_at`-Zeitstempel.
 - Fortify-Verifikationsrouten, die gebrandete Verify-Seite und der Mailversand bleiben als freiwillige Funktion bestehen.
 - Die getrennte Teilnehmerpruefung vor einer Gewinnausgabe bleibt im Promotion-Domainservice erhalten; sie ist kein Zugangsgate fuer Admins oder Mitarbeiter.
+
+## 2026-08-16 | Admin nutzt denselben gespiegelten Glücksrad-V2-Domainvertrag wie Base
+
+- Ticket-, Aufruf-, Ergebnis-, Audit-, QR-, Settings-, Social-Settings- und Mailstatus-Services bleiben zwischen Base und Admin byte-identisch; nur Base besitzt die additive Migration.
+- Neue Scans verlangen eine aktuell öffentliche Kampagne sowie ein aktives, E-Mail-verifiziertes Teilnehmerkonto. Bereits aktive Aufrufe können nach Kampagnenwechsel oder Deaktivierung weiterhin sicher abgeschlossen oder freigegeben werden.
+- Persönliche QR-Codes sind stateless und werden nicht gespeichert. Participation-, Ticket-, Aufruf-, Ergebnis-, Mail- und Kampagnenzustände sind synchron HMAC-gebunden und werden vor jeder Mutation fail-closed geprüft.
+- Promotion läuft ausschließlich über direkte Webaktionen ohne Commands, Jobs, Scheduler, Queue-Worker oder ENV-Konfiguration.

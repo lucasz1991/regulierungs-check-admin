@@ -33,14 +33,13 @@ final class RbacCatalog
                 'users.manage' => 'Benutzer verwalten',
             ],
             'Promotion' => [
-                'promotion.wins.record' => 'Gewinn gemeinsam erfassen',
-                'promotion.wins.view_all' => 'Gewinnerliste ansehen',
+                'promotion.wins.record' => 'Teilnehmer scannen und Ergebnis erfassen',
+                'promotion.wins.view_all' => 'Teilnahmeverlauf ansehen',
                 'promotion.fulfillment.onsite' => 'Vor-Ort-Gewinn ausgeben',
                 'promotion.fulfillment.external' => 'Externe Erfuellung ausloesen',
                 'promotion.campaigns.manage' => 'Kampagnen verwalten',
-                'promotion.prizes.manage' => 'Preise verwalten',
-                'promotion.corrections.manage' => 'Gewinnvorgaenge korrigieren',
-                'promotion.audit.view' => 'Promotion-Audit ansehen',
+                'promotion.prizes.manage' => 'Radfelder verwalten',
+                'promotion.corrections.manage' => 'Ergebnisse gegenbuchen',
             ],
         ];
     }
@@ -73,7 +72,6 @@ final class RbacCatalog
             'promotion.campaigns.manage',
             'promotion.prizes.manage',
             'promotion.corrections.manage',
-            'promotion.audit.view',
         ];
     }
 

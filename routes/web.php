@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\SocialAuthProviderSettingsController;
 use App\Http\Controllers\NewsSocialImageController;
 use App\Http\Controllers\PagebuilderProjectController;
 use App\Http\Controllers\StaffInvitationController;
@@ -46,12 +47,20 @@ Route::middleware(['guest', SensitiveBearerPageHeaders::class])->group(function 
 });
 
 Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'account.active'])->group(function (): void {
-    Route::middleware(['promotion.enabled', 'can:promotion.wins.record'])->group(function (): void {
+    // Die Konsole bleibt fuer bereits aktive Aufrufe erreichbar, auch wenn die
+    // Promotion zwischen Scan und Ergebnis deaktiviert oder beendet wird.
+    Route::middleware(['can:promotion.wins.record'])->group(function (): void {
         Route::get('/promotion', PromotionConsole::class)->name('promotion.console');
     });
 
     Route::get('/admin', AdminDashboard::class)->middleware('can:admin.dashboard.view')->name('admin.index');
     Route::get('/config', AdminConfig::class)->middleware('can:settings.manage')->name('admin.config');
+    Route::post('/admin/config/social/google', [SocialAuthProviderSettingsController::class, 'saveGoogle'])
+        ->middleware('can:settings.manage')
+        ->name('admin.social-auth.google.save');
+    Route::post('/admin/config/social/apple', [SocialAuthProviderSettingsController::class, 'saveApple'])
+        ->middleware('can:settings.manage')
+        ->name('admin.social-auth.apple.save');
 
     Route::get('/web-content-manager', WebContentManager::class)->middleware('can:content.web.manage')->name('admin.webcontentmanager');
     Route::get('/web-content-manager/news', WebContentManager::class)->middleware('can:content.news.manage')->name('admin.webcontent.news');

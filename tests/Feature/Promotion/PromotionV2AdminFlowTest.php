@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Promotion;
 
+use App\Livewire\AdminConfig;
 use App\Livewire\Admin\Config\SocialAuthSettings;
 use App\Livewire\Admin\PromotionAdministration;
 use App\Livewire\Admin\UserProfile;
@@ -47,6 +48,17 @@ class PromotionV2AdminFlowTest extends TestCase
             'redemption_base_url' => 'https://teilnahme.example.test',
             'qr_ttl_minutes' => 30,
         ]);
+    }
+
+    public function test_social_login_renders_as_its_own_admin_settings_tab(): void
+    {
+        $admin = $this->user('Volladmin', 'social-settings-navigation@example.test', 'admin');
+
+        Livewire::actingAs($admin)
+            ->test(AdminConfig::class)
+            ->assertSee('Promotion-Einstellungen')
+            ->assertSee('Social Login')
+            ->assertSee('Social-Login-Einstellungen');
     }
 
     public function test_scanner_flow_masks_identity_handles_mail_failure_and_blocks_exhausted_quota(): void
@@ -341,6 +353,7 @@ class PromotionV2AdminFlowTest extends TestCase
 
         $encrypted = SocialAuthProviderSetting::query()->where('provider', 'google')->value('client_secret_encrypted');
         $component = Livewire::actingAs($admin)->test(SocialAuthSettings::class)
+            ->assertSee('Social Login')
             ->assertSee('Google-Anmeldung')
             ->assertSee('Apple-Anmeldung');
         $serialized = json_encode(['html' => $component->html(), 'snapshot' => $component->snapshot], JSON_THROW_ON_ERROR);
@@ -374,7 +387,7 @@ class PromotionV2AdminFlowTest extends TestCase
                 'redirect_uri' => 'https://teilnahme.example.test/auth/apple/callback',
                 'private_key' => UploadedFile::fake()->createWithContent('AuthKey_KEY123.p8', $validPem),
             ],
-        ])->assertRedirect(route('admin.config').'#promotion');
+        ])->assertRedirect(route('admin.config').'#social-login');
 
         $apple = SocialAuthProviderSetting::query()->where('provider', 'apple')->firstOrFail();
         $this->assertStringNotContainsString('PRIVATE KEY', (string) $apple->getRawOriginal('client_secret_encrypted'));

@@ -30,8 +30,8 @@ class PromotionSettingsUiTest extends TestCase
         Livewire::actingAs($admin)
             ->test(PromotionSettings::class)
             ->assertSee('Promotion-Glücksrad')
-            ->assertSee('Google-Anmeldung')
-            ->assertSee('Apple-Anmeldung')
+            ->assertDontSee('Google-Anmeldung')
+            ->assertDontSee('Apple-Anmeldung')
             ->assertSee('Alles Notwendige wird direkt hier verwaltet')
             ->assertDontSee('.env')
             ->assertDontSee('Command')
@@ -56,6 +56,19 @@ class PromotionSettingsUiTest extends TestCase
         $this->assertSame(32, strlen(base64_decode(Crypt::decryptString($stored->getRawOriginal('audit_secret_encrypted')), true)));
         $this->assertTrue(app(PromotionSettingsService::class)->isEnabled());
         $this->assertDatabaseCount('promotion_settings', 1);
+    }
+
+    public function test_social_login_has_its_own_admin_settings_tab_outside_promotion(): void
+    {
+        $adminConfig = file_get_contents(resource_path('views/livewire/admin-config.blade.php'));
+        $promotionSettings = file_get_contents(resource_path('views/livewire/admin/config/promotion-settings.blade.php'));
+
+        $this->assertIsString($adminConfig);
+        $this->assertIsString($promotionSettings);
+        $this->assertStringContainsString("activeTab === 'social-login'", $adminConfig);
+        $this->assertStringContainsString("@livewire('admin.config.social-auth-settings')", $adminConfig);
+        $this->assertStringContainsString('Social-Login-Einstellungen', $adminConfig);
+        $this->assertStringNotContainsString('admin.config.social-auth-settings', $promotionSettings);
     }
 
     public function test_delegated_settings_manager_cannot_mount_component_or_see_section(): void

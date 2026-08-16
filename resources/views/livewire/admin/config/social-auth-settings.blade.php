@@ -1,15 +1,15 @@
 <section aria-labelledby="social-auth-settings-title" class="space-y-5">
     <div>
-        <p class="text-sm font-semibold text-teal-700">Anmeldung für Teilnehmer</p>
-        <h2 id="social-auth-settings-title" class="mt-1 text-2xl font-bold text-gray-950">Google &amp; Apple</h2>
+        <p class="text-sm font-semibold text-teal-700">Anmeldung &amp; Registrierung</p>
+        <h2 id="social-auth-settings-title" class="mt-1 text-2xl font-bold text-gray-950">Social Login</h2>
         <p class="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-            Zugangsdaten werden verschlüsselt in der gemeinsamen Datenbank gespeichert. OAuth-Zugriffs- und Refresh-Tokens werden nicht gespeichert.
+            Google und Apple werden hier unabhängig von den Promotion-Einstellungen verwaltet. Zugangsdaten werden verschlüsselt in der gemeinsamen Datenbank gespeichert; OAuth-Zugriffs- und Refresh-Tokens werden nicht gespeichert.
         </p>
     </div>
 
     @if (! $schemaReady)
         <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Die additive Glücksrad-V2-Migration ist noch nicht installiert. Social Login bleibt bis dahin deaktiviert.
+            Die Datenbankerweiterung für Social Login ist noch nicht installiert. Google und Apple bleiben bis dahin deaktiviert.
         </div>
     @elseif ($configurationError)
         <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">{{ $configurationError }}</div>

@@ -431,3 +431,7 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: kompletter Admin-Promotionlauf plus EmailVerification 81 Tests/674 Assertions; V2/Admin 6/79; Pint 21 Dateien; `git diff --check`; 20 gespiegelte Domain-/Maildateien SHA-256-identisch mit Base.
 - Artifacts: none.
 - Next: Root-Agent übernimmt Browser-/Geräte-Smoke-Test, Screenshots und finalen Rollout-Handoff.
+
+## 2026-08-16T09:33:30Z | Codex -> all | status
+
+- Message: Started: Google- und Apple-Einstellungen in eigenen Social-Login-Bereich verschieben

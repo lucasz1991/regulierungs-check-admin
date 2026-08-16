@@ -2,6 +2,12 @@
 
 Record durable decisions with date, context, decision, and consequences.
 
+## 2026-08-16 | Social Login ist ein eigener Admin-Einstellungsbereich
+
+- Google- und Apple-Konfiguration wird im Admin nicht innerhalb der Promotion-Einstellungen dargestellt, sondern in einem eigenen Tab `Social Login`.
+- Promotion und Social Login behalten ihre bestehenden getrennten Livewire-Komponenten und Sicherheitsregeln; Datenhaltung und OAuth-Ablauf ändern sich nicht.
+- Social-Provider-Speicheraktionen führen nach Erfolg zurück zu `#social-login`; Validierungsfehler öffnen denselben Bereich wieder.
+
 ## 2026-08-13 | Promotion laeuft ausschliesslich in direkten Webrequests
 
 - Gewinn-QR, Bindung, Teilnehmerbestaetigung, Ausgabe und Korrektur bleiben transaktionale Webaktionen; es gibt keine Promotion-Commands, Jobs oder Scheduler-Eintraege.

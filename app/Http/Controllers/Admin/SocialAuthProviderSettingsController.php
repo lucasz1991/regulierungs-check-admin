@@ -127,7 +127,7 @@ class SocialAuthProviderSettingsController extends Controller
 
     private function success(string $message): RedirectResponse
     {
-        return redirect()->to(route('admin.config').'#promotion')->with('status', $message);
+        return redirect()->to(route('admin.config').'#social-login')->with('status', $message);
     }
 
     private function redirectUriRule(string $provider): Closure

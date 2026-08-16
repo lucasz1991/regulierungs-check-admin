@@ -1,4 +1,3 @@
-<div class="space-y-8">
 <section aria-labelledby="promotion-settings-title" class="space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -75,8 +74,3 @@
         </div>
     </form>
 </section>
-
-<div class="my-8 border-t border-gray-200"></div>
-
-@livewire('admin.config.social-auth-settings')
-</div>

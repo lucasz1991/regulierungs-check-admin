@@ -3,6 +3,7 @@
 | Task | Owner | Status | Updated (UTC) |
 |---|---|---|---|
 | Review project state | unassigned | open | - |
+| Google- und Apple-Konfiguration aus Promotion in eigenen Social-Login-Bereich verschieben | Codex | in-progress | 2026-08-16T09:33:30Z |
 | Promotion-Kern ohne Commands, Jobs, Scheduler, Auditmail oder Zugriffskontext betreiben | Codex / simplify_promotion_core | completed | 2026-08-13T18:39:00Z |
 | Promotion-Konfiguration vollstaendig aus env in MAC-geschuetzten DB-Singleton verlagern | Codex / promotion_db_settings_core | completed | 2026-08-13T17:10:00Z |
 | Remove the embedded article button from News social-media images | Codex | completed | 2026-08-05T19:43:37Z |

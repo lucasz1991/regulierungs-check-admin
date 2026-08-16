@@ -83,6 +83,12 @@ class PromotionAdministration extends Component
 
     public ?string $historyTo = null;
 
+    public bool $showCampaignModal = false;
+
+    public bool $showPrizeModal = false;
+
+    public bool $showCounterbookModal = false;
+
     #[Locked]
     public ?int $counterbookResultId = null;
 
@@ -97,27 +103,29 @@ class PromotionAdministration extends Component
             ?? PromotionCampaign::query()->latest()->first();
 
         if ($campaign) {
-            $this->editCampaign($campaign->id);
+            $this->loadCampaign($campaign);
         }
+    }
+
+    public function selectCampaign(mixed $campaignId): void
+    {
+        $this->authorize('promotion.campaigns.manage');
+        if (! is_numeric($campaignId)) {
+            return;
+        }
+
+        $this->loadCampaign(PromotionCampaign::query()->findOrFail((int) $campaignId));
+        $this->resetValidation();
+        $this->showCampaignModal = false;
+        $this->showPrizeModal = false;
     }
 
     public function editCampaign(int $campaignId): void
     {
         $this->authorize('promotion.campaigns.manage');
-        $campaign = PromotionCampaign::query()->findOrFail($campaignId);
-        $this->campaignId = $campaign->id;
-        $this->campaignCode = $campaign->code;
-        $this->campaignName = $campaign->name;
-        $this->campaignLandingHeadline = (string) $campaign->landing_headline;
-        $this->campaignLandingText = (string) $campaign->landing_text;
-        $this->campaignRulesText = (string) $campaign->rules_text;
-        $this->campaignQuotaPolicy = $campaign->quota_exhaustion_policy->value;
-        $this->campaignIsActive = (bool) $campaign->is_active;
-        $this->campaignIsPublic = (bool) $campaign->is_public;
-        $this->campaignStartsAt = optional($campaign->starts_at)->format('Y-m-d\TH:i');
-        $this->campaignEndsAt = optional($campaign->ends_at)->format('Y-m-d\TH:i');
-        $this->resetPrizeForm();
-        $this->resetHistoryFilters();
+        $this->loadCampaign(PromotionCampaign::query()->findOrFail($campaignId));
+        $this->resetValidation();
+        $this->showCampaignModal = true;
     }
 
     public function newCampaign(): void
@@ -131,6 +139,22 @@ class PromotionAdministration extends Component
         $this->campaignIsActive = false;
         $this->campaignIsPublic = false;
         $this->resetPrizeForm();
+        $this->resetValidation();
+        $this->showCampaignModal = true;
+    }
+
+    public function closeCampaignModal(): void
+    {
+        $this->authorize('promotion.campaigns.manage');
+        $this->showCampaignModal = false;
+        $this->resetValidation();
+
+        $campaign = $this->campaignId
+            ? PromotionCampaign::query()->find($this->campaignId)
+            : PromotionCampaign::query()->where('is_public', true)->first() ?? PromotionCampaign::query()->latest()->first();
+        if ($campaign) {
+            $this->loadCampaign($campaign);
+        }
     }
 
     public function saveCampaign(PromotionAuditChain $audit, PromotionTicketService $tickets): void
@@ -210,8 +234,18 @@ class PromotionAdministration extends Component
 
         $this->campaignId = $campaign->id;
         $this->campaignIsPublic = $campaign->is_public;
+        $this->showCampaignModal = false;
         activity('promotion')->causedBy($this->actor())->performedOn($campaign)->log('Promotion-Kampagne gespeichert');
         session()->flash('status', 'Kampagne gespeichert.');
+    }
+
+    public function createPrize(): void
+    {
+        $this->authorize('promotion.prizes.manage');
+        abort_unless($this->campaignId !== null, 422, 'Bitte zuerst eine Kampagne auswählen.');
+        $this->resetPrizeForm();
+        $this->resetValidation();
+        $this->showPrizeModal = true;
     }
 
     public function editPrize(int $prizeId): void
@@ -229,6 +263,16 @@ class PromotionAdministration extends Component
         $this->prizeQuota = $prize->quota;
         $this->prizeIsActive = (bool) $prize->is_active;
         $this->prizeSortOrder = $prize->sort_order;
+        $this->resetValidation();
+        $this->showPrizeModal = true;
+    }
+
+    public function closePrizeModal(): void
+    {
+        $this->authorize('promotion.prizes.manage');
+        $this->showPrizeModal = false;
+        $this->resetPrizeForm();
+        $this->resetValidation();
     }
 
     public function savePrize(PromotionAuditChain $audit): void
@@ -305,6 +349,7 @@ class PromotionAdministration extends Component
 
         activity('promotion')->causedBy($this->actor())->performedOn($prize)->log('Promotion-Gewinn gespeichert');
         $this->resetPrizeForm();
+        $this->showPrizeModal = false;
         session()->flash('status', 'Gewinn gespeichert.');
     }
 
@@ -338,12 +383,16 @@ class PromotionAdministration extends Component
         $this->counterbookResultId = $result->id;
         $this->counterbookPrizeId = $result->prize_id;
         $this->counterbookReason = '';
+        $this->resetValidation();
+        $this->showCounterbookModal = true;
     }
 
     public function cancelCounterbook(): void
     {
         $this->authorize('promotion.corrections.manage');
+        $this->showCounterbookModal = false;
         $this->reset('counterbookResultId', 'counterbookPrizeId', 'counterbookReason');
+        $this->resetValidation();
     }
 
     public function counterbook(PromotionTurnService $turns, PromotionResultMailer $mailer): void
@@ -360,6 +409,7 @@ class PromotionAdministration extends Component
         $outcome = $field->outcome_type->value;
         $corrected = $turns->counterbookResult($result, $field, $outcome, $this->actor(), trim($validated['counterbookReason']));
         $mailSent = $mailer->send($corrected, true);
+        $this->showCounterbookModal = false;
         $this->reset('counterbookResultId', 'counterbookPrizeId', 'counterbookReason');
         session()->flash('status', $mailSent
             ? 'Gegenbuchung gespeichert; der vorherige Stand bleibt im Verlauf erhalten und die Korrekturmail wurde versendet.'
@@ -607,5 +657,22 @@ class PromotionAdministration extends Component
         abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
 
         return $actor;
+    }
+
+    private function loadCampaign(PromotionCampaign $campaign): void
+    {
+        $this->campaignId = $campaign->id;
+        $this->campaignCode = $campaign->code;
+        $this->campaignName = $campaign->name;
+        $this->campaignLandingHeadline = (string) $campaign->landing_headline;
+        $this->campaignLandingText = (string) $campaign->landing_text;
+        $this->campaignRulesText = (string) $campaign->rules_text;
+        $this->campaignQuotaPolicy = $campaign->quota_exhaustion_policy->value;
+        $this->campaignIsActive = (bool) $campaign->is_active;
+        $this->campaignIsPublic = (bool) $campaign->is_public;
+        $this->campaignStartsAt = optional($campaign->starts_at)->format('Y-m-d\TH:i');
+        $this->campaignEndsAt = optional($campaign->ends_at)->format('Y-m-d\TH:i');
+        $this->resetPrizeForm();
+        $this->resetHistoryFilters();
     }
 }

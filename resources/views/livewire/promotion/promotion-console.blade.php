@@ -350,25 +350,52 @@
         </div>
     </template>
 
-    @if ($correctionResultId)
-        <div class="fixed inset-0 z-[10001] grid place-items-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="staff-correction-title">
-            <form wire:submit="correctResult" class="w-full max-w-md rounded-3xl bg-white p-6 text-slate-900 shadow-2xl">
-                <p class="text-xs font-black uppercase tracking-[0.16em] text-amber-700">10-Minuten-Korrektur</p>
-                <h2 id="staff-correction-title" class="mt-2 text-xl font-black">Beobachtetes Ergebnis korrigieren</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600">Nur das eigene Ergebnis und nur vor einer Ausgabe. Der vorherige Stand bleibt im Verlauf erhalten.</p>
+    <x-dialog-modal id="promotion-result-correction-modal" wire:model.live="correctionModalOpen" maxWidth="md">
+        <x-slot name="title">
+            <p class="text-xs font-black uppercase tracking-[0.16em] text-amber-700">10-Minuten-Korrektur</p>
+            <h2 class="mt-2 text-xl font-black text-slate-900">Beobachtetes Ergebnis korrigieren</h2>
+        </x-slot>
+
+        <x-slot name="content">
+            <form id="promotion-result-correction-form" wire:submit="correctResult">
+                <p class="text-sm leading-6 text-slate-600">Nur das eigene Ergebnis und nur vor einer Ausgabe. Der vorherige Stand bleibt im Verlauf erhalten.</p>
+
                 <label for="staff-correction-field" class="mt-5 block text-sm font-bold text-slate-700">Korrektes Ergebnis</label>
-                <select id="staff-correction-field" wire:model="correctionPrizeId" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600">
+                <select
+                    id="staff-correction-field"
+                    wire:model="correctionPrizeId"
+                    class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"
+                >
                     <option value="">Bitte Ergebnis wählen</option>
                     @foreach ($resultFields->filter(fn ($field) => in_array($field->outcome_type->value, ['prize', 'no_win'], true)) as $field)
                         <option value="{{ $field->id }}">{{ $field->name }}</option>
                     @endforeach
                 </select>
-                @error('correctionPrizeId') <p class="mt-2 text-sm text-red-700">{{ $message }}</p> @enderror
-                <div class="mt-5 flex justify-end gap-3">
-                    <button type="button" wire:click="cancelCorrection" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700">Abbrechen</button>
-                    <button type="submit" wire:loading.attr="disabled" class="rounded-xl bg-amber-700 px-5 py-3 text-sm font-black text-white hover:bg-amber-800 disabled:opacity-50">Korrektur speichern</button>
-                </div>
+                @error('correctionPrizeId')
+                    <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
+                @enderror
             </form>
-        </div>
-    @endif
+        </x-slot>
+
+        <x-slot name="footer">
+            <button
+                type="button"
+                wire:click="cancelCorrection"
+                wire:loading.attr="disabled"
+                wire:target="correctResult"
+                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+                Abbrechen
+            </button>
+            <button
+                type="submit"
+                form="promotion-result-correction-form"
+                wire:loading.attr="disabled"
+                wire:target="correctResult"
+                class="ml-3 rounded-xl bg-amber-700 px-5 py-3 text-sm font-black text-white hover:bg-amber-800 disabled:opacity-50"
+            >
+                Korrektur speichern
+            </button>
+        </x-slot>
+    </x-dialog-modal>
 </div>

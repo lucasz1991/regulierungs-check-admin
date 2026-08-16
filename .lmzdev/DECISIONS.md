@@ -92,3 +92,9 @@ Record durable decisions with date, context, decision, and consequences.
 - Volladmins konfigurieren pro Kampagne ausschließlich die sichtbare Gewinnbezeichnung und die verfügbare Menge; technische Codes, Ergebnisart, Ausgabeart, Sortierung und Aktivstatus sind keine Bedienoptionen.
 - `Kein Gewinn` und `Zusatzdreh` bleiben feste interne Systemergebnisse, damit der Drehablauf vollständig abgeschlossen werden kann, ohne im Admin Radfelder zu modellieren.
 - Erschöpfte Gewinne verwenden automatisch den bestehenden Abklebe-/Weiterdreh-Ablauf. Eine gesonderte Kontingentstrategie wird nicht mehr in der Kampagnenoberfläche angeboten.
+
+## 2026-08-16 | Promotion-Formulare verwenden Standarddialoge
+
+- Kampagne, Gewinn, Gegenbuchung, Promotion-Einstellungen und Mitarbeiterkorrektur verwenden die vorhandene Komponente `x-dialog-modal` mit Livewire-synchronisiertem Offen-Zustand.
+- Validierungsfehler werden im jeweiligen Dialog angezeigt; Abbrechen und Escape setzen Zustand und Fokus sauber zurück.
+- Der Kamera-Scanner bleibt ein eigenes Vollbildmodal, weil dessen Schließen zwingend Kamera-Streams stoppen und einen aktiven Drehplatz kontrolliert freigeben muss.

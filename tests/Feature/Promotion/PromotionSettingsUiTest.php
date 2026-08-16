@@ -38,6 +38,10 @@ class PromotionSettingsUiTest extends TestCase
             ->assertDontSee('Hintergrundjob')
             ->assertDontSee('Kontroll-E-Mail')
             ->assertDontSee('Zugriffskontexte aufbewahren')
+            ->assertSeeHtml('id="promotion-settings-modal"')
+            ->assertSet('showSettingsModal', false)
+            ->call('openSettingsModal')
+            ->assertSet('showSettingsModal', true)
             ->set('redemptionBaseUrl', 'https://promotion.example.test/')
             ->set('qrTtlMinutes', 30)
             ->set('enabled', true)
@@ -46,6 +50,7 @@ class PromotionSettingsUiTest extends TestCase
             ->assertSet('effectiveEnabled', true)
             ->assertSet('isConfigured', true)
             ->assertSet('auditKeyConfigured', true)
+            ->assertSet('showSettingsModal', false)
             ->assertSee('Aktiv und freigegeben')
             ->assertSee('/gluecksrad');
 
@@ -146,6 +151,7 @@ class PromotionSettingsUiTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(PromotionSettings::class)
+            ->call('openSettingsModal')
             ->set('redemptionBaseUrl', 'http://promotion.example.test')
             ->set('qrTtlMinutes', 4)
             ->set('enabled', true)
@@ -153,7 +159,8 @@ class PromotionSettingsUiTest extends TestCase
             ->assertHasErrors([
                 'redemptionBaseUrl',
                 'qrTtlMinutes',
-            ]);
+            ])
+            ->assertSet('showSettingsModal', true);
 
         $this->assertNull(PromotionSetting::query()->find(1));
     }

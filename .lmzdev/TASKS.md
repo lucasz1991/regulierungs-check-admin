@@ -27,3 +27,4 @@
 | Glücksrad V2 Mitarbeiter-Scanner, Kampagnenverwaltung, Social Settings und Profilintegration | Codex / v2_admin_scanner | completed | 2026-08-16T08:29:47Z |
 | Glücksrad V2 Integration, Gesamtgate und Browser-Screenshots | Codex-root | in-progress | 2026-08-16T07:20:00Z |
 | Kampagnenverwaltung auf Gewinnbezeichnung und Menge reduzieren; drei Dauer-QR-SVGs bereitstellen | Codex | completed | 2026-08-16T10:55:00Z |
+| Alle Promotion-Formulare in bestehende Standard-Modale verschieben | Codex | completed | 2026-08-16T18:12:12Z |

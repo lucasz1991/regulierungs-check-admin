@@ -16,6 +16,8 @@ class PromotionSettings extends Component
 
     public int $qrTtlMinutes = 30;
 
+    public bool $showSettingsModal = false;
+
     #[Locked]
     public bool $auditKeyConfigured = false;
 
@@ -41,6 +43,22 @@ class PromotionSettings extends Component
         $this->authorizeGlobalAdmin();
     }
 
+    public function openSettingsModal(PromotionSettingsService $settings): void
+    {
+        $this->authorizeGlobalAdmin();
+        $this->fillFromSettings($settings->get());
+        $this->resetValidation();
+        $this->showSettingsModal = true;
+    }
+
+    public function closeSettingsModal(PromotionSettingsService $settings): void
+    {
+        $this->authorizeGlobalAdmin();
+        $this->showSettingsModal = false;
+        $this->fillFromSettings($settings->get());
+        $this->resetValidation();
+    }
+
     public function save(PromotionSettingsService $settings): void
     {
         $this->authorizeGlobalAdmin();
@@ -63,6 +81,7 @@ class PromotionSettings extends Component
         ]);
 
         $this->fillFromSettings($saved);
+        $this->showSettingsModal = false;
         $this->dispatch('showAlert', 'Promotion-Einstellungen wurden sicher gespeichert.', 'success');
     }
 

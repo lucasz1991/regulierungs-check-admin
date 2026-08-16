@@ -22,6 +22,8 @@ class PromotionConsole extends Component
     #[Locked]
     public ?int $correctionResultId = null;
 
+    public bool $correctionModalOpen = false;
+
     #[Locked]
     public ?int $recoveryCampaignId = null;
 
@@ -175,6 +177,8 @@ class PromotionConsole extends Component
         $this->correctionResultId = $result->id;
         $this->correctionPrizeId = $result->prize_id;
         $this->correctionReason = 'staff_correction';
+        $this->resetValidation();
+        $this->correctionModalOpen = true;
     }
 
     public function cancelCorrection(): void
@@ -182,6 +186,8 @@ class PromotionConsole extends Component
         $this->authorize('promotion.wins.record');
         $this->reset('correctionResultId', 'correctionPrizeId');
         $this->correctionReason = 'staff_correction';
+        $this->correctionModalOpen = false;
+        $this->resetValidation();
     }
 
     public function correctResult(PromotionTurnService $turns, PromotionResultMailer $mailer): void

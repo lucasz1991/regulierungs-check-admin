@@ -71,6 +71,9 @@ class PromotionV2AdminFlowTest extends TestCase
 
         $this->fakeMail();
         Livewire::actingAs($staff)->test(PromotionConsole::class)
+            ->assertSeeHtml('id="promotion-result-correction-modal"')
+            ->assertSeeHtml('class="jetstream-modal fixed inset-0')
+            ->assertDontSeeHtml('z-[10001]')
             ->assertSee('Gewinn auswählen')
             ->assertSee($prize->name)
             ->assertSee('Kein Gewinn')
@@ -84,9 +87,19 @@ class PromotionV2AdminFlowTest extends TestCase
         Mail::shouldReceive('to')->once()->andThrow(new RuntimeException('transport unavailable'));
         Livewire::actingAs($staff)->test(PromotionConsole::class)
             ->call('prepareCorrection', $original->id)
+            ->assertSet('correctionModalOpen', true)
+            ->call('cancelCorrection')
+            ->assertSet('correctionModalOpen', false)
+            ->call('prepareCorrection', $original->id)
+            ->assertSet('correctionModalOpen', true)
+            ->set('correctionPrizeId', null)
+            ->call('correctResult')
+            ->assertHasErrors('correctionPrizeId')
+            ->assertSet('correctionModalOpen', true)
             ->set('correctionPrizeId', $noWin->id)
             ->set('correctionReason', 'staff_correction')
             ->call('correctResult')
+            ->assertSet('correctionModalOpen', false)
             ->assertSee('Die E-Mail ist fehlgeschlagen');
 
         $correction = PromotionSpinResult::query()->latest('id')->firstOrFail();
@@ -146,6 +159,13 @@ class PromotionV2AdminFlowTest extends TestCase
         ]);
 
         Livewire::actingAs($admin)->test(PromotionAdministration::class)
+            ->assertSet('showCampaignModal', false)
+            ->assertSet('showPrizeModal', false)
+            ->assertSet('showCounterbookModal', false)
+            ->assertSeeHtml('id="promotion-campaign-modal"')
+            ->assertSeeHtml('id="promotion-prize-modal"')
+            ->assertSeeHtml('id="promotion-counterbook-modal"')
+            ->assertDontSeeHtml('z-[10000]')
             ->assertSee('Übersicht')
             ->assertSee('Kampagne')
             ->assertSee('Gewinne')
@@ -158,7 +178,15 @@ class PromotionV2AdminFlowTest extends TestCase
             ->assertSee('Verlauf')
             ->assertSee('Dauerhafter Poster-Link')
             ->assertDontSee('Gewinn-QR erzeugen')
-            ->assertDontSee('Auditkette');
+            ->assertDontSee('Auditkette')
+            ->call('editCampaign', $campaign->id)
+            ->assertSet('showCampaignModal', true)
+            ->call('closeCampaignModal')
+            ->assertSet('showCampaignModal', false)
+            ->call('createPrize')
+            ->assertSet('showPrizeModal', true)
+            ->call('closePrizeModal')
+            ->assertSet('showPrizeModal', false);
 
         Livewire::actingAs($admin)->test(UserProfile::class, ['userId' => $participant->id])
             ->assertSee('Promotion-Profil')
@@ -267,7 +295,9 @@ class PromotionV2AdminFlowTest extends TestCase
             ->call('editPrize', $prize->id)
             ->set('prizeName', 'Nicht waehrend einer Drehung')
             ->call('savePrize')
-            ->assertHasErrors(['prize']);
+            ->assertHasErrors(['prize'])
+            ->assertSet('showPrizeModal', true)
+            ->assertSee('Gewinne können nicht geändert werden, solange ein Teilnehmer am Glücksrad aktiv ist.');
         $this->assertSame('Gewinn', $prize->fresh()->name);
 
         app(PromotionTurnService::class)->releaseTurn($turn, $staff);

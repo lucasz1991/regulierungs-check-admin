@@ -457,3 +457,17 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Artifacts: drei logo-freie SVG-QR-Designs unter `.lmzdev/artifacts/images/`, Ziel `https://www.regulierungs-check.de/gluecksrad`, plus PNG-Vorschauen fuer den Chat.
 - Verified: alle drei SVGs mit ZXing erfolgreich auf die Ziel-URL dekodiert; kompletter Admin-Promotion-Ordner 78 Tests/686 Assertions; fokussierter V2-Lauf 8/106; PHP-Lint, Pint-Test und `git diff --check` gruen.
 - Migration: keine.
+
+## 2026-08-16T17:52:00Z | Codex -> all | status
+
+- Message: Started: Promotion-Formulare in bestehende Standard-Modale verschieben
+
+## 2026-08-16T18:12:12Z | Codex -> all | handoff
+
+- Task: Alle normalen Formulare auf den Admin-Promotion-Seiten in die bestehende Standardkomponente `x-dialog-modal` verschieben.
+- Status: completed.
+- Changed: Kampagne, Gewinn, Gegenbuchung, Promotion-Einstellungen und Mitarbeiterkorrektur sind zustandssynchronisierte Standardmodale mit Formular-ID, Footer-Aktionen und modaleigenen Validierungsfehlern.
+- Exception: Der Kamera-Scanner bleibt absichtlich ein eigenes Vollbildmodal, weil Schliessen, Kamera-Tracks und aktiver Drehplatz gemeinsam freigegeben werden muessen; seine manuelle Teilnahme-ID gehoert zu diesem Scannerablauf.
+- Verified: kompletter `tests/Feature/Promotion`-Ordner 78 Tests/715 Assertions; PHP-Lint fuer drei Livewire-Komponenten; Pint-Test fuer fuenf PHP-Dateien; `git diff --check`; authentifizierte Browserpruefung auf Desktop und 390 px inklusive Escape/Fokus-Rueckgabe.
+- Artifacts: keine; Browser-Testartefakte und lokaler Testserver wurden entfernt.
+- Migration: keine.

@@ -12,13 +12,13 @@
             <p class="mt-2 max-w-2xl text-sm leading-6 text-teal-50/75">Kampagne veröffentlichen, Gewinne und Mengen pflegen und jeden beobachteten Dreh nachvollziehen.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row">
-            <select wire:change="editCampaign($event.target.value)" class="min-w-56 rounded-xl border-white/15 bg-white/10 text-sm text-white focus:border-teal-300 focus:ring-teal-300">
+            <select wire:change="selectCampaign($event.target.value)" class="min-w-56 rounded-xl border-white/15 bg-white/10 text-sm text-white focus:border-teal-300 focus:ring-teal-300">
                 <option class="text-slate-900" value="">Kampagne wählen</option>
                 @foreach ($campaigns as $entry)
                     <option class="text-slate-900" value="{{ $entry->id }}" @selected($entry->id === $campaignId)>{{ $entry->name }}</option>
                 @endforeach
             </select>
-            <button wire:click="newCampaign" x-on:click="tab = 'campaign'" class="rounded-xl bg-[#ffd166] px-5 py-3 text-sm font-black text-[#07363c] hover:bg-[#ffdc82]">Neue Kampagne</button>
+            <button type="button" wire:click="newCampaign" class="rounded-xl bg-[#ffd166] px-5 py-3 text-sm font-black text-[#07363c] hover:bg-[#ffdc82]">Neue Kampagne</button>
         </div>
     </header>
 
@@ -77,30 +77,32 @@
     </section>
 
     <section x-show.important="tab === 'campaign'" x-cloak class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-xl font-black text-slate-950">Kampagnendaten</h2><p class="mt-1 text-sm text-slate-500">Texte erscheinen auf der mobilen Teilnehmerseite.</p></div>@if ($campaignIsPublic)<span class="w-fit rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">Öffentlich</span>@endif</div>
-        <form wire:submit="saveCampaign" class="mt-6 space-y-5">
-            <div class="grid gap-5 md:grid-cols-2">
-                <div><label for="campaign-name" class="block text-sm font-bold text-slate-700">Name</label><input id="campaign-name" wire:model="campaignName" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
-                <div><label for="campaign-code" class="block text-sm font-bold text-slate-700">Interner Code</label><input id="campaign-code" wire:model="campaignCode" class="mt-1 block w-full rounded-xl border-slate-300 font-mono uppercase focus:border-teal-600 focus:ring-teal-600" placeholder="STRASSE26"></div>
-                <div><label for="campaign-start" class="block text-sm font-bold text-slate-700">Start</label><input id="campaign-start" type="datetime-local" wire:model="campaignStartsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
-                <div><label for="campaign-end" class="block text-sm font-bold text-slate-700">Ende</label><input id="campaign-end" type="datetime-local" wire:model="campaignEndsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></div>
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><h2 class="text-xl font-black text-slate-950">Kampagnendaten</h2><p class="mt-1 text-sm text-slate-500">Ansehen auf der Seite, bearbeiten im Standardmodal.</p></div>
+            @if ($selectedCampaign)
+                <button type="button" wire:click="editCampaign({{ $selectedCampaign->id }})" class="rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800">Kampagne bearbeiten</button>
+            @else
+                <button type="button" wire:click="newCampaign" class="rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800">Kampagne anlegen</button>
+            @endif
+        </div>
+        @if ($selectedCampaign)
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-2xl bg-slate-50 p-4"><span class="text-xs font-bold uppercase tracking-wide text-slate-400">Name</span><strong class="mt-2 block text-slate-950">{{ $selectedCampaign->name }}</strong><span class="mt-1 block font-mono text-xs text-slate-500">{{ $selectedCampaign->code }}</span></div>
+                <div class="rounded-2xl bg-slate-50 p-4"><span class="text-xs font-bold uppercase tracking-wide text-slate-400">Zeitraum</span><strong class="mt-2 block text-sm text-slate-950">{{ $selectedCampaign->starts_at?->format('d.m.Y H:i') ?? 'Offen' }}</strong><span class="mt-1 block text-xs text-slate-500">bis {{ $selectedCampaign->ends_at?->format('d.m.Y H:i') ?? 'ohne Ende' }}</span></div>
+                <div class="rounded-2xl bg-slate-50 p-4"><span class="text-xs font-bold uppercase tracking-wide text-slate-400">Status</span><strong class="mt-2 block {{ $selectedCampaign->is_active ? 'text-emerald-700' : 'text-slate-600' }}">{{ $selectedCampaign->is_active ? 'Aktiv' : 'Inaktiv' }}</strong><span class="mt-1 block text-xs text-slate-500">{{ $selectedCampaign->is_public ? 'Auf /gluecksrad veröffentlicht' : 'Nicht veröffentlicht' }}</span></div>
+                <div class="rounded-2xl bg-slate-50 p-4"><span class="text-xs font-bold uppercase tracking-wide text-slate-400">Landingpage</span><strong class="mt-2 block text-slate-950">{{ $selectedCampaign->landing_headline ?: 'Keine Überschrift' }}</strong><span class="mt-1 block text-xs text-slate-500">Texte und Regeln im Modal bearbeiten</span></div>
             </div>
-            <div><label for="campaign-headline" class="block text-sm font-bold text-slate-700">Landingpage-Überschrift</label><input id="campaign-headline" wire:model="campaignLandingHeadline" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600" placeholder="Dreh dein Glück!"></div>
-            <div class="grid gap-5 lg:grid-cols-2">
-                <div><label for="campaign-text" class="block text-sm font-bold text-slate-700">Erklärung</label><textarea id="campaign-text" rows="6" wire:model="campaignLandingText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
-                <div><label for="campaign-rules" class="block text-sm font-bold text-slate-700">Teilnahmebedingungen</label><textarea id="campaign-rules" rows="6" wire:model="campaignRulesText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
-            </div>
-            <div class="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm leading-6 text-teal-950">
-                Sie pflegen ausschließlich Gewinnbezeichnung und Menge. Ist ein Gewinn aufgebraucht, weist die Mitarbeiterkonsole automatisch darauf hin; weitere technische Einstellungen sind nicht erforderlich.
-            </div>
-            <div class="grid gap-3 md:grid-cols-2"><label class="flex gap-3 rounded-xl bg-slate-50 p-4"><input type="checkbox" wire:model="campaignIsActive" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Kampagne aktiv</strong><span class="mt-1 block text-xs text-slate-500">Zeitraum und interne Nutzung freigeben.</span></span></label><label class="flex gap-3 rounded-xl bg-teal-50 p-4"><input type="checkbox" wire:model="campaignIsPublic" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Auf /gluecksrad veröffentlichen</strong><span class="mt-1 block text-xs text-slate-500">Entfernt automatisch jede andere öffentliche Kampagne.</span></span></label></div>
-            <div class="flex justify-end"><button type="submit" wire:loading.attr="disabled" class="rounded-xl bg-teal-700 px-6 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50">Kampagne speichern</button></div>
-        </form>
+        @else
+            <div class="mt-6 rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Noch keine Kampagne ausgewählt.</div>
+        @endif
     </section>
 
-    <section x-show.important="tab === 'prizes'" x-cloak class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
+    <section x-show.important="tab === 'prizes'" x-cloak>
         <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <header class="border-b border-slate-100 p-5 sm:p-6"><h2 class="text-xl font-black text-slate-950">Gewinne dieser Kampagne</h2><p class="mt-1 text-sm text-slate-500">Diese Gewinne stehen Mitarbeitern bei der Ergebniserfassung zur Auswahl.</p></header>
+            <header class="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+                <div><h2 class="text-xl font-black text-slate-950">Gewinne dieser Kampagne</h2><p class="mt-1 text-sm text-slate-500">Diese Gewinne stehen Mitarbeitern bei der Ergebniserfassung zur Auswahl.</p></div>
+                <button type="button" wire:click="createPrize" @disabled(! $campaignId) class="rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">Gewinn hinzufügen</button>
+            </header>
             <div class="divide-y divide-slate-100">
                 @forelse ($selectedCampaign?->prizes?->where('outcome_type.value', 'prize') ?? collect() as $prize)
                     <article wire:key="admin-prize-{{ $prize->id }}" class="grid gap-4 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-6">
@@ -115,13 +117,6 @@
                 @endforelse
             </div>
         </div>
-
-        <form wire:submit="savePrize" class="h-fit space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex justify-between gap-3"><div><h2 class="font-black text-slate-950">{{ $prizeId ? 'Gewinn bearbeiten' : 'Gewinn hinzufügen' }}</h2><p class="mt-1 text-xs text-slate-500">Nur Bezeichnung und Gesamtmenge werden benötigt.</p></div>@if($prizeId)<button type="button" wire:click="resetPrizeForm" class="text-xs font-bold text-slate-500">Abbrechen</button>@endif</div>
-            <div><label for="prize-name" class="block text-xs font-bold text-slate-600">Gewinnbezeichnung</label><input id="prize-name" wire:model="prizeName" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600" placeholder="z. B. Amazon-Gutschein 20 €"></div>
-            <div><label for="prize-quantity" class="block text-xs font-bold text-slate-600">Menge</label><input id="prize-quantity" type="number" min="1" wire:model="prizeQuota" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
-            <button type="submit" @disabled(! $campaignId) class="w-full rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-40">Gewinn speichern</button>
-        </form>
     </section>
 
     <section x-show.important="tab === 'history'" x-cloak class="space-y-5">
@@ -188,15 +183,65 @@
         @endif
     </section>
 
-    @if ($counterbookResultId)
-        <div class="fixed inset-0 z-[10000] grid place-items-center bg-slate-950/70 p-4" role="dialog" aria-modal="true" aria-labelledby="counterbook-title">
-            <form wire:submit="counterbook" class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-                <h2 id="counterbook-title" class="text-xl font-black text-slate-950">Ergebnis gegenbuchen</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600">Der vorherige Wert bleibt sichtbar. Kontingente werden transaktional korrigiert und der Teilnehmer erhält eine Korrekturmail.</p>
-                <div class="mt-5"><label class="block text-sm font-bold text-slate-700">Neues finales Ergebnis</label><select wire:model="counterbookPrizeId" class="mt-1 block w-full rounded-xl border-slate-300 text-sm"><option value="">Bitte Ergebnis wählen</option>@foreach($selectedCampaign?->prizes?->where('is_active', true)->whereIn('outcome_type.value', ['prize','no_win']) ?? collect() as $field)<option value="{{ $field->id }}">{{ $field->name }}</option>@endforeach</select></div>
-                <div class="mt-4"><label class="block text-sm font-bold text-slate-700">Pflichtgrund</label><textarea wire:model="counterbookReason" rows="4" class="mt-1 block w-full rounded-xl border-slate-300 text-sm" placeholder="Mindestens 10 Zeichen"></textarea></div>
-                <div class="mt-5 flex justify-end gap-3"><button type="button" wire:click="cancelCounterbook" class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700">Abbrechen</button><button type="submit" class="rounded-xl bg-amber-700 px-5 py-3 text-sm font-black text-white hover:bg-amber-800">Gegenbuchung speichern</button></div>
+    <x-dialog-modal id="promotion-campaign-modal" wire:model.live="showCampaignModal" :maxWidth="'4xl'">
+        <x-slot name="title">{{ $campaignId ? 'Kampagne bearbeiten' : 'Neue Kampagne' }}</x-slot>
+        <x-slot name="content">
+            <form id="promotion-campaign-form" wire:submit="saveCampaign" class="space-y-5 text-left">
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div><label for="campaign-name" class="block text-sm font-bold text-slate-700">Name</label><input id="campaign-name" wire:model="campaignName" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600">@error('campaignName')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                    <div><label for="campaign-code" class="block text-sm font-bold text-slate-700">Interner Code</label><input id="campaign-code" wire:model="campaignCode" class="mt-1 block w-full rounded-xl border-slate-300 font-mono uppercase focus:border-teal-600 focus:ring-teal-600" placeholder="STRASSE26">@error('campaignCode')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                    <div><label for="campaign-start" class="block text-sm font-bold text-slate-700">Start</label><input id="campaign-start" type="datetime-local" wire:model="campaignStartsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600">@error('campaignStartsAt')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                    <div><label for="campaign-end" class="block text-sm font-bold text-slate-700">Ende</label><input id="campaign-end" type="datetime-local" wire:model="campaignEndsAt" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600">@error('campaignEndsAt')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                </div>
+                <div><label for="campaign-headline" class="block text-sm font-bold text-slate-700">Landingpage-Überschrift</label><input id="campaign-headline" wire:model="campaignLandingHeadline" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600" placeholder="Dreh dein Glück!">@error('campaignLandingHeadline')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                <div class="grid gap-5 lg:grid-cols-2">
+                    <div><label for="campaign-text" class="block text-sm font-bold text-slate-700">Erklärung</label><textarea id="campaign-text" rows="6" wire:model="campaignLandingText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea>@error('campaignLandingText')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                    <div><label for="campaign-rules" class="block text-sm font-bold text-slate-700">Teilnahmebedingungen</label><textarea id="campaign-rules" rows="6" wire:model="campaignRulesText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea>@error('campaignRulesText')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                </div>
+                <div class="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm leading-6 text-teal-950">Sie pflegen ausschließlich Gewinnbezeichnung und Menge. Ist ein Gewinn aufgebraucht, weist die Mitarbeiterkonsole automatisch darauf hin.</div>
+                <div class="grid gap-3 md:grid-cols-2">
+                    <label class="flex gap-3 rounded-xl bg-slate-50 p-4"><input type="checkbox" wire:model="campaignIsActive" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Kampagne aktiv</strong><span class="mt-1 block text-xs text-slate-500">Zeitraum und interne Nutzung freigeben.</span></span></label>
+                    <label class="flex gap-3 rounded-xl bg-teal-50 p-4"><input type="checkbox" wire:model="campaignIsPublic" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Auf /gluecksrad veröffentlichen</strong><span class="mt-1 block text-xs text-slate-500">Entfernt automatisch jede andere öffentliche Kampagne.</span></span></label>
+                </div>
+                @error('campaignIsPublic')<p class="text-sm text-red-700">{{ $message }}</p>@enderror
             </form>
-        </div>
-    @endif
+        </x-slot>
+        <x-slot name="footer">
+            <button type="button" wire:click="closeCampaignModal" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Abbrechen</button>
+            <button type="submit" form="promotion-campaign-form" wire:loading.attr="disabled" wire:target="saveCampaign" class="ml-3 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50"><span wire:loading.remove wire:target="saveCampaign">Kampagne speichern</span><span wire:loading wire:target="saveCampaign">Wird gespeichert …</span></button>
+        </x-slot>
+    </x-dialog-modal>
+
+    <x-dialog-modal id="promotion-prize-modal" wire:model.live="showPrizeModal" :maxWidth="'lg'">
+        <x-slot name="title">{{ $prizeId ? 'Gewinn bearbeiten' : 'Gewinn hinzufügen' }}</x-slot>
+        <x-slot name="content">
+            <form id="promotion-prize-form" wire:submit="savePrize" class="space-y-4 text-left">
+                <p class="text-sm text-slate-600">Nur Gewinnbezeichnung und Gesamtmenge werden benötigt.</p>
+                @error('prize')
+                    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="alert">{{ $message }}</div>
+                @enderror
+                <div><label for="prize-name" class="block text-sm font-bold text-slate-700">Gewinnbezeichnung</label><input id="prize-name" wire:model="prizeName" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600" placeholder="z. B. Amazon-Gutschein 20 €">@error('prizeName')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                <div><label for="prize-quantity" class="block text-sm font-bold text-slate-700">Menge</label><input id="prize-quantity" type="number" min="1" wire:model="prizeQuota" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600">@error('prizeQuota')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+            </form>
+        </x-slot>
+        <x-slot name="footer">
+            <button type="button" wire:click="closePrizeModal" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Abbrechen</button>
+            <button type="submit" form="promotion-prize-form" wire:loading.attr="disabled" wire:target="savePrize" class="ml-3 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50"><span wire:loading.remove wire:target="savePrize">Gewinn speichern</span><span wire:loading wire:target="savePrize">Wird gespeichert …</span></button>
+        </x-slot>
+    </x-dialog-modal>
+
+    <x-dialog-modal id="promotion-counterbook-modal" wire:model.live="showCounterbookModal" :maxWidth="'lg'">
+        <x-slot name="title">Ergebnis gegenbuchen</x-slot>
+        <x-slot name="content">
+            <form id="promotion-counterbook-form" wire:submit="counterbook" class="space-y-4 text-left">
+                <p class="text-sm leading-6 text-slate-600">Der vorherige Wert bleibt sichtbar. Kontingente werden transaktional korrigiert und der Teilnehmer erhält eine Korrekturmail.</p>
+                <div><label for="counterbook-prize" class="block text-sm font-bold text-slate-700">Neues finales Ergebnis</label><select id="counterbook-prize" wire:model="counterbookPrizeId" class="mt-1 block w-full rounded-xl border-slate-300 text-sm"><option value="">Bitte Ergebnis wählen</option>@foreach($selectedCampaign?->prizes?->where('is_active', true)->whereIn('outcome_type.value', ['prize','no_win']) ?? collect() as $field)<option value="{{ $field->id }}">{{ $field->name }}</option>@endforeach</select>@error('counterbookPrizeId')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+                <div><label for="counterbook-reason" class="block text-sm font-bold text-slate-700">Pflichtgrund</label><textarea id="counterbook-reason" wire:model="counterbookReason" rows="4" class="mt-1 block w-full rounded-xl border-slate-300 text-sm" placeholder="Mindestens 10 Zeichen"></textarea>@error('counterbookReason')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror</div>
+            </form>
+        </x-slot>
+        <x-slot name="footer">
+            <button type="button" wire:click="cancelCounterbook" class="rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">Abbrechen</button>
+            <button type="submit" form="promotion-counterbook-form" wire:loading.attr="disabled" wire:target="counterbook" class="ml-3 rounded-lg bg-amber-700 px-5 py-2.5 text-sm font-black text-white hover:bg-amber-800 disabled:opacity-50"><span wire:loading.remove wire:target="counterbook">Gegenbuchung speichern</span><span wire:loading wire:target="counterbook">Wird gespeichert …</span></button>
+        </x-slot>
+    </x-dialog-modal>
 </div>

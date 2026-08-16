@@ -63,3 +63,8 @@
 - Authenticated QA used a uniquely named temporary local Admin and News record; both records and the generated image-cache directory were deleted and verified absent afterward.
 - Global `php artisan view:cache` still fails on the pre-existing unresolved `x-admin-layout` component outside this modal; direct Livewire rendering succeeds.
 - Der waehrend paralleler Promotion-Settings-Arbeit ausgefuehrte Gesamtgate war temporaer rot, weil neue DB-Settings-Tabellen/Seeds in den bestehenden Promotion-Testschemas noch fehlten; der zustaendige Settings-Agent integriert diese Tests. Die hier fokussierten Sicherheitslaeufe sind vollstaendig gruen.
+
+## 2026-08-16 | Promotion-Standardmodale
+
+- Alle normalen Promotion-Formulare verwenden jetzt das projektweite `x-dialog-modal`; der Kamera-Scanner bleibt als einzige fachlich notwendige Vollbild-Ausnahme bestehen.
+- Abschlussgate: 78 Promotion-Tests mit 715 Assertions sowie authentifizierte Desktop- und 390-px-Browserpruefung bestanden.

@@ -515,7 +515,7 @@ class AdminPromotionSecurityTest extends TestCase
         $this->actingAs($staff)->get(route('promotion.console'))->assertForbidden();
     }
 
-    public function test_campaign_starts_as_an_empty_inactive_draft_without_hardcoded_prizes(): void
+    public function test_campaign_starts_without_configurable_prizes_and_keeps_operational_results_internal(): void
     {
         $admin = $this->admin();
 
@@ -529,7 +529,9 @@ class AdminPromotionSecurityTest extends TestCase
         $campaign = PromotionCampaign::query()->where('code', 'STRASSE26')->firstOrFail();
         $this->assertFalse($campaign->is_active);
         $this->assertFalse($campaign->is_public);
-        $this->assertCount(0, $campaign->prizes);
+        $this->assertCount(0, $campaign->prizes->where('outcome_type.value', 'prize'));
+        $this->assertCount(1, $campaign->prizes->where('outcome_type.value', 'no_win'));
+        $this->assertCount(1, $campaign->prizes->where('outcome_type.value', 'retry'));
     }
 
     public function test_campaign_and_prize_configuration_are_hmac_audited(): void
@@ -544,15 +546,15 @@ class AdminPromotionSecurityTest extends TestCase
 
         $campaign = PromotionCampaign::query()->where('code', 'AUDIT26')->firstOrFail();
         $component
-            ->set('prizeCode', 'FREIERGEWINN')
             ->set('prizeName', 'Frei konfigurierter Gewinn')
-            ->set('prizeOutcomeType', 'prize')
-            ->set('prizeFulfillmentMode', PromotionPrize::FULFILLMENT_ONSITE)
             ->set('prizeQuota', 5)
-            ->set('prizeIsActive', true)
             ->call('savePrize')
             ->assertHasNoErrors();
-        $surprise = $campaign->prizes()->where('code', 'FREIERGEWINN')->firstOrFail();
+        $surprise = $campaign->prizes()->where('name', 'Frei konfigurierter Gewinn')->firstOrFail();
+        $this->assertSame('FREI-KONFIGURIERTER-GEWINN', $surprise->code);
+        $this->assertSame('prize', $surprise->outcome_type->value);
+        $this->assertSame(PromotionPrize::FULFILLMENT_ONSITE, $surprise->fulfillment_mode);
+        $this->assertTrue($surprise->is_active);
 
         $service = app(PromotionWinService::class);
         $this->assertTrue($service->verifyAuditChain($campaign)['valid']);
@@ -765,7 +767,7 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertDatabaseCount('win_events', 0);
     }
 
-    public function test_arbitrary_prize_modes_are_allowed_but_publication_requires_complete_landing_content(): void
+    public function test_hidden_technical_prize_fields_cannot_be_changed_and_publication_requires_complete_landing_content(): void
     {
         $admin = $this->admin();
         $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'ARBITRARY', 'is_active' => false, 'created_by' => $admin->id]);
@@ -773,7 +775,7 @@ class AdminPromotionSecurityTest extends TestCase
 
         $this->savePrizeThroughLivewire($admin, $amazon20, quota: 5, mode: PromotionPrize::FULFILLMENT_ONSITE)
             ->assertHasNoErrors();
-        $this->assertSame(PromotionPrize::FULFILLMENT_ONSITE, $amazon20->fresh()->fulfillment_mode);
+        $this->assertSame(PromotionPrize::FULFILLMENT_EXTERNAL, $amazon20->fresh()->fulfillment_mode);
 
         $component = Livewire::actingAs($admin)->test(PromotionAdministration::class)
             ->call('editCampaign', $campaign->id)

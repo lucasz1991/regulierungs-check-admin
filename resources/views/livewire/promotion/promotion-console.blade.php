@@ -15,6 +15,8 @@
         'completed' => 'abgeschlossen',
         'released' => 'abgebrochen',
     ];
+    $prizeOptions = $resultFields->filter(fn ($result) => $result->outcome_type->value === 'prize');
+    $operationalOptions = $resultFields->filter(fn ($result) => in_array($result->outcome_type->value, ['no_win', 'retry'], true));
 @endphp
 
 <div
@@ -66,8 +68,8 @@
     @if ($stickerRequired)
         <section class="grid gap-4 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-950 shadow-sm sm:grid-cols-[1fr_auto] sm:items-center">
             <div>
-                <h2 class="font-black">Erschöpftes Gewinnfeld am Rad abkleben</h2>
-                <p class="mt-1 text-sm leading-6">Bitte prüfen Sie das physische Glücksrad und kleben Sie alle ausgeschöpften Gewinnfelder sichtbar ab. Erst danach kann der nächste Teilnehmer gestartet werden.</p>
+                <h2 class="font-black">Erschöpften Gewinn am Rad abkleben</h2>
+                <p class="mt-1 text-sm leading-6">Bitte prüfen Sie das physische Glücksrad und kleben Sie alle ausgeschöpften Gewinne sichtbar ab. Erst danach kann der nächste Teilnehmer gestartet werden.</p>
             </div>
             <button
                 type="button"
@@ -84,7 +86,7 @@
     @if ($scanBlockedByQuota)
         <section role="alert" class="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-950 shadow-sm">
             <h2 class="font-black">Neue Drehungen sind gesperrt</h2>
-            <p class="mt-1 text-sm leading-6">Mindestens ein aktives Gewinnfeld hat sein Kontingent erreicht. Ein Volladmin muss das Kontingent oder die Radkonfiguration anpassen.</p>
+            <p class="mt-1 text-sm leading-6">Mindestens ein Gewinn ist ausgeschöpft. Ein Volladmin muss dessen Menge anpassen oder den Gewinn am physischen Rad entfernen.</p>
         </section>
     @endif
 
@@ -295,26 +297,45 @@
                     </div>
 
                     <div class="mt-6">
-                        <p class="text-sm font-bold text-white">Was zeigt das Glücksrad?</p>
+                        <p class="text-sm font-bold text-white">Gewinn auswählen</p>
+                        <p class="mt-1 text-xs text-teal-50/65">Bitte den beobachteten Gewinn antippen. Die verfügbare Menge wird automatisch aktualisiert.</p>
                         <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                            @foreach ($resultFields as $field)
-                                @php($fieldOutcome = $field->outcome_type->value)
-                                @php($style = $outcomeStyles[$fieldOutcome] ?? $outcomeStyles['prize'])
+                            @forelse ($prizeOptions as $prize)
                                 <button
                                     type="button"
-                                    x-on:click="record({{ $field->id }})"
+                                    x-on:click="record({{ $prize->id }})"
                                     :disabled="busy"
-                                    class="min-h-28 rounded-2xl border-2 p-5 text-left shadow-lg transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-wait disabled:opacity-50 {{ $style }}"
+                                    class="min-h-28 rounded-2xl border-2 p-5 text-left shadow-lg transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-wait disabled:opacity-50 {{ $outcomeStyles['prize'] }}"
                                 >
-                                    <span class="block text-xs font-black uppercase tracking-[0.14em] opacity-75">{{ $outcomeLabels[$fieldOutcome] ?? $fieldOutcome }}</span>
-                                    <span class="mt-2 block text-xl font-black leading-tight">{{ $field->name }}</span>
-                                    @if ($fieldOutcome === 'prize')
-                                        <span class="mt-2 block text-xs font-semibold opacity-80">{{ max(0, $field->quota - $field->awarded_count) }} von {{ $field->quota }} verfügbar</span>
-                                    @endif
+                                    <span class="block text-xs font-black uppercase tracking-[0.14em] opacity-75">Gewinn</span>
+                                    <span class="mt-2 block text-xl font-black leading-tight">{{ $prize->name }}</span>
+                                    <span class="mt-2 block text-xs font-semibold opacity-80">{{ max(0, $prize->quota - $prize->awarded_count) }} von {{ $prize->quota }} verfügbar</span>
                                 </button>
-                            @endforeach
+                            @empty
+                                <div class="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-5 text-sm text-amber-100 sm:col-span-2 lg:col-span-3">Für diese Kampagne ist aktuell kein Gewinn verfügbar.</div>
+                            @endforelse
                         </div>
                     </div>
+
+                    @if ($operationalOptions->isNotEmpty())
+                        <div class="mt-6 border-t border-white/10 pt-5">
+                            <p class="text-xs font-bold uppercase tracking-[0.14em] text-teal-100/60">Kein Gewinn oder erneuter Dreh</p>
+                            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                                @foreach ($operationalOptions as $option)
+                                    @php($optionOutcome = $option->outcome_type->value)
+                                    <button
+                                        type="button"
+                                        x-on:click="record({{ $option->id }})"
+                                        :disabled="busy"
+                                        class="rounded-2xl border-2 p-4 text-left transition focus-visible:outline-none focus-visible:ring-4 disabled:cursor-wait disabled:opacity-50 {{ $outcomeStyles[$optionOutcome] }}"
+                                    >
+                                        <span class="block text-xs font-black uppercase tracking-[0.14em] opacity-75">{{ $outcomeLabels[$optionOutcome] }}</span>
+                                        <span class="mt-1 block text-lg font-black">{{ $option->name }}</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
                     <button
                         type="button"

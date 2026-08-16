@@ -2,6 +2,7 @@
 
 ## Confirmed
 
+- Google- und Apple-Konfiguration befindet sich im AdminConfig als eigener Volladmin-Tab `Social Login`. Das Promotion-Template enthält keine Social-Provider-Komponente mehr; Speicher- und Validierungsrückleitungen öffnen `#social-login`.
 - Weder globale Admins noch Promotion-Mitarbeiter benoetigen im Adminsystem eine bestaetigte E-Mail-Adresse. Der gemeinsame Admin-/Promotion-Routenblock und Jetstream enthalten kein `verified`-Middleware mehr; aktive Konten, Sessionpruefung und RBAC bleiben unveraendert verpflichtend.
 - Die Admin-Verifikationsseite verwendet ein einzelnes responsives Regulierungs-CHECK-Layout mit lokalem Logo, deutschem Text, erneutem Versand und Logout. Minia, Themesbrand, Swiper, Demo-Avatare und der nicht erreichbare Profil-Link sind entfernt.
 - Admin-Verifikationsmails erzeugen ihren signierten Link ueber die Admin-Anwendung und sind nicht mehr von Promotion-Einstellungen oder der oeffentlichen Einloeseadresse abhaengig.
@@ -27,6 +28,7 @@
 
 ## Verification
 
+- Social-Login-Trennung: kompletter Admin-Ordner `tests/Feature/Promotion` mit 78 Tests/678 Assertions bestanden; fokussierte Settings-/V2-Suite 16 Tests/157 Assertions, RBAC-Revoke 6/103. PHP-Lint, Pint-Test und `git diff --check` bestanden.
 - Optionale Admin-E-Mail-Verifikation: 6 Tests/28 Assertions bestanden. Darin sind die middlewarefreie Admin-/Staff-Routenmatrix, Branding, Resend, signierter Link und ungueltiger Hash abgedeckt.
 - Kompletter Admin-Promotion-Sicherheitsordner nach Entfernen der Verifikationspflicht: 69 Tests/567 Assertions bestanden. Unverifizierte Admins und Staff koennen sich anmelden; in der Runtime-Routenliste ist kein `EnsureEmailIsVerified` registriert.
 - Kompletter Admin-Promotion-Sicherheitsordner nach der Auth-Aenderung: 68 Tests/544 Assertions bestanden. Pint fuer die drei PHP-Scope-Dateien, PHP-Lint und `git diff --check` bestanden.
@@ -50,6 +52,10 @@
 - Admin-Promotion-/RBAC-Suite inklusive User-Target-Guard: 50 Tests mit 368 Assertions bestanden; fokussierter Guard-Lauf: 7 Tests mit 26 Assertions. Vier PHP-Lints, Scoped-Diff-Check und Pint fuer die zwei neuen Dateien bestanden.
 - Legacy-P1-Fokus: Admin 7 Tests/51 Assertions, Base 4 Tests/18 Assertions bestanden; zusaetzlich PHP-Lint, Pint fuer neue/eng geaenderte Dateien und beide Repository-Diff-Checks bestanden.
 - Vereinfachter Promotion-Webbetrieb: kompletter Admin-Ordner `tests/Feature/Promotion` 68 Tests/544 Assertions bestanden; Settings-UI 7/47; automatische Team-Webaktionen und nicht registrierte Promotion-Commands sind abgedeckt. PHP-Lint, Pint-Test der eng geaenderten PHP-Dateien und `git diff --check` bestanden.
+- Kampagnenpreise sind im Admin auf Gewinnbezeichnung und Menge reduziert. Technische Codes, Ergebnisart, Ausgabeart, Sortierung und Aktivstatus werden intern gesetzt; `Kein Gewinn` und `Zusatzdreh` bleiben feste, nicht konfigurierbare Systemergebnisse.
+- Der Mitarbeiter-Scanner zeigt die pro Kampagne gepflegten Gewinne samt Restmenge als direkte Ergebnisauswahl; die beiden festen Betriebsaktionen sind separat angeordnet.
+- Drei logo-freie, druckfaehige Dauer-QR-SVGs fuer `https://www.regulierungs-check.de/gluecksrad` wurden erzeugt und mit ZXing wieder auf exakt diese URL dekodiert.
+- Vereinfachungs-Gate: kompletter Admin-Promotion-Ordner 78 Tests/686 Assertions; fokussierter V2-Lauf nach Formatierung 8/106; PHP-Lint, Pint-Test und `git diff --check` bestanden.
 
 ## Risks and blockers
 

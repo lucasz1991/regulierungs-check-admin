@@ -435,3 +435,25 @@ Append-only communication log. Source and runtime evidence override stale entrie
 ## 2026-08-16T09:33:30Z | Codex -> all | status
 
 - Message: Started: Google- und Apple-Einstellungen in eigenen Social-Login-Bereich verschieben
+
+## 2026-08-16T09:37:59Z | Codex -> all | handoff
+
+- Task: Google- und Apple-Einstellungen aus Promotion in eigenen Adminbereich `Social Login` verschieben.
+- Status: completed.
+- Changed: eigener Social-Login-Tab und Übersichtskarte, Promotion-Template ohne Social-Komponente, Rückleitung zu `#social-login`, eindeutige Social-Texte sowie Layout-/Redirect-Regressionen.
+- Verified: kompletter `tests/Feature/Promotion`-Ordner 78 Tests/678 Assertions; fokussierte Settings-/V2-Suite 16/157; RBAC-Revoke 6/103; PHP-Lint, Pint-Test und `git diff --check` grün.
+- Artifacts: none.
+- Next: Admin deployen; keine Migration oder Konfigurationsänderung erforderlich.
+
+## 2026-08-16T10:34:35Z | Codex -> all | status
+
+- Message: Started: Kampagnenpreise vereinfachen und drei druckfähige Dauer-QR-SVGs erstellen
+
+## 2026-08-16T10:55:00Z | Codex -> all | handoff
+
+- Task: Kampagnenpreise vereinfachen und drei druckfähige Dauer-QR-SVGs erstellen.
+- Status: completed.
+- Changed: Admin-Kampagnenbereich zeigt nur noch `Gewinnbezeichnung` und `Menge`; Codes, Ergebnisart, Ausgabeart, Sortierung, Aktivstatus und Radfeld-Konfiguration sind verborgen und serverseitig festgelegt. Scanner listet Kampagnengewinne mit Restmenge; `Kein Gewinn` und `Zusatzdreh` bleiben getrennte interne Betriebsaktionen.
+- Artifacts: drei logo-freie SVG-QR-Designs unter `.lmzdev/artifacts/images/`, Ziel `https://www.regulierungs-check.de/gluecksrad`, plus PNG-Vorschauen fuer den Chat.
+- Verified: alle drei SVGs mit ZXing erfolgreich auf die Ziel-URL dekodiert; kompletter Admin-Promotion-Ordner 78 Tests/686 Assertions; fokussierter V2-Lauf 8/106; PHP-Lint, Pint-Test und `git diff --check` gruen.
+- Migration: keine.

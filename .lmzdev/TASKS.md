@@ -3,7 +3,7 @@
 | Task | Owner | Status | Updated (UTC) |
 |---|---|---|---|
 | Review project state | unassigned | open | - |
-| Google- und Apple-Konfiguration aus Promotion in eigenen Social-Login-Bereich verschieben | Codex | in-progress | 2026-08-16T09:33:30Z |
+| Google- und Apple-Konfiguration aus Promotion in eigenen Social-Login-Bereich verschieben | Codex | completed | 2026-08-16T09:37:59Z |
 | Promotion-Kern ohne Commands, Jobs, Scheduler, Auditmail oder Zugriffskontext betreiben | Codex / simplify_promotion_core | completed | 2026-08-13T18:39:00Z |
 | Promotion-Konfiguration vollstaendig aus env in MAC-geschuetzten DB-Singleton verlagern | Codex / promotion_db_settings_core | completed | 2026-08-13T17:10:00Z |
 | Remove the embedded article button from News social-media images | Codex | completed | 2026-08-05T19:43:37Z |
@@ -26,3 +26,4 @@
 | Glücksrad V2 gespiegelter Domainkern und atomare Ticket-/Dreh-Services | Codex / v2_domain_core | completed | 2026-08-16T08:42:18Z |
 | Glücksrad V2 Mitarbeiter-Scanner, Kampagnenverwaltung, Social Settings und Profilintegration | Codex / v2_admin_scanner | completed | 2026-08-16T08:29:47Z |
 | Glücksrad V2 Integration, Gesamtgate und Browser-Screenshots | Codex-root | in-progress | 2026-08-16T07:20:00Z |
+| Kampagnenverwaltung auf Gewinnbezeichnung und Menge reduzieren; drei Dauer-QR-SVGs bereitstellen | Codex | completed | 2026-08-16T10:55:00Z |

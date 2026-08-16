@@ -9,7 +9,7 @@
         <div>
             <p class="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Promotion</p>
             <h1 class="mt-2 text-3xl font-black tracking-tight">Glücksrad verwalten</h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-teal-50/75">Kampagne veröffentlichen, Radfelder pflegen und jeden beobachteten Dreh nachvollziehen.</p>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-teal-50/75">Kampagne veröffentlichen, Gewinne und Mengen pflegen und jeden beobachteten Dreh nachvollziehen.</p>
         </div>
         <div class="flex flex-col gap-2 sm:flex-row">
             <select wire:change="editCampaign($event.target.value)" class="min-w-56 rounded-xl border-white/15 bg-white/10 text-sm text-white focus:border-teal-300 focus:ring-teal-300">
@@ -31,7 +31,7 @@
     @endif
 
     <nav aria-label="Promotion-Bereiche" class="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:grid-cols-4">
-        @foreach (['overview' => 'Übersicht', 'campaign' => 'Kampagne', 'fields' => 'Radfelder', 'history' => 'Verlauf'] as $key => $label)
+        @foreach (['overview' => 'Übersicht', 'campaign' => 'Kampagne', 'prizes' => 'Gewinne', 'history' => 'Verlauf'] as $key => $label)
             <button type="button" x-on:click="tab = '{{ $key }}'" :class="tab === '{{ $key }}' ? 'bg-teal-700 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'" class="rounded-xl px-4 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-200">{{ $label }}</button>
         @endforeach
     </nav>
@@ -62,14 +62,14 @@
             <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="font-black text-slate-950">Kontingente</h2>
                 <div class="mt-4 space-y-4">
-                    @forelse ($selectedCampaign?->prizes?->where('outcome_type.value', 'prize') ?? collect() as $field)
-                        @php($percent = $field->quota > 0 ? min(100, round(($field->awarded_count / $field->quota) * 100)) : 0)
+                    @forelse ($selectedCampaign?->prizes?->where('outcome_type.value', 'prize') ?? collect() as $prize)
+                        @php($percent = $prize->quota > 0 ? min(100, round(($prize->awarded_count / $prize->quota) * 100)) : 0)
                         <div>
-                            <div class="flex justify-between gap-3 text-xs"><span class="truncate font-bold text-slate-700">{{ $field->name }}</span><span class="text-slate-500">{{ $field->awarded_count }}/{{ $field->quota }}</span></div>
+                            <div class="flex justify-between gap-3 text-xs"><span class="truncate font-bold text-slate-700">{{ $prize->name }}</span><span class="text-slate-500">{{ $prize->awarded_count }}/{{ $prize->quota }}</span></div>
                             <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full {{ $percent >= 100 ? 'bg-red-500' : 'bg-teal-600' }}" style="width: {{ $percent }}%"></div></div>
                         </div>
                     @empty
-                        <p class="text-sm text-slate-500">Noch keine Gewinnfelder.</p>
+                        <p class="text-sm text-slate-500">Noch keine Gewinne angelegt.</p>
                     @endforelse
                 </div>
             </article>
@@ -90,41 +90,37 @@
                 <div><label for="campaign-text" class="block text-sm font-bold text-slate-700">Erklärung</label><textarea id="campaign-text" rows="6" wire:model="campaignLandingText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
                 <div><label for="campaign-rules" class="block text-sm font-bold text-slate-700">Teilnahmebedingungen</label><textarea id="campaign-rules" rows="6" wire:model="campaignRulesText" class="mt-1 block w-full rounded-xl border-slate-300 focus:border-teal-600 focus:ring-teal-600"></textarea></div>
             </div>
-            <fieldset><legend class="text-sm font-bold text-slate-700">Wenn ein Gewinnkontingent erschöpft ist</legend><div class="mt-2 grid gap-3 md:grid-cols-2"><label class="flex gap-3 rounded-xl border border-slate-200 p-4"><input type="radio" wire:model="campaignQuotaPolicy" value="block" class="mt-1 text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Neue Drehungen sperren</strong><span class="mt-1 block text-xs text-slate-500">Scanner bleibt bis zur Anpassung blockiert.</span></span></label><label class="flex gap-3 rounded-xl border border-slate-200 p-4"><input type="radio" wire:model="campaignQuotaPolicy" value="sticker_continue" class="mt-1 text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Nach Sticker-Hinweis weiter</strong><span class="mt-1 block text-xs text-slate-500">Mitarbeiter bestätigt abgeklebt Felder vor dem nächsten Scan.</span></span></label></div></fieldset>
+            <div class="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-sm leading-6 text-teal-950">
+                Sie pflegen ausschließlich Gewinnbezeichnung und Menge. Ist ein Gewinn aufgebraucht, weist die Mitarbeiterkonsole automatisch darauf hin; weitere technische Einstellungen sind nicht erforderlich.
+            </div>
             <div class="grid gap-3 md:grid-cols-2"><label class="flex gap-3 rounded-xl bg-slate-50 p-4"><input type="checkbox" wire:model="campaignIsActive" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Kampagne aktiv</strong><span class="mt-1 block text-xs text-slate-500">Zeitraum und interne Nutzung freigeben.</span></span></label><label class="flex gap-3 rounded-xl bg-teal-50 p-4"><input type="checkbox" wire:model="campaignIsPublic" class="mt-1 rounded text-teal-700 focus:ring-teal-600"><span><strong class="block text-sm">Auf /gluecksrad veröffentlichen</strong><span class="mt-1 block text-xs text-slate-500">Entfernt automatisch jede andere öffentliche Kampagne.</span></span></label></div>
             <div class="flex justify-end"><button type="submit" wire:loading.attr="disabled" class="rounded-xl bg-teal-700 px-6 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-50">Kampagne speichern</button></div>
         </form>
     </section>
 
-    <section x-show.important="tab === 'fields'" x-cloak class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
+    <section x-show.important="tab === 'prizes'" x-cloak class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_23rem]">
         <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <header class="border-b border-slate-100 p-5 sm:p-6"><h2 class="text-xl font-black text-slate-950">Radfelder</h2><p class="mt-1 text-sm text-slate-500">Reihenfolge entspricht der Ergebnisauswahl im Mitarbeiter-Scanner.</p></header>
+            <header class="border-b border-slate-100 p-5 sm:p-6"><h2 class="text-xl font-black text-slate-950">Gewinne dieser Kampagne</h2><p class="mt-1 text-sm text-slate-500">Diese Gewinne stehen Mitarbeitern bei der Ergebniserfassung zur Auswahl.</p></header>
             <div class="divide-y divide-slate-100">
-                @forelse ($selectedCampaign?->prizes ?? collect() as $field)
-                    @php($fieldOutcome = $field->outcome_type->value)
-                    <article wire:key="admin-field-{{ $field->id }}" class="grid gap-4 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-6">
-                        <span class="flex h-11 w-11 items-center justify-center rounded-xl text-sm font-black {{ $fieldOutcome === 'prize' ? 'bg-teal-100 text-teal-800' : ($fieldOutcome === 'retry' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700') }}">{{ $field->sort_order }}</span>
-                        <div><div class="flex flex-wrap gap-2"><strong class="text-slate-950">{{ $field->name }}</strong><span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">{{ $outcomeLabels[$fieldOutcome] }}</span>@unless($field->is_active)<span class="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">Inaktiv</span>@endunless</div><p class="mt-1 text-xs text-slate-500">{{ $field->code }}@if($fieldOutcome === 'prize') · {{ $field->awarded_count }} von {{ $field->quota }} vergeben · {{ $field->fulfillment_mode === 'external_admin' ? 'extern durch Admin' : 'vor Ort' }}@endif</p></div>
-                        <div class="flex gap-3 text-sm"><button wire:click="editPrize({{ $field->id }})" class="font-bold text-teal-700 hover:text-teal-900">Bearbeiten</button><button wire:click="deletePrize({{ $field->id }})" wire:confirm="Dieses unbenutzte Radfeld wirklich löschen?" class="font-bold text-red-600 hover:text-red-800">Löschen</button></div>
+                @forelse ($selectedCampaign?->prizes?->where('outcome_type.value', 'prize') ?? collect() as $prize)
+                    <article wire:key="admin-prize-{{ $prize->id }}" class="grid gap-4 p-5 sm:grid-cols-[auto_1fr_auto] sm:items-center sm:px-6">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-100 text-teal-800">
+                            <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 7v14M12 7H7.5a2.5 2.5 0 1 1 0-5C10 2 12 7 12 7Zm0 0h4.5a2.5 2.5 0 1 0 0-5C14 2 12 7 12 7Z"/></svg>
+                        </span>
+                        <div><strong class="text-slate-950">{{ $prize->name }}</strong><p class="mt-1 text-xs text-slate-500">{{ $prize->awarded_count }} von {{ $prize->quota }} vergeben · {{ max(0, $prize->quota - $prize->awarded_count) }} verfügbar</p></div>
+                        <div class="flex gap-3 text-sm"><button wire:click="editPrize({{ $prize->id }})" class="font-bold text-teal-700 hover:text-teal-900">Bearbeiten</button><button wire:click="deletePrize({{ $prize->id }})" wire:confirm="Diesen unbenutzten Gewinn wirklich löschen?" class="font-bold text-red-600 hover:text-red-800">Löschen</button></div>
                     </article>
                 @empty
-                    <p class="p-8 text-center text-sm text-slate-500">Noch keine Radfelder angelegt.</p>
+                    <p class="p-8 text-center text-sm text-slate-500">Noch keine Gewinne angelegt.</p>
                 @endforelse
             </div>
         </div>
 
         <form wire:submit="savePrize" class="h-fit space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex justify-between gap-3"><div><h2 class="font-black text-slate-950">{{ $prizeId ? 'Radfeld bearbeiten' : 'Radfeld hinzufügen' }}</h2><p class="mt-1 text-xs text-slate-500">Gewinne, Nieten oder Zusatzdrehs.</p></div>@if($prizeId)<button type="button" wire:click="resetPrizeForm" class="text-xs font-bold text-slate-500">Abbrechen</button>@endif</div>
-            <div><label class="block text-xs font-bold text-slate-600">Ergebnistyp</label><select wire:model.live="prizeOutcomeType" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"><option value="prize">Gewinn</option><option value="no_win">Niete</option><option value="retry">Zusatzdreh</option></select></div>
-            <div><label class="block text-xs font-bold text-slate-600">Bezeichnung</label><input wire:model="prizeName" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
-            <div><label class="block text-xs font-bold text-slate-600">Code</label><input wire:model="prizeCode" class="mt-1 block w-full rounded-xl border-slate-300 font-mono text-sm uppercase focus:border-teal-600 focus:ring-teal-600"></div>
-            @if ($prizeOutcomeType === 'prize')
-                <div><label class="block text-xs font-bold text-slate-600">Kontingent</label><input type="number" min="1" wire:model="prizeQuota" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
-                <div><label class="block text-xs font-bold text-slate-600">Ausgabe</label><select wire:model="prizeFulfillmentMode" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"><option value="onsite_staff">Vor Ort durch Mitarbeiter</option><option value="external_admin">Extern durch Volladmin</option></select></div>
-            @endif
-            <div><label class="block text-xs font-bold text-slate-600">Sortierung</label><input type="number" min="0" wire:model="prizeSortOrder" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
-            <label class="flex items-center gap-3 rounded-xl bg-slate-50 p-3 text-sm font-bold"><input type="checkbox" wire:model="prizeIsActive" class="rounded text-teal-700 focus:ring-teal-600">Im Scanner anzeigen</label>
-            <button type="submit" @disabled(! $campaignId) class="w-full rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-40">Radfeld speichern</button>
+            <div class="flex justify-between gap-3"><div><h2 class="font-black text-slate-950">{{ $prizeId ? 'Gewinn bearbeiten' : 'Gewinn hinzufügen' }}</h2><p class="mt-1 text-xs text-slate-500">Nur Bezeichnung und Gesamtmenge werden benötigt.</p></div>@if($prizeId)<button type="button" wire:click="resetPrizeForm" class="text-xs font-bold text-slate-500">Abbrechen</button>@endif</div>
+            <div><label for="prize-name" class="block text-xs font-bold text-slate-600">Gewinnbezeichnung</label><input id="prize-name" wire:model="prizeName" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600" placeholder="z. B. Amazon-Gutschein 20 €"></div>
+            <div><label for="prize-quantity" class="block text-xs font-bold text-slate-600">Menge</label><input id="prize-quantity" type="number" min="1" wire:model="prizeQuota" class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"></div>
+            <button type="submit" @disabled(! $campaignId) class="w-full rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800 disabled:opacity-40">Gewinn speichern</button>
         </form>
     </section>
 

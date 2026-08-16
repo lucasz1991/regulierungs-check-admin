@@ -20,6 +20,7 @@ use App\Services\Promotion\PromotionSettingsService;
 use App\Services\Promotion\PromotionTicketService;
 use App\Services\Promotion\PromotionTurnService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
@@ -126,7 +127,7 @@ class PromotionAdministration extends Component
             'campaignId', 'campaignCode', 'campaignName', 'campaignLandingHeadline',
             'campaignLandingText', 'campaignRulesText', 'campaignStartsAt', 'campaignEndsAt',
         ]);
-        $this->campaignQuotaPolicy = PromotionQuotaPolicy::Block->value;
+        $this->campaignQuotaPolicy = PromotionQuotaPolicy::StickerContinue->value;
         $this->campaignIsActive = false;
         $this->campaignIsPublic = false;
         $this->resetPrizeForm();
@@ -141,7 +142,6 @@ class PromotionAdministration extends Component
             'campaignLandingHeadline' => ['nullable', 'string', 'max:255'],
             'campaignLandingText' => ['nullable', 'string', 'max:5000'],
             'campaignRulesText' => ['nullable', 'string', 'max:10000'],
-            'campaignQuotaPolicy' => ['required', Rule::enum(PromotionQuotaPolicy::class)],
             'campaignIsActive' => ['boolean'],
             'campaignIsPublic' => ['boolean'],
             'campaignStartsAt' => ['nullable', 'date'],
@@ -167,7 +167,7 @@ class PromotionAdministration extends Component
 
             if ($validated['campaignIsPublic'] && ! $this->campaignCanBePublished($campaign)) {
                 throw ValidationException::withMessages([
-                    'campaignIsPublic' => 'Vor der Veröffentlichung muss mindestens ein aktives finales Radfeld konfiguriert sein.',
+                    'campaignIsPublic' => 'Vor der Veröffentlichung muss mindestens ein Gewinn angelegt sein.',
                 ]);
             }
 
@@ -177,12 +177,14 @@ class PromotionAdministration extends Component
                 'landing_headline' => trim($validated['campaignLandingHeadline']),
                 'landing_text' => trim($validated['campaignLandingText']),
                 'rules_text' => trim($validated['campaignRulesText']),
-                'quota_exhaustion_policy' => $validated['campaignQuotaPolicy'],
+                'quota_exhaustion_policy' => PromotionQuotaPolicy::StickerContinue->value,
                 'is_active' => (bool) $validated['campaignIsActive'],
                 'starts_at' => $validated['campaignStartsAt'],
                 'ends_at' => $validated['campaignEndsAt'],
                 'created_by' => $campaign->created_by ?: auth()->id(),
             ])->save();
+
+            $this->ensureOperationalResults($campaign);
 
             $this->synchronizeStickerRequirement(
                 $campaign,
@@ -217,6 +219,7 @@ class PromotionAdministration extends Component
         $this->authorize('promotion.prizes.manage');
         $prize = PromotionPrize::query()->findOrFail($prizeId);
         abort_unless((int) $prize->campaign_id === (int) $this->campaignId, 422);
+        abort_unless($prize->outcome_type === PromotionOutcomeType::Prize, 422);
         $this->prizeId = $prize->id;
         $this->prizeCode = $prize->code;
         $this->prizeName = $prize->name;
@@ -234,22 +237,9 @@ class PromotionAdministration extends Component
         abort_unless($this->campaignId !== null, 422, 'Bitte zuerst eine Kampagne speichern.');
 
         $validated = $this->validate([
-            'prizeCode' => ['required', 'alpha_dash', 'max:50', Rule::unique('prizes', 'code')->where('campaign_id', $this->campaignId)->ignore($this->prizeId)],
             'prizeName' => ['required', 'string', 'max:255'],
-            'prizeOutcomeType' => ['required', Rule::in([
-                PromotionOutcomeType::Prize->value,
-                PromotionOutcomeType::NoWin->value,
-                PromotionOutcomeType::Retry->value,
-            ])],
-            'prizeFulfillmentMode' => ['required', Rule::in([PromotionPrize::FULFILLMENT_ONSITE, PromotionPrize::FULFILLMENT_EXTERNAL])],
-            'prizeQuota' => ['required', 'integer', 'min:0'],
-            'prizeIsActive' => ['boolean'],
-            'prizeSortOrder' => ['integer', 'min:0', 'max:10000'],
+            'prizeQuota' => ['required', 'integer', 'min:1'],
         ]);
-
-        if ($validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value && (int) $validated['prizeQuota'] < 1) {
-            throw ValidationException::withMessages(['prizeQuota' => 'Ein Gewinnfeld benötigt ein Kontingent von mindestens 1.']);
-        }
 
         $prize = DB::transaction(function () use ($validated, $audit): PromotionPrize {
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($this->campaignId);
@@ -260,6 +250,7 @@ class PromotionAdministration extends Component
                 ? PromotionPrize::query()->lockForUpdate()->findOrFail($this->prizeId)
                 : new PromotionPrize(['campaign_id' => $campaign->id, 'reserved_count' => 0, 'awarded_count' => 0]);
             abort_unless(! $prize->exists || (int) $prize->campaign_id === (int) $campaign->id, 422);
+            abort_unless(! $prize->exists || $prize->outcome_type === PromotionOutcomeType::Prize, 422);
 
             $legacyCount = $prize->exists
                 ? PromotionWin::query()->where('prize_id', $prize->id)->where('status', '<>', 'cancelled')->count()
@@ -274,9 +265,7 @@ class PromotionAdministration extends Component
                 : 0;
             $reservedCount = $prize->exists ? $legacyCount : 0;
             $awardedCount = $prize->exists ? $legacyCount + $v2AwardedCount : 0;
-            $quota = $validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value
-                ? (int) $validated['prizeQuota']
-                : 0;
+            $quota = (int) $validated['prizeQuota'];
             if ($quota < $awardedCount) {
                 throw ValidationException::withMessages([
                     'prizeQuota' => 'Das Kontingent darf nicht unter die bereits vergebenen Gewinne fallen.',
@@ -285,17 +274,21 @@ class PromotionAdministration extends Component
 
             $prize->forceFill([
                 'campaign_id' => $campaign->id,
-                'code' => mb_strtoupper(trim($validated['prizeCode'])),
+                'code' => $prize->exists
+                    ? $prize->code
+                    : $this->uniquePrizeCode($campaign, (string) $validated['prizeName']),
                 'name' => trim($validated['prizeName']),
-                'outcome_type' => $validated['prizeOutcomeType'],
-                'fulfillment_mode' => $validated['prizeOutcomeType'] === PromotionOutcomeType::Prize->value
-                    ? $validated['prizeFulfillmentMode']
+                'outcome_type' => PromotionOutcomeType::Prize->value,
+                'fulfillment_mode' => $prize->exists
+                    ? $prize->fulfillment_mode
                     : PromotionPrize::FULFILLMENT_ONSITE,
                 'quota' => $quota,
                 'reserved_count' => $reservedCount,
                 'awarded_count' => $awardedCount,
-                'is_active' => (bool) $validated['prizeIsActive'],
-                'sort_order' => (int) $validated['prizeSortOrder'],
+                'is_active' => true,
+                'sort_order' => $prize->exists
+                    ? $prize->sort_order
+                    : ((int) $campaign->prizes()->where('outcome_type', PromotionOutcomeType::Prize->value)->max('sort_order')) + 10,
             ])->save();
 
             $this->synchronizeStickerRequirement(
@@ -310,9 +303,9 @@ class PromotionAdministration extends Component
             return $prize->fresh();
         }, 3);
 
-        activity('promotion')->causedBy($this->actor())->performedOn($prize)->log('Promotion-Radfeld gespeichert');
+        activity('promotion')->causedBy($this->actor())->performedOn($prize)->log('Promotion-Gewinn gespeichert');
         $this->resetPrizeForm();
-        session()->flash('status', 'Radfeld gespeichert.');
+        session()->flash('status', 'Gewinn gespeichert.');
     }
 
     public function deletePrize(int $prizeId, PromotionAuditChain $audit): void
@@ -321,11 +314,12 @@ class PromotionAdministration extends Component
 
         DB::transaction(function () use ($prizeId, $audit): void {
             $prize = PromotionPrize::query()->lockForUpdate()->findOrFail($prizeId);
+            abort_unless($prize->outcome_type === PromotionOutcomeType::Prize, 422);
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($prize->campaign_id);
             $this->assertCampaignHasNoActiveTurn($campaign);
             $this->assertConfigurationIntegrityBeforeMutation($campaign, $audit);
             if ($prize->spinResults()->exists() || $prize->wins()->exists()) {
-                throw ValidationException::withMessages(['prize' => 'Ein bereits verwendetes Radfeld kann nur deaktiviert, nicht gelöscht werden.']);
+                throw ValidationException::withMessages(['prize' => 'Ein bereits vergebener Gewinn kann wegen des Verlaufs nicht gelöscht werden.']);
             }
 
             $prize->delete();
@@ -334,7 +328,7 @@ class PromotionAdministration extends Component
         }, 3);
 
         $this->resetPrizeForm();
-        session()->flash('status', 'Radfeld gelöscht.');
+        session()->flash('status', 'Gewinn gelöscht.');
     }
 
     public function prepareCounterbook(int $resultId): void
@@ -478,7 +472,7 @@ class PromotionAdministration extends Component
 
         return $campaign->prizes()
             ->where('is_active', true)
-            ->whereIn('outcome_type', [PromotionOutcomeType::Prize->value, PromotionOutcomeType::NoWin->value])
+            ->where('outcome_type', PromotionOutcomeType::Prize->value)
             ->exists();
     }
 
@@ -519,9 +513,57 @@ class PromotionAdministration extends Component
         $state = PromotionCampaignState::query()->whereKey($campaign->id)->lockForUpdate()->first();
         if ($state?->active_turn_id !== null) {
             throw ValidationException::withMessages([
-                'prize' => 'Radfelder können nicht geändert werden, solange ein Teilnehmer am Glücksrad aktiv ist.',
+                'prize' => 'Gewinne können nicht geändert werden, solange ein Teilnehmer am Glücksrad aktiv ist.',
             ]);
         }
+    }
+
+    private function ensureOperationalResults(PromotionCampaign $campaign): void
+    {
+        $definitions = [
+            PromotionOutcomeType::NoWin->value => ['code' => 'SYSTEM-NO-WIN', 'name' => 'Kein Gewinn', 'sort_order' => 9000],
+            PromotionOutcomeType::Retry->value => ['code' => 'SYSTEM-RETRY', 'name' => 'Zusatzdreh', 'sort_order' => 9010],
+        ];
+
+        foreach ($definitions as $outcome => $definition) {
+            $existing = $campaign->prizes()->where('outcome_type', $outcome)->orderBy('id')->first();
+            if ($existing) {
+                if (! $existing->is_active) {
+                    $this->assertCampaignHasNoActiveTurn($campaign);
+                    $existing->forceFill(['is_active' => true])->save();
+                }
+
+                continue;
+            }
+
+            $this->assertCampaignHasNoActiveTurn($campaign);
+            $campaign->prizes()->create([
+                'code' => $this->uniquePrizeCode($campaign, $definition['code']),
+                'name' => $definition['name'],
+                'outcome_type' => $outcome,
+                'fulfillment_mode' => PromotionPrize::FULFILLMENT_ONSITE,
+                'quota' => 0,
+                'reserved_count' => 0,
+                'awarded_count' => 0,
+                'is_active' => true,
+                'sort_order' => $definition['sort_order'],
+            ]);
+        }
+    }
+
+    private function uniquePrizeCode(PromotionCampaign $campaign, string $name): string
+    {
+        $base = mb_strtoupper(Str::slug($name));
+        $base = mb_substr($base !== '' ? $base : 'GEWINN', 0, 42);
+        $candidate = $base;
+        $suffix = 2;
+
+        while ($campaign->prizes()->where('code', $candidate)->exists()) {
+            $candidate = mb_substr($base, 0, 42 - mb_strlen((string) $suffix) - 1).'-'.$suffix;
+            $suffix++;
+        }
+
+        return $candidate;
     }
 
     private function synchronizeStickerRequirement(PromotionCampaign $campaign, bool $forceReacknowledgement = false): void

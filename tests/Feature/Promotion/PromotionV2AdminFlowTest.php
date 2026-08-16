@@ -2,10 +2,10 @@
 
 namespace Tests\Feature\Promotion;
 
-use App\Livewire\AdminConfig;
 use App\Livewire\Admin\Config\SocialAuthSettings;
 use App\Livewire\Admin\PromotionAdministration;
 use App\Livewire\Admin\UserProfile;
+use App\Livewire\AdminConfig;
 use App\Livewire\Promotion\PromotionConsole;
 use App\Mail\PromotionResultMail;
 use App\Models\Customer;
@@ -71,6 +71,10 @@ class PromotionV2AdminFlowTest extends TestCase
 
         $this->fakeMail();
         Livewire::actingAs($staff)->test(PromotionConsole::class)
+            ->assertSee('Gewinn auswählen')
+            ->assertSee($prize->name)
+            ->assertSee('Kein Gewinn')
+            ->assertSee('Zusatzdreh')
             ->call('recordResult', $turn->id, $prize->id);
 
         $original = PromotionSpinResult::query()->latest('id')->firstOrFail();
@@ -144,7 +148,13 @@ class PromotionV2AdminFlowTest extends TestCase
         Livewire::actingAs($admin)->test(PromotionAdministration::class)
             ->assertSee('Übersicht')
             ->assertSee('Kampagne')
-            ->assertSee('Radfelder')
+            ->assertSee('Gewinne')
+            ->assertSee('Gewinnbezeichnung')
+            ->assertSee('Menge')
+            ->assertDontSee('Ergebnistyp')
+            ->assertDontSee('Sortierung')
+            ->assertDontSeeHtml('wire:model="prizeFulfillmentMode"')
+            ->assertDontSee('Radfelder')
             ->assertSee('Verlauf')
             ->assertSee('Dauerhafter Poster-Link')
             ->assertDontSee('Gewinn-QR erzeugen')
@@ -269,7 +279,7 @@ class PromotionV2AdminFlowTest extends TestCase
         $this->assertFalse($campaign->fresh()->is_public);
     }
 
-    public function test_admin_policy_switch_and_exhausted_field_changes_require_a_fresh_sticker_acknowledgement(): void
+    public function test_exhausted_prize_changes_require_a_fresh_sticker_acknowledgement(): void
     {
         [$admin, , $campaign, $prize] = $this->promotionFixture();
         app(PromotionWinService::class)->issue($campaign, $prize, $admin);
@@ -305,30 +315,7 @@ class PromotionV2AdminFlowTest extends TestCase
         Livewire::actingAs($admin)->test(PromotionAdministration::class)
             ->call('editCampaign', $campaign->id)
             ->call('editPrize', $prize->id)
-            ->set('prizeIsActive', false)
-            ->call('savePrize')
-            ->assertHasNoErrors();
-        $state->refresh();
-        $this->assertFalse($state->sticker_required);
-        $this->assertNull($state->sticker_acknowledged_at);
-        $this->assertNull($state->sticker_acknowledged_by);
-
-        Livewire::actingAs($admin)->test(PromotionAdministration::class)
-            ->call('editCampaign', $campaign->id)
-            ->call('editPrize', $prize->id)
-            ->set('prizeIsActive', true)
-            ->call('savePrize')
-            ->assertHasNoErrors();
-        $state->refresh();
-        $this->assertTrue($state->sticker_required);
-        $this->assertNull($state->sticker_acknowledged_at);
-        $this->assertNull($state->sticker_acknowledged_by);
-
-        app(PromotionTurnService::class)->acknowledgeSticker($campaign->fresh(), $admin);
-        Livewire::actingAs($admin)->test(PromotionAdministration::class)
-            ->call('editCampaign', $campaign->id)
-            ->call('editPrize', $prize->id)
-            ->set('prizeName', 'Gewinnfeld neu beschriftet')
+            ->set('prizeName', 'Gewinn neu bezeichnet')
             ->call('savePrize')
             ->assertHasNoErrors();
 

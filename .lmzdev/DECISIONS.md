@@ -86,3 +86,9 @@ Record durable decisions with date, context, decision, and consequences.
 - Neue Scans verlangen eine aktuell öffentliche Kampagne sowie ein aktives, E-Mail-verifiziertes Teilnehmerkonto. Bereits aktive Aufrufe können nach Kampagnenwechsel oder Deaktivierung weiterhin sicher abgeschlossen oder freigegeben werden.
 - Persönliche QR-Codes sind stateless und werden nicht gespeichert. Participation-, Ticket-, Aufruf-, Ergebnis-, Mail- und Kampagnenzustände sind synchron HMAC-gebunden und werden vor jeder Mutation fail-closed geprüft.
 - Promotion läuft ausschließlich über direkte Webaktionen ohne Commands, Jobs, Scheduler, Queue-Worker oder ENV-Konfiguration.
+
+## 2026-08-16 | Kampagnen pflegen nur Gewinne und Mengen
+
+- Volladmins konfigurieren pro Kampagne ausschließlich die sichtbare Gewinnbezeichnung und die verfügbare Menge; technische Codes, Ergebnisart, Ausgabeart, Sortierung und Aktivstatus sind keine Bedienoptionen.
+- `Kein Gewinn` und `Zusatzdreh` bleiben feste interne Systemergebnisse, damit der Drehablauf vollständig abgeschlossen werden kann, ohne im Admin Radfelder zu modellieren.
+- Erschöpfte Gewinne verwenden automatisch den bestehenden Abklebe-/Weiterdreh-Ablauf. Eine gesonderte Kontingentstrategie wird nicht mehr in der Kampagnenoberfläche angeboten.

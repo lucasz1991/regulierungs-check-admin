@@ -532,6 +532,19 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertCount(0, $campaign->prizes->where('outcome_type.value', 'prize'));
         $this->assertCount(1, $campaign->prizes->where('outcome_type.value', 'no_win'));
         $this->assertCount(1, $campaign->prizes->where('outcome_type.value', 'retry'));
+
+        Livewire::actingAs($admin)->test(\App\Livewire\Admin\PromotionAdministration::class)
+            ->call('editCampaign', $campaign->id)
+            ->set('campaignLandingHeadline', 'Drehen und gewinnen')
+            ->set('campaignLandingText', 'Melde dich an und zeige dein Ticket.')
+            ->set('campaignRulesText', 'Eine Teilnahme je Konto.')
+            ->set('campaignIsActive', true)
+            ->set('campaignIsPublic', true)
+            ->call('saveCampaign')
+            ->assertHasErrors(['campaignIsPublic'])
+            ->assertSee('Legen Sie vor der Veröffentlichung mindestens einen Gewinn mit Menge an.');
+
+        $this->assertFalse($campaign->fresh()->is_public);
     }
 
     public function test_campaign_and_prize_configuration_are_hmac_audited(): void
@@ -797,6 +810,52 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertTrue($campaign->fresh()->is_public);
     }
 
+    public function test_domain_publication_requires_a_real_prize_with_quantity_and_public_campaign_keeps_its_last_prize(): void
+    {
+        $admin = $this->admin();
+        $campaign = PromotionCampaign::create([
+            'name' => 'Vollständige Kampagne',
+            'code' => 'DOMAIN-PUBLISH',
+            'landing_headline' => 'Jetzt gewinnen',
+            'landing_text' => 'Zeige dein Ticket und drehe am Glücksrad.',
+            'rules_text' => 'Eine Teilnahme je Konto.',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
+        $zeroQuotaPrize = PromotionPrize::query()->create([
+            'campaign_id' => $campaign->id,
+            'code' => 'OHNE-MENGE',
+            'name' => 'Gewinn ohne Menge',
+            'outcome_type' => 'prize',
+            'fulfillment_mode' => PromotionPrize::FULFILLMENT_ONSITE,
+            'quota' => 0,
+            'reserved_count' => 0,
+            'awarded_count' => 0,
+            'is_active' => true,
+            'sort_order' => 10,
+        ]);
+
+        try {
+            app(PromotionTicketService::class)->publishCampaign($campaign, $admin);
+            $this->fail('Eine Kampagne mit einem Gewinn ohne Menge wurde veröffentlicht.');
+        } catch (\DomainException $exception) {
+            $this->assertStringContainsString('aktiver Gewinn mit Menge', $exception->getMessage());
+        }
+
+        $zeroQuotaPrize->delete();
+        $prize = $this->prize($campaign, 'ECHTER-GEWINN', PromotionPrize::FULFILLMENT_ONSITE, 5);
+        app(PromotionTicketService::class)->publishCampaign($campaign->fresh(), $admin);
+
+        Livewire::actingAs($admin)
+            ->test(PromotionAdministration::class)
+            ->call('deletePrize', $prize->id)
+            ->assertHasErrors(['prize'])
+            ->assertSee('Der letzte Gewinn einer veröffentlichten Kampagne kann nicht gelöscht werden.');
+
+        $this->assertTrue($campaign->fresh()->is_public);
+        $this->assertDatabaseHas('prizes', ['id' => $prize->id]);
+    }
+
     /** @return array{User, User, User, PromotionCampaign} */
     private function promotionActors(): array
     {
@@ -804,7 +863,15 @@ class AdminPromotionSecurityTest extends TestCase
         $team = app(PromotionTeamService::class)->ensure($admin);
         $staff = $this->staff($team);
         $participant = $this->participant($admin);
-        $campaign = PromotionCampaign::create(['name' => 'Promo', 'code' => 'PROMO', 'is_active' => true, 'created_by' => $admin->id]);
+        $campaign = PromotionCampaign::create([
+            'name' => 'Promo',
+            'code' => 'PROMO',
+            'landing_headline' => 'Drehen und gewinnen',
+            'landing_text' => 'Melde dich an und zeige dein persönliches Ticket.',
+            'rules_text' => 'Eine Teilnahme je Konto.',
+            'is_active' => true,
+            'created_by' => $admin->id,
+        ]);
 
         return [$admin, $staff, $participant, $campaign];
     }
@@ -928,6 +995,7 @@ class AdminPromotionSecurityTest extends TestCase
             'is_active' => true,
             'created_by' => $admin->id,
         ]);
+        $this->prize($campaign, 'TEST-GEWINN', PromotionPrize::FULFILLMENT_ONSITE, 10);
         $this->prize($campaign, 'NO-WIN', PromotionPrize::FULFILLMENT_ONSITE, 0)
             ->forceFill(['outcome_type' => 'no_win', 'awarded_count' => 0])
             ->save();

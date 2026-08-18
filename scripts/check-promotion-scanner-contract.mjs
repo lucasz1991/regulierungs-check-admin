@@ -34,7 +34,7 @@ if (!viewSource.includes('x-show.important="open"') || !viewSource.includes('x-s
 if (!viewSource.includes('<template x-teleport="body" wire:ignore>') || !viewSource.includes('wire:ignore\n            x-show.important="open"')) {
     missing.push(['poll-stabiler Teleport-Dialog']);
 }
-for (const tab of ['overview', 'campaign', 'fields', 'history']) {
+for (const tab of ['overview', 'campaign', 'prizes', 'history']) {
     if (!administrationViewSource.includes(`x-show.important="tab === '${tab}'"`)) {
         missing.push([`Tailwind-important-kompatibler Admin-Tab ${tab}`]);
     }

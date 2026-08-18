@@ -36,31 +36,50 @@
                 <p class="mt-2 break-all font-mono text-sm font-semibold text-gray-900">{{ $redemptionBaseUrl !== '' ? $redemptionBaseUrl : 'Noch nicht eingerichtet' }}</p>
                 <p class="mt-2 text-sm text-gray-600">Freigabe: <strong>{{ $enabled ? 'aktiviert' : 'deaktiviert' }}</strong>. Änderungen werden im Standardmodal vorgenommen.</p>
             </div>
-            <button type="button" wire:click="openSettingsModal" class="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">Einstellungen bearbeiten</button>
+            <button type="button" wire:click="openSettingsModal" class="rounded-lg bg-teal-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2">Einstellungen bearbeiten</button>
         </div>
     </div>
 
     <x-dialog-modal id="promotion-settings-modal" wire:model.live="showSettingsModal" :maxWidth="'2xl'">
         <x-slot name="title">Promotion-Einstellungen bearbeiten</x-slot>
         <x-slot name="content">
-            <form id="promotion-settings-form" wire:submit="save" class="space-y-6 text-left">
-                <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <label for="promotion-enabled" class="flex cursor-pointer items-start gap-3">
-                        <input id="promotion-enabled" type="checkbox" wire:model="enabled" class="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500">
-                        <span><span class="block text-sm font-semibold text-gray-900">Promotion freigeben</span><span class="mt-1 block text-sm text-gray-600">Die Freigabe wird nur wirksam, wenn die Teilnehmer-Adresse und eine öffentliche Kampagne vollständig eingerichtet sind.</span></span>
-                    </label>
-                </div>
-                <div>
-                    <label for="promotion-redemption-url" class="block text-sm font-medium text-gray-700">Öffentliche Teilnehmer-Adresse</label>
-                    <input id="promotion-redemption-url" type="url" wire:model="redemptionBaseUrl" autocomplete="url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="https://www.example.de">
-                    <p class="mt-1 text-xs text-gray-500">Basisadresse der Teilnehmer-App; der dauerhaft gedruckte Poster-QR verweist auf <span class="font-mono">/gluecksrad</span>.</p>
-                    @error('redemptionBaseUrl') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
-                </div>
+            <form id="promotion-settings-form" wire:submit="save" class="space-y-6 text-left" novalidate>
+                @error('settings')
+                    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+                        {{ $message }}
+                    </div>
+                @enderror
+                @error('qrTtlMinutes')
+                    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+                        {{ $message }}
+                    </div>
+                @enderror
+
+                <x-promotion.form-checkbox
+                    id="promotion-enabled"
+                    field="enabled"
+                    label="Promotion freigeben"
+                    hint="Die Freigabe wird nur wirksam, wenn die Teilnehmer-Adresse und eine öffentliche Kampagne vollständig eingerichtet sind."
+                    :accent="true"
+                    wire:model="enabled"
+                />
+                <x-promotion.form-input
+                    id="promotion-redemption-url"
+                    field="redemptionBaseUrl"
+                    label="Öffentliche Teilnehmer-Adresse"
+                    type="url"
+                    hint="Basisadresse der Teilnehmer-App; der dauerhaft gedruckte Poster-QR verweist automatisch auf /gluecksrad."
+                    :required="true"
+                    wire:model="redemptionBaseUrl"
+                    autocomplete="url"
+                    inputmode="url"
+                    placeholder="https://www.example.de"
+                />
             </form>
         </x-slot>
         <x-slot name="footer">
             <button type="button" wire:click="closeSettingsModal" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">Abbrechen</button>
-            <button type="submit" form="promotion-settings-form" wire:loading.attr="disabled" wire:target="save" class="ml-3 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:cursor-wait disabled:opacity-60"><span wire:loading.remove wire:target="save">Einstellungen speichern</span><span wire:loading wire:target="save">Wird gespeichert…</span></button>
+            <button type="submit" form="promotion-settings-form" wire:loading.attr="disabled" wire:target="save" class="ml-3 rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-wait disabled:opacity-60"><span wire:loading.remove wire:target="save">Einstellungen speichern</span><span wire:loading wire:target="save">Wird gespeichert…</span></button>
         </x-slot>
     </x-dialog-modal>
 </section>

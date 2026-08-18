@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Promotion\PromotionSettingsService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
@@ -160,7 +161,8 @@ class PromotionSettingsUiTest extends TestCase
                 'redemptionBaseUrl',
                 'qrTtlMinutes',
             ])
-            ->assertSet('showSettingsModal', true);
+            ->assertSet('showSettingsModal', true)
+            ->assertSee('HTTP ist nur lokal für localhost, 127.0.0.1 oder ::1 erlaubt.');
 
         $this->assertNull(PromotionSetting::query()->find(1));
     }
@@ -195,6 +197,53 @@ class PromotionSettingsUiTest extends TestCase
             ->assertHasErrors(['redemptionBaseUrl']);
 
         $this->assertNull(PromotionSetting::query()->find(1));
+    }
+
+    public function test_missing_settings_schema_is_reported_in_the_open_modal_without_creating_tables(): void
+    {
+        $admin = $this->user('Admin', 'promotion-missing-schema@example.test', 'admin');
+        Schema::drop('promotion_settings');
+
+        Livewire::actingAs($admin)
+            ->test(PromotionSettings::class)
+            ->call('openSettingsModal')
+            ->set('redemptionBaseUrl', 'https://promotion.example.test')
+            ->set('qrTtlMinutes', 30)
+            ->set('enabled', true)
+            ->call('save')
+            ->assertHasErrors(['settings'])
+            ->assertSet('showSettingsModal', true)
+            ->assertSee('Die Promotion-Einstellungen konnten nicht gespeichert werden.');
+
+        $this->assertFalse(Schema::hasTable('promotion_settings'));
+    }
+
+    public function test_integrity_failure_is_reported_without_overwriting_protected_settings(): void
+    {
+        app(PromotionSettingsService::class)->save([
+            'enabled' => false,
+            'redemption_base_url' => 'https://promotion.example.test',
+            'qr_ttl_minutes' => 30,
+        ]);
+        DB::table('promotion_settings')->where('id', 1)->update([
+            'configuration_mac' => str_repeat('0', 64),
+        ]);
+        $admin = $this->user('Admin', 'promotion-integrity-error@example.test', 'admin');
+
+        Livewire::actingAs($admin)
+            ->test(PromotionSettings::class)
+            ->call('openSettingsModal')
+            ->set('redemptionBaseUrl', 'https://changed.example.test')
+            ->set('enabled', true)
+            ->call('save')
+            ->assertHasErrors(['settings'])
+            ->assertSet('showSettingsModal', true)
+            ->assertSee('Die Promotion-Einstellungen konnten nicht gespeichert werden.');
+
+        $stored = PromotionSetting::query()->findOrFail(1);
+        $this->assertSame('https://promotion.example.test', $stored->redemption_base_url);
+        $this->assertFalse($stored->enabled);
+        $this->assertSame(str_repeat('0', 64), $stored->getRawOriginal('configuration_mac'));
     }
 
     private function user(string $name, string $email, string $role): User

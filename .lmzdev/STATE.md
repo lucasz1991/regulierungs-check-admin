@@ -68,3 +68,23 @@
 
 - Alle normalen Promotion-Formulare verwenden jetzt das projektweite `x-dialog-modal`; der Kamera-Scanner bleibt als einzige fachlich notwendige Vollbild-Ausnahme bestehen.
 - Abschlussgate: 78 Promotion-Tests mit 715 Assertions sowie authentifizierte Desktop- und 390-px-Browserpruefung bestanden.
+
+## 2026-08-17 | Promotion-Einstellungen speichern fail-closed
+
+- Service-, Datenbank-, Schema- und Integritaetsfehler beim Speichern werden gemeldet, als sichere deutsche Formularmeldung angezeigt und lassen das Standardmodal offen; es wird weder Schema erzeugt noch eine MAC-Pruefung umgangen.
+- Alle Validierungsregeln des Livewire-Formulars besitzen explizite deutsche Meldungen.
+- Fokussiertes Gate: `PromotionSettingsUiTest` 10 Tests/73 Assertions; PHP-Lint, Pint-Test und scoped `git diff --check` bestanden.
+
+## 2026-08-17 | Promotion-Formfelder
+
+- Kampagne, Gewinn, Gegenbuchung, Promotion-Einstellungen, Korrektur, Scanner-Fallback und Verlaufsfilter verwenden vier gemeinsame Promotion-Formfeldkomponenten mit sichtbaren Labels, Hinweisen, Fehlerzustand und ARIA-Verknuepfung.
+- Neue Kampagnen erklaeren den Entwurf-zu-Gewinn-Ablauf direkt im Modal; das erste Gewinnmodal folgt unmittelbar und die Veroeffentlichung erscheint erst fuer gespeicherte Kampagnen.
+- Fokussiertes Gate: PromotionSettingsUiTest und PromotionV2AdminFlowTest 20 Tests/232 Assertions; Produktions-Vite-Build, Scanner-Vertrag mit 18 Checks und git diff --check bestanden.
+
+## 2026-08-17 | Kampagne und erster Gewinn
+
+- Neue Kampagnen werden immer zuerst als unveroeffentlichter Entwurf gespeichert; direkt danach oeffnet sich das Standardmodal fuer den ersten Gewinn. Eine Veroeffentlichung ist erst mit vollstaendigen Landingtexten und mindestens einem aktiven Gewinn mit Menge groesser null moeglich.
+- Die Veroeffentlichungsregel gilt auch im gemeinsamen Domainservice. Bei einer bereits veroeffentlichten Kampagne kann der letzte gueltige Gewinn nicht geloescht werden.
+- Promotion-Einstellungen liefern bei fehlendem Schema oder Integritaetsfehler keinen HTTP 500 mehr, sondern eine sichere deutsche Formularmeldung; Schema und MAC bleiben fail-closed.
+- Alle Promotion-Formulare verwenden gemeinsame barrierearme Formkomponenten und explizite deutsche Validierungstexte. Browser-QA bestaetigte Pflichtfeldfehler, Entwurf, automatisches Erstgewinn-Modal und Gewinnspeicherung ohne Console-Fehler.
+- Abschlussgate: Admin `tests/Feature/Promotion` 83 Tests/771 Assertions, Base 76/602, Scannervertrag 18/18, Vite-Build, Pint und beide Diff-Checks bestanden.

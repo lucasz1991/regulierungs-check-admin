@@ -197,6 +197,20 @@ class PromotionConsole extends Component
             'correctionResultId' => ['required', 'integer', 'exists:promotion_spin_results,id'],
             'correctionPrizeId' => ['required', 'integer', 'exists:prizes,id'],
             'correctionReason' => ['required', 'string', 'max:100'],
+        ], [
+            'correctionResultId.required' => 'Das zu korrigierende Ergebnis fehlt. Bitte öffnen Sie die Korrektur erneut.',
+            'correctionResultId.integer' => 'Das zu korrigierende Ergebnis ist ungültig.',
+            'correctionResultId.exists' => 'Das zu korrigierende Ergebnis ist nicht mehr verfügbar.',
+            'correctionPrizeId.required' => 'Bitte wählen Sie das korrekte Ergebnis aus.',
+            'correctionPrizeId.integer' => 'Das ausgewählte Ergebnis ist ungültig.',
+            'correctionPrizeId.exists' => 'Das ausgewählte Ergebnis ist nicht mehr verfügbar.',
+            'correctionReason.required' => 'Bitte geben Sie einen Grund für die Korrektur ein.',
+            'correctionReason.string' => 'Der Korrekturgrund muss als Text eingegeben werden.',
+            'correctionReason.max' => 'Der Korrekturgrund darf höchstens 100 Zeichen enthalten.',
+        ], [
+            'correctionResultId' => 'Ergebnis',
+            'correctionPrizeId' => 'korrektes Ergebnis',
+            'correctionReason' => 'Korrekturgrund',
         ]);
         $result = PromotionSpinResult::query()->findOrFail($validated['correctionResultId']);
         $field = PromotionPrize::query()->findOrFail($validated['correctionPrizeId']);

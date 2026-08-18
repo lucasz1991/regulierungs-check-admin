@@ -266,19 +266,19 @@
 
                     <div x-show.important="cameraError" role="alert" class="mt-4 rounded-2xl border border-red-300/30 bg-red-400/10 p-4 text-sm text-red-100" x-text="cameraError"></div>
 
-                    <form x-on:submit.prevent="submitManual()" class="mt-5 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:grid-cols-[1fr_auto]">
-                        <div>
-                            <label for="manual-ticket-id" class="block text-xs font-bold uppercase tracking-wide text-teal-200">Manuelle Teilnahme-ID</label>
-                            <input
-                                id="manual-ticket-id"
-                                type="text"
-                                x-model="manualParticipationId"
-                                autocomplete="off"
-                                spellcheck="false"
-                                class="mt-2 block w-full rounded-xl border-white/15 bg-white/10 px-4 py-3 font-mono text-sm uppercase text-white placeholder:text-white/35 focus:border-teal-300 focus:ring-teal-300"
-                                placeholder="RC-STR26-…"
-                            >
-                        </div>
+                    <form x-on:submit.prevent="submitManual()" class="mt-5 grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:grid-cols-[1fr_auto]" novalidate>
+                        <x-promotion.form-input
+                            id="manual-ticket-id"
+                            field="manualParticipationId"
+                            label="Manuelle Teilnahme-ID"
+                            hint="Fallback, falls die Kamera nicht verfügbar ist."
+                            variant="dark"
+                            x-model="manualParticipationId"
+                            autocomplete="off"
+                            spellcheck="false"
+                            class="font-mono uppercase"
+                            placeholder="RC-STR26-…"
+                        />
                         <button type="submit" :disabled="busy" class="self-end rounded-xl bg-white px-5 py-3 text-sm font-black text-[#082f35] hover:bg-teal-50 disabled:opacity-50">Ticket prüfen</button>
                     </form>
                 </div>
@@ -357,23 +357,29 @@
         </x-slot>
 
         <x-slot name="content">
-            <form id="promotion-result-correction-form" wire:submit="correctResult">
+            <form id="promotion-result-correction-form" wire:submit="correctResult" novalidate>
                 <p class="text-sm leading-6 text-slate-600">Nur das eigene Ergebnis und nur vor einer Ausgabe. Der vorherige Stand bleibt im Verlauf erhalten.</p>
+                @error('correctionResultId')
+                    <div class="mt-5 flex gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800" role="alert">
+                        <svg aria-hidden="true" class="mt-0.5 h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+                        <span>{{ $message }}</span>
+                    </div>
+                @enderror
 
-                <label for="staff-correction-field" class="mt-5 block text-sm font-bold text-slate-700">Korrektes Ergebnis</label>
-                <select
+                <x-promotion.form-select
                     id="staff-correction-field"
+                    field="correctionPrizeId"
+                    label="Korrektes Ergebnis"
+                    hint="Wählen Sie das tatsächlich beobachtete finale Ergebnis."
+                    wrapper-class="mt-5"
+                    :required="true"
                     wire:model="correctionPrizeId"
-                    class="mt-1 block w-full rounded-xl border-slate-300 text-sm focus:border-teal-600 focus:ring-teal-600"
                 >
                     <option value="">Bitte Ergebnis wählen</option>
                     @foreach ($resultFields->filter(fn ($field) => in_array($field->outcome_type->value, ['prize', 'no_win'], true)) as $field)
                         <option value="{{ $field->id }}">{{ $field->name }}</option>
                     @endforeach
-                </select>
-                @error('correctionPrizeId')
-                    <p class="mt-2 text-sm text-red-700">{{ $message }}</p>
-                @enderror
+                </x-promotion.form-select>
             </form>
         </x-slot>
 

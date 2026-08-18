@@ -28,3 +28,6 @@
 | Glücksrad V2 Integration, Gesamtgate und Browser-Screenshots | Codex-root | in-progress | 2026-08-16T07:20:00Z |
 | Kampagnenverwaltung auf Gewinnbezeichnung und Menge reduzieren; drei Dauer-QR-SVGs bereitstellen | Codex | completed | 2026-08-16T10:55:00Z |
 | Alle Promotion-Formulare in bestehende Standard-Modale verschieben | Codex | completed | 2026-08-16T18:12:12Z |
+| Neue Kampagne mit erstem Gewinn anlegen, Settings-500 beheben und alle Promotion-Formulare deutsch/komponentenbasiert polieren | Codex | completed | 2026-08-17T06:08:08Z |
+| Wiederverwendbare barrierearme Promotion-Formfeldkomponenten und View-Migration | Codex / promotion_form_components | completed | 2026-08-17T05:47:47Z |
+| Promotion-Einstellungen bei Service-, Schema- oder Integritätsfehlern ohne HTTP 500 fail-closed halten | Codex / settings_500_fix | completed | 2026-08-17T05:49:00Z |

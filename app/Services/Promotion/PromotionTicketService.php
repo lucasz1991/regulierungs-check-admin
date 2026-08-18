@@ -167,6 +167,24 @@ final class PromotionTicketService
                 throw new DomainException('Nur eine aktivierte Kampagne kann veroeffentlicht werden.');
             }
 
+            if ($candidate) {
+                $candidatePrizes = $candidate->prizes()->orderBy('id')->lockForUpdate()->get();
+                if (trim((string) $candidate->landing_headline) === ''
+                    || trim((string) $candidate->landing_text) === ''
+                    || trim((string) $candidate->rules_text) === '') {
+                    throw new DomainException('Vor der Veröffentlichung müssen Überschrift, Erklärung und Teilnahmebedingungen vollständig sein.');
+                }
+
+                $hasActivePrize = $candidatePrizes->contains(
+                    static fn ($prize): bool => (bool) $prize->is_active
+                        && $prize->outcome_type === PromotionOutcomeType::Prize
+                        && (int) $prize->quota >= 1,
+                );
+                if (! $hasActivePrize) {
+                    throw new DomainException('Vor der Veröffentlichung muss mindestens ein aktiver Gewinn mit Menge angelegt sein.');
+                }
+            }
+
             foreach ($campaigns as $item) {
                 if (PromotionWinEvent::query()->where('campaign_id', $item->getKey())->exists()
                     && ! $this->audit->verify($item)) {

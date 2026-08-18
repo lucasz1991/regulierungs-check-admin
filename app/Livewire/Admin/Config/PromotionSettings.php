@@ -5,8 +5,10 @@ namespace App\Livewire\Admin\Config;
 use App\Models\User;
 use App\Services\Promotion\PromotionSettingsService;
 use Closure;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Throwable;
 
 class PromotionSettings extends Component
 {
@@ -62,23 +64,58 @@ class PromotionSettings extends Component
     public function save(PromotionSettingsService $settings): void
     {
         $this->authorizeGlobalAdmin();
+        $this->resetValidation('settings');
 
         $validated = $this->validate([
             'enabled' => ['required', 'boolean'],
             'redemptionBaseUrl' => ['required', 'string', 'max:2048', 'url', $this->redemptionUrlRule()],
             'qrTtlMinutes' => ['required', 'integer', 'min:5', 'max:120'],
         ], [
+            'enabled.required' => 'Bitte wählen Sie, ob die Promotion freigegeben werden soll.',
+            'enabled.boolean' => 'Der Freigabestatus der Promotion ist ungültig.',
             'redemptionBaseUrl.required' => 'Bitte die öffentliche Einlöseadresse angeben.',
+            'redemptionBaseUrl.string' => 'Die öffentliche Einlöseadresse muss als Text angegeben werden.',
+            'redemptionBaseUrl.max' => 'Die öffentliche Einlöseadresse darf höchstens 2.048 Zeichen lang sein.',
             'redemptionBaseUrl.url' => 'Bitte eine vollständige URL inklusive https:// angeben.',
+            'qrTtlMinutes.required' => 'Bitte die Gültigkeitsdauer der QR-Codes angeben.',
+            'qrTtlMinutes.integer' => 'Die Gültigkeitsdauer der QR-Codes muss eine ganze Zahl sein.',
             'qrTtlMinutes.min' => 'Ein QR-Code muss mindestens 5 Minuten gültig sein.',
             'qrTtlMinutes.max' => 'Ein QR-Code darf höchstens 120 Minuten gültig sein.',
         ]);
 
-        $saved = $settings->save([
-            'enabled' => (bool) $validated['enabled'],
-            'redemption_base_url' => rtrim(trim((string) $validated['redemptionBaseUrl']), '/'),
-            'qr_ttl_minutes' => (int) $validated['qrTtlMinutes'],
-        ]);
+        try {
+            $saved = $settings->save([
+                'enabled' => (bool) $validated['enabled'],
+                'redemption_base_url' => rtrim(trim((string) $validated['redemptionBaseUrl']), '/'),
+                'qr_ttl_minutes' => (int) $validated['qrTtlMinutes'],
+            ]);
+        } catch (ValidationException $exception) {
+            $this->showSettingsModal = true;
+
+            foreach ($exception->errors() as $field => $messages) {
+                $target = match ($field) {
+                    'enabled' => 'enabled',
+                    'redemption_base_url' => 'redemptionBaseUrl',
+                    'qr_ttl_minutes' => 'qrTtlMinutes',
+                    default => 'settings',
+                };
+
+                foreach ($messages as $message) {
+                    $this->addError($target, (string) $message);
+                }
+            }
+
+            return;
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->showSettingsModal = true;
+            $this->addError(
+                'settings',
+                'Die Promotion-Einstellungen konnten nicht gespeichert werden. Bitte prüfen Sie den Datenbankstand und die gemeinsame Anwendungskonfiguration.',
+            );
+
+            return;
+        }
 
         $this->fillFromSettings($saved);
         $this->showSettingsModal = false;

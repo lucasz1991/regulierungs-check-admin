@@ -170,9 +170,12 @@ class PromotionAdministration extends Component
             'campaignIsPublic' => ['boolean'],
             'campaignStartsAt' => ['nullable', 'date'],
             'campaignEndsAt' => ['nullable', 'date', 'after:campaignStartsAt'],
-        ]);
+        ], $this->campaignValidationMessages(), $this->campaignValidationAttributes());
 
-        $campaign = DB::transaction(function () use ($validated, $audit, $tickets): PromotionCampaign {
+        $isNewCampaign = $this->campaignId === null;
+        $willBePublic = ! $isNewCampaign && (bool) $validated['campaignIsPublic'];
+
+        $campaign = DB::transaction(function () use ($validated, $audit, $tickets, $willBePublic): PromotionCampaign {
             $campaign = $this->campaignId
                 ? PromotionCampaign::query()->lockForUpdate()->findOrFail($this->campaignId)
                 : new PromotionCampaign;
@@ -186,13 +189,11 @@ class PromotionAdministration extends Component
             $this->assertCampaignTransitionDoesNotStrandTurn(
                 $campaign,
                 (bool) $validated['campaignIsActive'],
-                (bool) $validated['campaignIsPublic'],
+                $willBePublic,
             );
 
-            if ($validated['campaignIsPublic'] && ! $this->campaignCanBePublished($campaign)) {
-                throw ValidationException::withMessages([
-                    'campaignIsPublic' => 'Vor der Veröffentlichung muss mindestens ein Gewinn angelegt sein.',
-                ]);
+            if ($willBePublic) {
+                $this->assertCampaignCanBePublished($campaign);
             }
 
             $campaign->forceFill([
@@ -223,7 +224,7 @@ class PromotionAdministration extends Component
                 $this->actor(),
             );
 
-            if ($validated['campaignIsPublic']) {
+            if ($willBePublic) {
                 $tickets->publishCampaign($campaign, $this->actor());
             } elseif ($campaign->is_public) {
                 $tickets->publishCampaign(null, $this->actor());
@@ -236,6 +237,16 @@ class PromotionAdministration extends Component
         $this->campaignIsPublic = $campaign->is_public;
         $this->showCampaignModal = false;
         activity('promotion')->causedBy($this->actor())->performedOn($campaign)->log('Promotion-Kampagne gespeichert');
+
+        if ($isNewCampaign) {
+            $this->resetPrizeForm();
+            $this->resetValidation();
+            $this->showPrizeModal = true;
+            session()->flash('status', 'Die Kampagne wurde als Entwurf gespeichert. Legen Sie jetzt den ersten Gewinn an.');
+
+            return;
+        }
+
         session()->flash('status', 'Kampagne gespeichert.');
     }
 
@@ -283,6 +294,16 @@ class PromotionAdministration extends Component
         $validated = $this->validate([
             'prizeName' => ['required', 'string', 'max:255'],
             'prizeQuota' => ['required', 'integer', 'min:1'],
+        ], [
+            'prizeName.required' => 'Bitte geben Sie eine Gewinnbezeichnung ein.',
+            'prizeName.string' => 'Die Gewinnbezeichnung muss als Text eingegeben werden.',
+            'prizeName.max' => 'Die Gewinnbezeichnung darf höchstens 255 Zeichen enthalten.',
+            'prizeQuota.required' => 'Bitte geben Sie die verfügbare Menge ein.',
+            'prizeQuota.integer' => 'Die Menge muss eine ganze Zahl sein.',
+            'prizeQuota.min' => 'Die Menge muss mindestens 1 betragen.',
+        ], [
+            'prizeName' => 'Gewinnbezeichnung',
+            'prizeQuota' => 'Menge',
         ]);
 
         $prize = DB::transaction(function () use ($validated, $audit): PromotionPrize {
@@ -367,6 +388,18 @@ class PromotionAdministration extends Component
                 throw ValidationException::withMessages(['prize' => 'Ein bereits vergebener Gewinn kann wegen des Verlaufs nicht gelöscht werden.']);
             }
 
+            $remainingActivePrizes = $campaign->prizes()
+                ->whereKeyNot($prize->getKey())
+                ->where('is_active', true)
+                ->where('outcome_type', PromotionOutcomeType::Prize->value)
+                ->where('quota', '>=', 1)
+                ->count();
+            if ($campaign->is_public && $remainingActivePrizes === 0) {
+                throw ValidationException::withMessages([
+                    'prize' => 'Der letzte Gewinn einer veröffentlichten Kampagne kann nicht gelöscht werden. Heben Sie zuerst die Veröffentlichung auf.',
+                ]);
+            }
+
             $prize->delete();
             $this->synchronizeStickerRequirement($campaign);
             $audit->appendConfiguration($campaign, 'campaign.configured', $audit->configurationPayload($campaign->fresh('prizes')), $this->actor());
@@ -402,6 +435,21 @@ class PromotionAdministration extends Component
             'counterbookResultId' => ['required', 'integer', 'exists:promotion_spin_results,id'],
             'counterbookPrizeId' => ['required', 'integer', 'exists:prizes,id'],
             'counterbookReason' => ['required', 'string', 'min:10', 'max:500'],
+        ], [
+            'counterbookResultId.required' => 'Das zu korrigierende Ergebnis fehlt. Bitte öffnen Sie die Gegenbuchung erneut.',
+            'counterbookResultId.integer' => 'Das zu korrigierende Ergebnis ist ungültig.',
+            'counterbookResultId.exists' => 'Das zu korrigierende Ergebnis ist nicht mehr verfügbar.',
+            'counterbookPrizeId.required' => 'Bitte wählen Sie das korrekte Ergebnis aus.',
+            'counterbookPrizeId.integer' => 'Das ausgewählte Ergebnis ist ungültig.',
+            'counterbookPrizeId.exists' => 'Das ausgewählte Ergebnis ist nicht mehr verfügbar.',
+            'counterbookReason.required' => 'Bitte geben Sie einen nachvollziehbaren Grund für die Gegenbuchung ein.',
+            'counterbookReason.string' => 'Der Grund muss als Text eingegeben werden.',
+            'counterbookReason.min' => 'Der Grund muss mindestens 10 Zeichen enthalten.',
+            'counterbookReason.max' => 'Der Grund darf höchstens 500 Zeichen enthalten.',
+        ], [
+            'counterbookResultId' => 'Ergebnis',
+            'counterbookPrizeId' => 'korrektes Ergebnis',
+            'counterbookReason' => 'Pflichtgrund',
         ]);
         $result = PromotionSpinResult::query()->findOrFail($validated['counterbookResultId']);
         $field = PromotionPrize::query()->findOrFail($validated['counterbookPrizeId']);
@@ -504,26 +552,90 @@ class PromotionAdministration extends Component
         ])->layout('layouts.master');
     }
 
-    private function campaignCanBePublished(PromotionCampaign $campaign): bool
+    private function assertCampaignCanBePublished(PromotionCampaign $campaign): void
     {
         if (! $this->campaignIsActive) {
-            return false;
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Aktivieren Sie die Kampagne, bevor Sie sie veröffentlichen.',
+            ]);
         }
 
-        if (trim($this->campaignLandingHeadline) === ''
-            || trim($this->campaignLandingText) === ''
-            || trim($this->campaignRulesText) === '') {
-            return false;
+        if (trim($this->campaignLandingHeadline) === '') {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Ergänzen Sie vor der Veröffentlichung die Landingpage-Überschrift.',
+            ]);
+        }
+
+        if (trim($this->campaignLandingText) === '') {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Ergänzen Sie vor der Veröffentlichung die Erklärung des Gewinnspiels.',
+            ]);
+        }
+
+        if (trim($this->campaignRulesText) === '') {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Ergänzen Sie vor der Veröffentlichung die Teilnahmebedingungen.',
+            ]);
         }
 
         if (! $campaign->exists) {
-            return false;
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Speichern Sie die Kampagne zunächst als Entwurf und legen Sie anschließend einen Gewinn an.',
+            ]);
         }
 
-        return $campaign->prizes()
+        $hasPrize = $campaign->prizes()
             ->where('is_active', true)
             ->where('outcome_type', PromotionOutcomeType::Prize->value)
+            ->where('quota', '>=', 1)
             ->exists();
+
+        if (! $hasPrize) {
+            throw ValidationException::withMessages([
+                'campaignIsPublic' => 'Legen Sie vor der Veröffentlichung mindestens einen Gewinn mit Menge an.',
+            ]);
+        }
+    }
+
+    /** @return array<string, string> */
+    private function campaignValidationMessages(): array
+    {
+        return [
+            'campaignCode.required' => 'Bitte geben Sie einen internen Kampagnen-Code ein.',
+            'campaignCode.alpha_dash' => 'Der Kampagnen-Code darf nur Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten.',
+            'campaignCode.max' => 'Der Kampagnen-Code darf höchstens 20 Zeichen enthalten.',
+            'campaignCode.unique' => 'Dieser Kampagnen-Code wird bereits verwendet.',
+            'campaignName.required' => 'Bitte geben Sie einen Namen für die Kampagne ein.',
+            'campaignName.string' => 'Der Kampagnenname muss als Text eingegeben werden.',
+            'campaignName.max' => 'Der Kampagnenname darf höchstens 255 Zeichen enthalten.',
+            'campaignLandingHeadline.string' => 'Die Landingpage-Überschrift muss als Text eingegeben werden.',
+            'campaignLandingHeadline.max' => 'Die Landingpage-Überschrift darf höchstens 255 Zeichen enthalten.',
+            'campaignLandingText.string' => 'Die Erklärung muss als Text eingegeben werden.',
+            'campaignLandingText.max' => 'Die Erklärung darf höchstens 5.000 Zeichen enthalten.',
+            'campaignRulesText.string' => 'Die Teilnahmebedingungen müssen als Text eingegeben werden.',
+            'campaignRulesText.max' => 'Die Teilnahmebedingungen dürfen höchstens 10.000 Zeichen enthalten.',
+            'campaignIsActive.boolean' => 'Der Aktivstatus der Kampagne ist ungültig.',
+            'campaignIsPublic.boolean' => 'Der Veröffentlichungsstatus der Kampagne ist ungültig.',
+            'campaignStartsAt.date' => 'Bitte geben Sie einen gültigen Startzeitpunkt ein.',
+            'campaignEndsAt.date' => 'Bitte geben Sie einen gültigen Endzeitpunkt ein.',
+            'campaignEndsAt.after' => 'Das Ende muss nach dem Start der Kampagne liegen.',
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function campaignValidationAttributes(): array
+    {
+        return [
+            'campaignCode' => 'Kampagnen-Code',
+            'campaignName' => 'Kampagnenname',
+            'campaignLandingHeadline' => 'Landingpage-Überschrift',
+            'campaignLandingText' => 'Erklärung',
+            'campaignRulesText' => 'Teilnahmebedingungen',
+            'campaignIsActive' => 'Aktivstatus',
+            'campaignIsPublic' => 'Veröffentlichungsstatus',
+            'campaignStartsAt' => 'Startzeitpunkt',
+            'campaignEndsAt' => 'Endzeitpunkt',
+        ];
     }
 
     private function assertConfigurationIntegrityBeforeMutation(PromotionCampaign $campaign, PromotionAuditChain $audit): void

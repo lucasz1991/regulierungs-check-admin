@@ -471,3 +471,37 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: kompletter `tests/Feature/Promotion`-Ordner 78 Tests/715 Assertions; PHP-Lint fuer drei Livewire-Komponenten; Pint-Test fuer fuenf PHP-Dateien; `git diff --check`; authentifizierte Browserpruefung auf Desktop und 390 px inklusive Escape/Fokus-Rueckgabe.
 - Artifacts: keine; Browser-Testartefakte und lokaler Testserver wurden entfernt.
 - Migration: keine.
+
+## 2026-08-17T05:30:28Z | Codex -> all | status
+
+- Message: Started: Kampagnen-Gewinnanlage und Promotion-Einstellungen-500 beheben
+
+## 2026-08-17T05:37:46Z | Codex settings_500_fix -> all | status
+
+- Message: Started: Promotion-Einstellungen Service- und DB-Fehler ohne HTTP 500 im offenen Modal anzeigen
+
+## 2026-08-17T05:37:55Z | Codex-promotion-form-components -> all | status
+
+- Message: Started: wiederverwendbare Promotion-Formfelder und View-Migration
+
+## 2026-08-17T05:40:52Z | Codex settings_500_fix -> all | handoff
+
+- Message: Completed: PromotionSettings faengt Service-, Schema-, DB- und Integritaetsfehler sicher ab, zeigt eine deutsche Formularmeldung im offenen Modal und behaelt MAC-/Schema-Fail-Closed bei; 10 Tests/73 Assertions, PHP-Lint, Pint und scoped diff-check gruen; keine Testartefakte.
+
+## 2026-08-17T05:47:47Z | Codex promotion_form_components -> all | handoff
+
+- Task: Wiederverwendbare, barrierearme Promotion-Formfelder erstellen und alle Promotion-Admin-/Mitarbeiterformulare darauf migrieren.
+- Status: completed.
+- Changed: vier anonyme Blade-Komponenten unter resources/views/components/promotion/; Kampagnenverwaltung, Promotion-Einstellungen und Mitarbeiterkonsole inklusive Verlauf, Entwurfs-/Erstgewinn-Hinweis und versteckter Datensatzfehler.
+- Verified: PromotionSettingsUiTest plus PromotionV2AdminFlowTest 20 Tests/232 Assertions; npm run build; Promotion-Scanner-Vertrag 18 Checks; git diff --check.
+- Artifacts: keine Test- oder Browserartefakte; ignorierte Admin-Buildausgabe. Der Build-Sync schrieb regulierungs-check-base/public/adminresources/css/tailwind.min.css neu, Root wurde zur finalen Scope-Entscheidung informiert.
+- Next: Root-Agent fuehrt Gesamtgate und Browser-QA aus und entscheidet ueber den bereits bestehenden Base-CSS-Sync.
+
+## 2026-08-17T06:08:08Z | Codex-root -> all | handoff
+
+- Task: Kampagnenanlage mit erstem Gewinn entkoppeln, Settings-500 abfangen und Promotion-Formulare deutsch sowie komponentenbasiert vereinheitlichen.
+- Status: completed.
+- Changed: Entwurf-zu-Erstgewinn-Ablauf, domainweite Veroeffentlichungsvoraussetzungen, Schutz des letzten Gewinns, sichere Settings-Fehlerbehandlung und vier gemeinsame Promotion-Formfeldkomponenten.
+- Verified: Admin Promotion 83/771; Base Promotion 76/602; Scannervertrag 18/18; Produktionsbuild; Pint; beide `git diff --check`; authentifizierter Browserlauf ohne Console-Fehler.
+- Database: Die lokale MySQL-Datenbank wurde nicht veraendert. Das fehlende lokale Promotion-Schema wird nicht automatisch erzeugt; der Produktionsrollout benoetigt Schema-Backup und die vorgesehenen additiven Base-Migrationen.
+- Artifacts: Nur die vier in diesem Browserlauf erzeugten temporaeren Snapshot-Dateien wurden entfernt; vorhandene aeltere `.playwright-cli`-Artefakte blieben unangetastet.

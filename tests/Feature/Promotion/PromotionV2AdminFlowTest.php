@@ -61,6 +61,72 @@ class PromotionV2AdminFlowTest extends TestCase
             ->assertSee('Social-Login-Einstellungen');
     }
 
+    public function test_new_campaign_is_saved_as_a_draft_and_immediately_opens_the_first_prize_form(): void
+    {
+        $admin = $this->user('Volladmin', 'campaign-onboarding@example.test', 'admin');
+
+        $component = Livewire::actingAs($admin)
+            ->test(PromotionAdministration::class)
+            ->call('newCampaign')
+            ->set('campaignCode', 'HERBST26')
+            ->set('campaignName', 'Herbstpromotion 2026')
+            ->set('campaignLandingHeadline', 'Jetzt drehen und gewinnen')
+            ->set('campaignLandingText', 'Melde dich an und zeige dein persönliches Ticket.')
+            ->set('campaignRulesText', 'Pro Konto ist eine Teilnahme möglich.')
+            ->set('campaignIsActive', true)
+            ->set('campaignIsPublic', true)
+            ->call('saveCampaign')
+            ->assertHasNoErrors()
+            ->assertSet('campaignIsPublic', false)
+            ->assertSet('showCampaignModal', false)
+            ->assertSet('showPrizeModal', true)
+            ->assertSee('Die Kampagne wurde als Entwurf gespeichert. Legen Sie jetzt den ersten Gewinn an.');
+
+        $campaign = PromotionCampaign::query()->where('code', 'HERBST26')->firstOrFail();
+        $this->assertFalse($campaign->is_public);
+        $this->assertSame($campaign->id, $component->get('campaignId'));
+
+        $component
+            ->set('prizeName', '')
+            ->set('prizeQuota', 0)
+            ->call('savePrize')
+            ->assertHasErrors(['prizeName' => ['required'], 'prizeQuota' => ['min']])
+            ->assertSet('showPrizeModal', true)
+            ->assertSee('Bitte geben Sie eine Gewinnbezeichnung ein.')
+            ->assertSee('Die Menge muss mindestens 1 betragen.')
+            ->set('prizeName', 'Regulierungs-CHECK Goodie')
+            ->set('prizeQuota', 25)
+            ->call('savePrize')
+            ->assertHasNoErrors()
+            ->assertSet('showPrizeModal', false)
+            ->assertSee('Gewinn gespeichert.');
+
+        $this->assertDatabaseHas('prizes', [
+            'campaign_id' => $campaign->id,
+            'name' => 'Regulierungs-CHECK Goodie',
+            'outcome_type' => 'prize',
+            'quota' => 25,
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_campaign_validation_messages_are_german(): void
+    {
+        $admin = $this->user('Volladmin', 'german-promotion-validation@example.test', 'admin');
+
+        Livewire::actingAs($admin)
+            ->test(PromotionAdministration::class)
+            ->call('newCampaign')
+            ->set('campaignCode', 'ungültiger code')
+            ->set('campaignName', '')
+            ->set('campaignStartsAt', 'kein-datum')
+            ->call('saveCampaign')
+            ->assertHasErrors(['campaignCode' => ['alpha_dash'], 'campaignName' => ['required'], 'campaignStartsAt' => ['date']])
+            ->assertSee('Der Kampagnen-Code darf nur Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten.')
+            ->assertSee('Bitte geben Sie einen Namen für die Kampagne ein.')
+            ->assertSee('Bitte geben Sie einen gültigen Startzeitpunkt ein.');
+    }
+
     public function test_scanner_flow_masks_identity_handles_mail_failure_and_blocks_exhausted_quota(): void
     {
         [$admin, $staff, $campaign, $prize, $noWin, $retry] = $this->promotionFixture();

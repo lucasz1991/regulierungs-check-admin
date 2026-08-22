@@ -6,14 +6,17 @@
 ])
 
 @php
-    $classes = 'sidebar-nav-link flex px-6 py-3 text-sm font-medium text-gray-600 transition-all duration-150 ease-linear hover:text-blue-500';
+    $classes = 'sidebar-nav-link';
+    $label = html_entity_decode(trim(strip_tags((string) $slot)), ENT_QUOTES | ENT_HTML5, 'UTF-8');
 @endphp
 
-<li>
+<li class="sidebar-nav__item">
     <a
         href="{{ $href }}"
         data-menu-active="{{ $active ? 'true' : 'false' }}"
-        {{ $attributes->class($classes) }}
+        title="{{ $label }}"
+        @if($active) aria-current="page" @endif
+        {{ $attributes->class([$classes, 'active' => $active]) }}
         @if($navigate) wire:navigate @endif
     >
         <span class="sidebar-nav-link__icon" aria-hidden="true">

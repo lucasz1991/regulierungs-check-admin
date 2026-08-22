@@ -18,8 +18,11 @@
             <!-- Toggle Button (relativ zur Sidebar positioniert, sichtbar bei kleineren Bildschirmen) -->
             <button type="button"
                 class=" border-b border-gray-300 dark:border-zinc-600   group-data-[sidebar-size=sm]:border-[#e9e9ef] group-data-[sidebar-size=sm]:dark:border-zinc-600 text-gray-800 dark:text-white h-[70px] px-4  rtl:-mr-14 py-1 vertical-menu-btn text-16"
-                id="vertical-menu-btn">
-                <div class=" z-50 text-gray-600  burger-container group-data-[sidebar-size=lg]:open">
+                id="vertical-menu-btn"
+                aria-controls="admin-sidebar"
+                aria-expanded="false"
+                aria-label="Navigation öffnen">
+                <div class="z-50 text-gray-600 burger-container" aria-hidden="true">
                     <div class="burger-bar bar1"></div>
                     <div class="burger-bar bar2"></div>
                     <div class="burger-bar bar3"></div>

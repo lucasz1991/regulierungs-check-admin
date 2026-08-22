@@ -22,12 +22,166 @@
   --primary-color: #65765f; 
   --secondary-color: #e5d4bc; 
   --primary-font-color: #414141;
+  --webreach-topbar-height: 70px;
   --webreach-sidebar-collapsed-width: 72px;
   --webreach-sidebar-expanded-width: 272px;
-  --webreach-sidebar-icon-size: 1rem;
-  --webreach-sidebar-collapsed-padding: calc((var(--webreach-sidebar-collapsed-width) - var(--webreach-sidebar-icon-size)) / 2);
-  --webreach-sidebar-expanded-padding: 1.5rem;
+  --webreach-sidebar-link-gutter: 0.5rem;
+  --webreach-sidebar-icon-size: 1.125rem;
+  --webreach-sidebar-collapsed-padding: calc((var(--webreach-sidebar-collapsed-width) - var(--webreach-sidebar-icon-size)) / 2 - var(--webreach-sidebar-link-gutter));
+  --webreach-sidebar-expanded-padding: 1rem;
   --webreach-sidebar-transition: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.admin-sidebar {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.admin-sidebar-scroll {
+    height: 100%;
+    min-height: 0;
+    width: 100%;
+}
+
+.admin-sidebar-scroll .simplebar-content-wrapper {
+    overscroll-behavior-y: contain;
+    scroll-padding-block: 1rem;
+}
+
+.admin-sidebar-scroll .simplebar-track.simplebar-vertical {
+    right: 0.125rem;
+    width: 0.625rem;
+}
+
+.admin-sidebar-scroll .simplebar-scrollbar {
+    right: 0.125rem;
+    width: 0.375rem;
+}
+
+.admin-sidebar-scroll .simplebar-scrollbar::before {
+    background: #0c968e;
+    opacity: 0.28;
+}
+
+.admin-sidebar-scroll .simplebar-scrollbar.simplebar-visible::before,
+.admin-sidebar-scroll .simplebar-track.simplebar-hover .simplebar-scrollbar::before {
+    opacity: 0.62;
+}
+
+#sidebar-menu {
+    min-height: 100%;
+    padding: 0.5rem 0 1.75rem;
+}
+
+.sidebar-nav__section {
+    box-sizing: border-box;
+    display: flex;
+    height: 2.5rem;
+    max-height: 2.5rem;
+    align-items: flex-end;
+    overflow: hidden;
+    padding: 0.75rem 1.25rem 0.375rem;
+    color: #64748b;
+    cursor: default;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1rem;
+    text-transform: uppercase;
+}
+
+#side-menu > .sidebar-nav__section:not(:first-child) {
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.sidebar-nav-link {
+    position: relative;
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    margin: 0.125rem var(--webreach-sidebar-link-gutter);
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    padding: 0.625rem 1rem;
+    color: #52606d;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    text-decoration: none;
+    transition:
+        background-color 160ms ease,
+        border-color 160ms ease,
+        color 160ms ease,
+        padding var(--webreach-sidebar-transition),
+        box-shadow 160ms ease;
+}
+
+.sidebar-nav-link:hover {
+    border-color: rgba(8, 64, 88, 0.08);
+    background: rgba(8, 64, 88, 0.055);
+    color: #084058 !important;
+}
+
+.sidebar-nav-link:focus-visible {
+    z-index: 1;
+    outline: 2px solid #0c968e;
+    outline-offset: -2px;
+}
+
+.sidebar-nav-link.active,
+.sidebar-nav-link[aria-current="page"] {
+    border-color: rgba(12, 150, 142, 0.18);
+    background: rgba(12, 150, 142, 0.1);
+    box-shadow: inset 3px 0 0 #0c968e;
+    color: #084058 !important;
+}
+
+[dir="rtl"] .sidebar-nav-link.active,
+[dir="rtl"] .sidebar-nav-link[aria-current="page"] {
+    box-shadow: inset -3px 0 0 #0c968e;
+}
+
+.sidebar-nav-link__icon {
+    display: inline-flex;
+    width: var(--webreach-sidebar-icon-size);
+    min-width: var(--webreach-sidebar-icon-size);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.sidebar-nav-link__icon svg {
+    width: var(--webreach-sidebar-icon-size) !important;
+    height: var(--webreach-sidebar-icon-size) !important;
+    margin: 0 !important;
+    transition: transform var(--webreach-sidebar-transition);
+}
+
+.sidebar-nav-link__label {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-inline-start: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-sidebar-backdrop {
+    position: fixed;
+    z-index: 9;
+    top: var(--webreach-topbar-height);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: none;
+    border: 0;
+    background: rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(2px);
+}
+
+.vertical-menu-btn:focus-visible {
+    outline: 2px solid #0c968e;
+    outline-offset: -4px;
 }
 
 @media (min-width: 1140px) {
@@ -79,6 +233,7 @@
     }
 
     body[data-sidebar-collapsible="true"] .vertical-menu [data-key="t-menu"] {
+        height: 0;
         max-height: 0;
         opacity: 0;
         overflow: hidden;
@@ -126,7 +281,7 @@
         opacity: 0;
         overflow: hidden;
         transform: translateX(-8px);
-        margin-left: 0;
+        margin-inline-start: 0;
         flex: 0 0 auto;
         transition:
             max-width var(--webreach-sidebar-transition),
@@ -156,6 +311,7 @@
     }
 
     body[data-sidebar-collapsible="true"][data-sidebar-expanded="true"] .vertical-menu [data-key="t-menu"] {
+        height: 2.5rem;
         max-height: 40px;
         opacity: 1;
         padding-top: 0.75rem;
@@ -169,14 +325,29 @@
 
     body[data-sidebar-collapsible="true"][data-sidebar-expanded="true"] .vertical-menu .sidebar-nav-link__label {
         max-width: 180px;
-        margin-left: 0.75rem;
+        margin-inline-start: 0.75rem;
         opacity: 1;
         transform: translateX(0);
     }
 
     body[data-sidebar-collapsible="true"] .vertical-menu .sidebar-nav-link.active,
     body[data-sidebar-collapsible="true"] .vertical-menu #sidebar-menu > ul > li.mm-active > .sidebar-nav-link {
-        background: rgba(59, 130, 246, 0.08);
+        background: rgba(12, 150, 142, 0.1);
+    }
+}
+
+@media (max-width: 1139px) {
+    body.sidebar-enable {
+        overflow: hidden;
+    }
+
+    .admin-sidebar {
+        width: min(17rem, calc(100vw - 3.5rem));
+        box-shadow: 18px 0 48px rgba(15, 23, 42, 0.18);
+    }
+
+    body.sidebar-enable .admin-sidebar-backdrop {
+        display: block;
     }
 }
 
@@ -318,15 +489,15 @@ body:hover::-webkit-scrollbar {
   transform: translateY(10px);
 }
 
-/* When container is open */
-.group[data-sidebar-size=lg] .group-data-\[sidebar-size\=lg\]\:open .bar1,.burger-container.is-open .bar1  {
+/* When the synchronized sidebar state is open */
+.burger-container.is-open .bar1 {
   transform: rotate(45deg);
 }
-.group[data-sidebar-size=lg] .group-data-\[sidebar-size\=lg\]\:open .bar2 ,.burger-container.is-open .bar2 {
+.burger-container.is-open .bar2 {
   transform: scale(0);
 }
 
-.group[data-sidebar-size=lg] .group-data-\[sidebar-size\=lg\]\:open .bar3,.burger-container.is-open .bar3  {
+.burger-container.is-open .bar3 {
   transform: rotate(-45deg);
 }
 

@@ -88,3 +88,17 @@
 - Promotion-Einstellungen liefern bei fehlendem Schema oder Integritaetsfehler keinen HTTP 500 mehr, sondern eine sichere deutsche Formularmeldung; Schema und MAC bleiben fail-closed.
 - Alle Promotion-Formulare verwenden gemeinsame barrierearme Formkomponenten und explizite deutsche Validierungstexte. Browser-QA bestaetigte Pflichtfeldfehler, Entwurf, automatisches Erstgewinn-Modal und Gewinnspeicherung ohne Console-Fehler.
 - Abschlussgate: Admin `tests/Feature/Promotion` 83 Tests/771 Assertions, Base 76/602, Scannervertrag 18/18, Vite-Build, Pint und beide Diff-Checks bestanden.
+
+## 2026-08-19 | Glücksrad-V2-Handbücher
+
+- Zwei getrennte, druckfertige A4-PDFs erklären den aktuellen V2-Ablauf für Volladmins und Promotion-Mitarbeiter.
+- Das Admin-Handbuch umfasst 10 Seiten; die Mitarbeiter-Anleitung 7 Seiten inklusive Prozessdiagrammen, Teilnehmeransichten, Kontingent-/Stickerlogik, Sonderfällen und Kurzreferenz.
+- Veraltete V1- und alte Admin-Screenshots wurden nicht als aktuelle Bedienoberfläche verwendet. Die Darstellung bildet die vereinfachte Pflege über Gewinnbezeichnung und Menge ab.
+- Beide PDFs wurden vollständig mit Poppler gerendert und visuell auf Layout, Überlagerungen, Seitenumbrüche und Lesbarkeit geprüft.
+
+## 2026-08-21 | Apple-ID Betreiber-Kurzanleitung
+
+- Eine einseitige, druckfertige A4-Anleitung erklärt dem Betreiber die vollständige Einrichtung von Sign in with Apple.
+- Die Anleitung ordnet Services ID, Team ID, Key ID, Rücksprungadresse und `.p8` exakt den aktuellen Adminfeldern zu.
+- Die Produktions-Rücksprungadresse, der einmalige `.p8`-Download, die 150-Tage-Erneuerung und der Test mit verborgener Apple-E-Mail sind hervorgehoben.
+- Die PDF wurde mit pypdf und Poppler geprüft, vollständig gerendert und visuell auf Lesbarkeit, Überlagerungen und Umbrüche kontrolliert.

@@ -505,3 +505,31 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: Admin Promotion 83/771; Base Promotion 76/602; Scannervertrag 18/18; Produktionsbuild; Pint; beide `git diff --check`; authentifizierter Browserlauf ohne Console-Fehler.
 - Database: Die lokale MySQL-Datenbank wurde nicht veraendert. Das fehlende lokale Promotion-Schema wird nicht automatisch erzeugt; der Produktionsrollout benoetigt Schema-Backup und die vorgesehenen additiven Base-Migrationen.
 - Artifacts: Nur die vier in diesem Browserlauf erzeugten temporaeren Snapshot-Dateien wurden entfernt; vorhandene aeltere `.playwright-cli`-Artefakte blieben unangetastet.
+
+## 2026-08-19T12:03:59Z | Codex -> all | status
+
+- Message: Started: Zwei Glücksrad-V2-Erklärungs-PDFs für Admin und Promotion-Mitarbeiter
+
+## 2026-08-19T12:23:39Z | Codex-root -> all | handoff
+
+- Task: Zwei getrennte Glücksrad-V2-Handbücher für Volladmins und Promotion-Mitarbeiter erstellen.
+- Status: completed.
+- Artifacts: `C:\xampp\htdocs\regulierungs-check\output\pdf\Gluecksrad-V2-Admin-Handbuch.pdf` und `C:\xampp\htdocs\regulierungs-check\output\pdf\Gluecksrad-V2-Mitarbeiter-Anleitung.pdf`; Spiegelkopien unter `.lmzdev/artifacts/pdfs` in Base und Admin.
+- Content: aktueller Poster-QR-/Ticket-/Scanner-/Ergebnisablauf, Kampagnen- und Gewinnverwaltung, Kontingent-/Stickerregeln, Rollen/Rechte, Verlauf, Korrekturen, Ausgaben, Mailfehler, Social Login und druckbare Kurzreferenz.
+- Verified: 10 + 7 A4-Seiten; pypdf erfolgreich, unverschlüsselt, Text extrahierbar; Poppler-Rasterung aller 17 Seiten und vollständige visuelle Prüfung; keine veralteten V1-Begriffe oder aktuelle Admin-Bedienung vortäuschenden Altscreenshots.
+- Source: `C:\xampp\htdocs\regulierungs-check\tmp\pdfs\build_gluecksrad_v2_manuals.py`.
+- Database/source impact: keine Anwendungsdatei und keine Datenbank geändert.
+
+## 2026-08-21T20:06:00Z | Codex -> all | status
+
+- Message: Started: Einseitige Betreiber-Anleitung für Apple-ID Login und Registrierung
+
+## 2026-08-21T20:13:55Z | Codex-root -> all | handoff
+
+- Task: Einseitige Betreiber-Anleitung für Apple-ID Login und Registrierung erstellen.
+- Status: completed.
+- Artifact: `C:\xampp\htdocs\regulierungs-check\output\pdf\Apple-ID-Login-Betreiber-Anleitung.pdf`; Spiegelkopie unter `.lmzdev/artifacts/pdfs` in Base und Admin.
+- Content: primäre App ID, Services ID, Website/Callback, Apple-Schlüssel, Team ID, Zuordnung der aktuellen Adminfelder, `.p8`-Sicherheit, 150-Tage-Erneuerung und Abnahmecheck.
+- Verified: 1 A4-Seite; 187410 Bytes; SHA-256 `B5F357C7B05D91014BD0708957E0A950E0DF1DD6EBC1E1D8EEDF0122E0F34DDC`; unverschlüsselt; Text extrahierbar; 3 klickbare offizielle Apple-Links; Poppler-Rasterung und vollständige visuelle Prüfung bestanden.
+- Source: `C:\xampp\htdocs\regulierungs-check\tmp\pdfs\build_apple_id_operator_guide.py`.
+- Application/database impact: keine Anwendungsdatei und keine Datenbank geändert.

@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use App\Support\NewsSocialImage;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Response;
 use Throwable;
 
 /**
@@ -24,7 +24,7 @@ class NewsSocialImageController extends Controller
      * Hochzaehlen, wenn sich das Bildlayout aendert - dann werden alle
      * abgelegten Staende beim naechsten Aufruf neu erzeugt.
      */
-    private const LAYOUT_VERSION = 6;
+    private const LAYOUT_VERSION = 7;
 
     /** Vorschau im Modal. */
     public function preview(Request $request, Post $post): Response

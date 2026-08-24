@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\NewsCategory;
 use App\Models\Post;
 use App\Support\NewsSocialImage;
+use ReflectionMethod;
 use Tests\TestCase;
 
 class NewsSocialImageTest extends TestCase
@@ -109,6 +110,38 @@ class NewsSocialImageTest extends TestCase
             sha1((new NewsSocialImage($defaultPost, 'square'))->render()),
             sha1((new NewsSocialImage($customPost, 'square'))->render())
         );
+    }
+
+    public function test_configured_title_font_size_is_not_reduced_for_long_news_titles(): void
+    {
+        $settings = NewsSocialImage::defaultLayoutSettings();
+
+        foreach (NewsSocialImage::FORMATS as $format => $spec) {
+            $settings[$format]['title_font_size'] = 88;
+            $settings[$format]['title_lines'] = 'auto';
+
+            $shortPost = $this->newsPost();
+            $shortPost->title = 'BGH stärkt Rechte';
+            $shortPost->social_image_settings = $settings;
+
+            $longPost = $this->newsPost();
+            $longPost->title = str_repeat('Versicherungsregulierungsentscheidung ', 10);
+            $longPost->social_image_settings = $settings;
+
+            $shortLayout = $this->titleLayout($shortPost, $format);
+            $longLayout = $this->titleLayout($longPost, $format);
+
+            $expectedSize = (int) round(88 * 2 * $spec['type']);
+            $this->assertSame($expectedSize, $shortLayout['size'], "Konfigurierte Groesse im Format {$format}");
+            $this->assertSame($shortLayout['size'], $longLayout['size'], "Gleiche Groesse fuer kurze und lange News im Format {$format}");
+            $this->assertCount($spec['lines'], $longLayout['lines']);
+            $this->assertStringEndsWith('…', $longLayout['lines'][$spec['lines'] - 1]);
+
+            foreach ($longLayout['lines'] as $line) {
+                $box = imagettfbbox($longLayout['size'], 0, $longLayout['font'], $line);
+                $this->assertLessThanOrEqual($longLayout['max_width'], $box[2] - $box[0]);
+            }
+        }
     }
 
     public function test_an_unknown_format_falls_back_to_the_default(): void
@@ -252,6 +285,20 @@ class NewsSocialImageTest extends TestCase
         imagedestroy($im);
 
         return $count;
+    }
+
+    /** @return array{font:string,size:int,lines:list<string>,horizontal_padding:int,max_width:int,max_lines:int} */
+    private function titleLayout(Post $post, string $format): array
+    {
+        $generator = new NewsSocialImage($post, $format);
+        $method = new ReflectionMethod(NewsSocialImage::class, 'titleLayout');
+        $method->setAccessible(true);
+
+        return $method->invoke(
+            $generator,
+            (string) $post->title,
+            NewsSocialImage::FORMATS[$format]['width'] * 2
+        );
     }
 
     private function newsPost(): Post

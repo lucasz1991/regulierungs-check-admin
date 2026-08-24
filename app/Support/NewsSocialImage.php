@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
- * Erzeugt das Social-Media-Bild einer News im Hochformat 1080x1920.
+ * Erzeugt das Social-Media-Bild einer News im gewaehlten Zuschnitt.
  *
  * Das Bild wird ausschliesslich im Arbeitsspeicher aufgebaut und als
- * PNG-String zurueckgegeben. Es landet nie im Dateisystem - der Controller
- * streamt es direkt an den Browser. Damit gibt es auch nichts aufzuraeumen.
+ * PNG-String zurueckgegeben. Der Renderer selbst schreibt keine Datei; die
+ * versionierte Ablage bereits erzeugter Bilder verwaltet der Controller.
  *
  * Gezeichnet wird intern mit doppelter Kantenlaenge und am Ende einmal
  * heruntergerechnet. Das glaettet Rundungen und Text, weil GD selbst keine
@@ -462,7 +462,7 @@ class NewsSocialImage
      * Farbe umgefaerbt. Das passiert auf der bereits verkleinerten Kopie -
      * so bleibt die Schleife bei wenigen zehntausend statt Millionen Pixeln.
      *
-     * @param array{0:int,1:int,2:int}|null $checkTint
+     * @param  array{0:int,1:int,2:int}|null  $checkTint
      */
     private function drawPngByHeight(
         GdImage $canvas,
@@ -527,7 +527,7 @@ class NewsSocialImage
      * Die Kanten der Wortmarke sind ueber Transparenz weichgezeichnet, nicht
      * ueber Mischfarben - ein harter Farbtausch erhaelt deshalb die Glaettung.
      *
-     * @param array{0:int,1:int,2:int} $tint
+     * @param  array{0:int,1:int,2:int}  $tint
      */
     private function tintYellowPixels(GdImage $image, array $tint): void
     {
@@ -643,15 +643,11 @@ class NewsSocialImage
             return;
         }
 
-        $font = $this->font('DejaVuSans-Bold.ttf');
-        $horizontalPadding = $this->layout['horizontal_padding'];
-        $maxWidth = $w - $this->px(2 * $horizontalPadding);
-        $maxSize = $this->layout['title_font_size'];
-
-        $maxLines = $this->layout['title_lines'] === 'auto'
-            ? $this->spec['lines']
-            : (int) $this->layout['title_lines'];
-        [$size, $lines] = $this->fitLines($font, $text, $maxWidth, $maxLines, $this->px($maxSize), $this->px(max(24, $maxSize - 44)), $this->px(2));
+        $titleLayout = $this->titleLayout($text, $w);
+        $font = $titleLayout['font'];
+        $horizontalPadding = $titleLayout['horizontal_padding'];
+        $size = $titleLayout['size'];
+        $lines = $titleLayout['lines'];
         $lead = (int) round($size * $this->layout['title_line_height'] / 100);
         $baseline = $ruleTop - $this->px($this->layout['section_spacing'] + 6);
         $top = $baseline - (count($lines) - 1) * $lead;
@@ -797,6 +793,48 @@ class NewsSocialImage
     }
 
     /**
+     * Berechnet den Titelumbruch mit der exakt eingestellten Schriftgroesse.
+     *
+     * Die Textlaenge darf nur Zeilenumbruch und Ellipse beeinflussen. Eine
+     * automatische Verkleinerung wuerde dazu fuehren, dass zwei News trotz
+     * identischer Einstellung sichtbar unterschiedliche Titelgroessen haben.
+     *
+     * @return array{
+     *     font:string,
+     *     size:int,
+     *     lines:list<string>,
+     *     horizontal_padding:int,
+     *     max_width:int,
+     *     max_lines:int
+     * }
+     */
+    private function titleLayout(string $text, int $canvasWidth): array
+    {
+        $font = $this->font('DejaVuSans-Bold.ttf');
+        $horizontalPadding = (int) $this->layout['horizontal_padding'];
+        $maxWidth = $canvasWidth - $this->px(2 * $horizontalPadding);
+        $size = $this->px($this->layout['title_font_size']);
+        $maxLines = $this->layout['title_lines'] === 'auto'
+            ? $this->spec['lines']
+            : (int) $this->layout['title_lines'];
+        $maxLines = max(1, $maxLines);
+
+        $allLines = $this->wrapAll($font, $size, $text, $maxWidth);
+        $lines = count($allLines) <= $maxLines
+            ? $this->wrapBalanced($font, $size, $text, $maxWidth, count($allLines))
+            : $this->truncateLines($allLines, $font, $size, $maxWidth, $maxLines);
+
+        return [
+            'font' => $font,
+            'size' => $size,
+            'lines' => $lines,
+            'horizontal_padding' => $horizontalPadding,
+            'max_width' => $maxWidth,
+            'max_lines' => $maxLines,
+        ];
+    }
+
+    /**
      * Umbruch ohne Zeilenbegrenzung.
      *
      * @return list<string>
@@ -808,13 +846,25 @@ class NewsSocialImage
         $current = '';
 
         foreach ($words as $word) {
-            $probe = $current === '' ? $word : $current.' '.$word;
+            $fragments = $this->splitWord($font, $size, $word, $maxWidth);
 
-            if ($current !== '' && $this->textWidth($font, $size, $probe) > $maxWidth) {
-                $lines[] = $current;
-                $current = $word;
-            } else {
-                $current = $probe;
+            foreach ($fragments as $index => $fragment) {
+                $separator = $current !== '' && $index === 0 ? ' ' : '';
+                $probe = $current.$separator.$fragment;
+
+                if ($current !== '' && $this->textWidth($font, $size, $probe) > $maxWidth) {
+                    $lines[] = $current;
+                    $current = $fragment;
+                } else {
+                    $current = $probe;
+                }
+
+                // Weitere Fragmente gehoeren zu demselben ueberlangen Wort.
+                // Der Umbruch ersetzt hier bewusst ein Leerzeichen.
+                if ($index < count($fragments) - 1) {
+                    $lines[] = $current;
+                    $current = '';
+                }
             }
         }
 
@@ -826,9 +876,44 @@ class NewsSocialImage
     }
 
     /**
+     * Zerlegt ein einzelnes zu breites Wort in Unicode-sichere Teilstuecke.
+     * So bleibt die Schriftgroesse fest, ohne dass lange deutsche Komposita
+     * ueber den Seitenrand laufen.
+     *
+     * @return list<string>
+     */
+    private function splitWord(string $font, float $size, string $word, float $maxWidth): array
+    {
+        if ($this->textWidth($font, $size, $word) <= $maxWidth) {
+            return [$word];
+        }
+
+        $characters = preg_split('//u', $word, -1, PREG_SPLIT_NO_EMPTY) ?: str_split($word);
+        $fragments = [];
+        $current = '';
+
+        foreach ($characters as $character) {
+            $probe = $current.$character;
+
+            if ($current !== '' && $this->textWidth($font, $size, $probe) > $maxWidth) {
+                $fragments[] = $current;
+                $current = $character;
+            } else {
+                $current = $probe;
+            }
+        }
+
+        if ($current !== '') {
+            $fragments[] = $current;
+        }
+
+        return $fragments;
+    }
+
+    /**
      * Kuerzt auf maxLines und haengt eine Ellipse an die letzte Zeile.
      *
-     * @param list<string> $lines
+     * @param  list<string>  $lines
      * @return list<string>
      */
     private function truncateLines(array $lines, string $font, float $size, float $maxWidth, int $maxLines): array
@@ -895,32 +980,6 @@ class NewsSocialImage
         return $best;
     }
 
-    /**
-     * Groesste Schriftgroesse, bei der der Text vollstaendig in hoechstens
-     * maxLines Zeilen passt. Noetig, weil lange deutsche Komposita sonst aus
-     * dem Bild laufen.
-     *
-     * Wichtig: geprueft wird auch, dass nichts abgeschnitten wird - sonst
-     * gilt ein gekuerzter Text faelschlich als passend.
-     *
-     * @return array{0:float,1:list<string>}
-     */
-    private function fitLines(string $font, string $text, float $maxWidth, int $maxLines, float $from, float $to, float $step): array
-    {
-        for ($size = $from; $size >= $to; $size -= $step) {
-            $lines = $this->wrapAll($font, $size, $text, $maxWidth);
-
-            if (count($lines) <= $maxLines && ! $this->overflows($font, $size, $lines, $maxWidth)) {
-                return [$size, $this->wrapBalanced($font, $size, $text, $maxWidth, count($lines))];
-            }
-        }
-
-        // Passt in keiner Groesse: kleinste Groesse nehmen und kuerzen.
-        $lines = $this->wrapAll($font, $to, $text, $maxWidth);
-
-        return [$to, $this->truncateLines($lines, $font, $to, $maxWidth, $maxLines)];
-    }
-
     /** @param list<string> $lines */
     private function overflows(string $font, float $size, array $lines, float $maxWidth): bool
     {
@@ -968,8 +1027,8 @@ class NewsSocialImage
     }
 
     /**
-     * @param array{0:int,1:int,2:int} $from
-     * @param array{0:int,1:int,2:int} $to
+     * @param  array{0:int,1:int,2:int}  $from
+     * @param  array{0:int,1:int,2:int}  $to
      */
     private function verticalGradientOpaque(GdImage $im, int $w, int $y0, int $y1, array $from, array $to): void
     {

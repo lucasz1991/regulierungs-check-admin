@@ -65,15 +65,14 @@ class NewsSocialImage
     /**
      * Pro Format speicherbare Layout-Werte.
      *
-     * Die Auswahllisten sind bewusst endlich: So kann das Livewire-Formular
-     * keine Werte speichern, mit denen Text oder Logo ausserhalb der
-     * Bildflaeche landen. Alle Angaben sind Basispixel und werden wie das
-     * bisherige Layout mit dem jeweiligen Formatfaktor skaliert.
+     * Auswahlwerte und freie Zahlenfelder sind bewusst begrenzt. Alle Angaben
+     * sind Basispixel und werden wie das bisherige Layout mit dem jeweiligen
+     * Formatfaktor skaliert.
      */
     public const LAYOUT_CONTROLS = [
         'title_font_size' => [
-            'group' => 'Schrift', 'label' => 'Titelgröße', 'default' => 78,
-            'options' => [58 => 'Klein (58 px)', 68 => 'Kompakt (68 px)', 78 => 'Standard (78 px)', 88 => 'Groß (88 px)', 98 => 'Sehr groß (98 px)'],
+            'group' => 'Schrift', 'label' => 'Titelgröße', 'default' => 58,
+            'input' => 'number', 'min' => 24, 'max' => 140, 'step' => 1, 'unit' => 'px',
         ],
         'title_color' => [
             'group' => 'Schrift', 'label' => 'Titelfarbe', 'default' => 'white',
@@ -212,8 +211,8 @@ class NewsSocialImage
 
     /**
      * Ergaenzt fehlende Werte und verwirft alles ausserhalb der erlaubten
-     * Dropdown-Optionen. Damit bleiben auch alte oder manuell geaenderte JSONs
-     * renderbar.
+     * Optionen beziehungsweise Zahlenbereiche. Damit bleiben auch alte oder
+     * manuell geaenderte JSONs renderbar.
      */
     public static function normalizeLayoutSettings(mixed $settings): array
     {
@@ -230,7 +229,7 @@ class NewsSocialImage
             foreach (self::LAYOUT_CONTROLS as $key => $control) {
                 $raw = $formatSettings[$key] ?? null;
 
-                if (($control['input'] ?? 'select') === 'range') {
+                if (in_array(($control['input'] ?? 'select'), ['number', 'range'], true)) {
                     $candidate = filter_var($raw, FILTER_VALIDATE_INT);
 
                     if ($candidate !== false && $candidate >= $control['min'] && $candidate <= $control['max']) {

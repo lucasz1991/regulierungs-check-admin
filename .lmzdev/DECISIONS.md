@@ -56,6 +56,12 @@ Record durable decisions with date, context, decision, and consequences.
 - Open every control by hover, keyboard focus, or tap, with the mobile side marker moved inside the image so its complete 36 px target remains available.
 - Execute the previously pending nullable JSON migration after runtime schema evidence proved the production-like local database did not yet contain the column.
 
+## 2026-08-24 | Titelgroesse ist eine freie Ganzzahl
+
+- Der bisherige Wert `Klein (58 px)` ist der Standard fuer neue oder noch nicht konfigurierte Social-Media-Bildlayouts.
+- Die Titelgroesse wird als Number-Feld mit ganzen Pixeln von 24 bis 140 gespeichert und serverseitig als Integer im selben Bereich validiert; beliebige Zwischenwerte sind damit erlaubt.
+- Bereits explizit gespeicherte gueltige Titelgroessen werden nicht umgedeutet oder migriert.
+
 ## 2026-08-13 | Global-admin target guard for user status changes
 
 - Centralize every user activation/deactivation from `Users` and `UserProfile` in one transaction service instead of maintaining divergent component checks.

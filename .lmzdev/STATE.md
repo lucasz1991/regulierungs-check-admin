@@ -21,6 +21,7 @@
 - Saving is scoped to the active Story, Post, or Link format; its preview URL and cache entry change immediately, while other format settings, dirty state, and cached images remain untouched.
 - The former central settings dropdown is replaced by seven image-anchored hover/focus/tap hotspots for logo, category, title, text gap, excerpt, side padding, and bottom spacing.
 - Every select change now persists and re-renders immediately without a save button; logo variants are persisted separately per format as well.
+- Die News-Social-Bild-Titelgroesse verwendet 58 px als neuen Standard und ist im Modal als freie Ganzzahl von 24 bis 140 px statt als feste Auswahlliste editierbar; bestehende explizit gespeicherte Werte bleiben erhalten.
 - The shared-database migration for `posts.social_image_settings` was executed successfully on 2026-08-07.
 - Benutzerstatus-Aenderungen aus Liste und Profil laufen ueber einen gemeinsamen, atomaren Dienst: delegiertes `users.manage` kann globale Admins weder einzeln noch im Bulk beruehren; Selbstdeaktivierung und das Entfernen des letzten aktiven globalen Admins sind fail-closed gesperrt.
 - Jetstream-Account-Deletion ist im Admin vollstaendig deaktiviert; der serverseitige Deleter blockiert auch direkte bzw. alte Livewire-Aufrufe mit 403.
@@ -45,6 +46,7 @@
 - The Base migration was checked with `php artisan migrate --pretend`; PHP syntax, `git diff --check`, and the News Tailwind contract passed.
 - Custom Story, Post, and Link layouts were rendered and visually inspected.
 - Latest focused verification: 39 tests passed with 196 assertions; the News Tailwind contract and both repository diff checks passed.
+- Titelgroessen-Gate 2026-08-24: Renderer/Routen 24 Tests mit 150 Assertions, Speichern/Validierung 3 Tests mit 19 Assertions, Pint, Vite-Produktionsbuild, direkte Blade-Kompilierung und beide `git diff --check` bestanden.
 - Final verification: 40 focused tests passed with 206 assertions. Authenticated browser QA confirmed desktop hover/click, mobile tap, immediate preview URL revision, database persistence after reload, and isolated Story/Post values and logo variants.
 - Finale Promotion-/RBAC-/Audit-Suite nach Gate-Review: 43 Tests mit 342 Assertions bestanden. Base-Promotion: 29 Tests mit 178 Assertions. Die Negativtests decken Zusatzrecht, fehlendes Pflichtrecht, manipulierte Transitionen, erneute Tokenbindung und unauditierte Konfigurationsaenderungen ab.
 - Nach dem letzten P1-Gate sind auch alle verschachtelten Admin-Livewire-Komponenten vor Mount und bei jeder Hydration exakt autorisiert. Der gemeinsame Icon-Sanitizer verwirft aktive SVG-Inhalte, externe Referenzen, Event-Attribute und nicht erlaubte FontAwesome-Klassen fail-closed; Altbestaende werden vor jedem Raw-Render erneut geprueft.

@@ -251,14 +251,14 @@ class NewsCacheVersionTest extends TestCase
 
         $modal->setFormat('square');
         $modal->layoutSettings['square']['horizontal_padding'] = 90;
-        $modal->layoutSettings['square']['title_font_size'] = 88;
+        $modal->layoutSettings['square']['title_font_size'] = 73;
         $modal->layoutSettings['square']['title_color'] = 'gold';
         $modal->updatedLayoutSettings();
 
         $saved = $post->fresh()->social_image_settings;
 
         $this->assertSame(90, $saved['square']['horizontal_padding']);
-        $this->assertSame(88, $saved['square']['title_font_size']);
+        $this->assertSame(73, $saved['square']['title_font_size']);
         $this->assertSame('gold', $saved['square']['title_color']);
         $this->assertSame(72, $saved['story']['horizontal_padding']);
         $this->assertFalse($modal->layoutSettingsDirty);
@@ -288,7 +288,7 @@ class NewsCacheVersionTest extends TestCase
         $saved = $post->fresh()->social_image_settings;
 
         $this->assertSame(288, $saved['story']['bottom_spacing']);
-        $this->assertSame(78, $saved['story']['title_font_size']);
+        $this->assertSame(58, $saved['story']['title_font_size']);
         $this->assertSame(90, $saved['square']['horizontal_padding']);
         $this->assertFalse($modal->dirtyFormats['square']);
 
@@ -325,7 +325,7 @@ class NewsCacheVersionTest extends TestCase
         $this->assertSame('yellow', $saved['square']['logo_variant']);
     }
 
-    public function test_social_image_layout_rejects_values_outside_the_dropdowns(): void
+    public function test_social_image_layout_rejects_values_outside_the_numeric_ranges(): void
     {
         $post = Post::create([
             'type' => 'news',
@@ -338,10 +338,10 @@ class NewsCacheVersionTest extends TestCase
 
         try {
             $modal->saveLayoutSettings();
-            $this->fail('Ein nicht angebotener Schriftwert hätte abgelehnt werden müssen.');
+            $this->fail('Ein zu großer Schriftwert hätte abgelehnt werden müssen.');
         } catch (\Illuminate\Validation\ValidationException $e) {
             $this->assertSame(
-                'Dieser Wert ist für die Bildeinstellung nicht erlaubt.',
+                'Der Pixelwert liegt außerhalb des erlaubten Bereichs.',
                 $e->errors()['layoutSettings.story.title_font_size'][0]
             );
         }
@@ -368,6 +368,7 @@ class NewsCacheVersionTest extends TestCase
             ->assertDontSee('Layout direkt am Bild anpassen')
             ->assertDontSee('Jede Auswahl wird sofort gespeichert')
             ->assertDontSee('1080 × 1920')
+            ->assertSee('Ganze Pixel von 24 bis 140.')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-logo"')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-horizontal"')
             ->assertSeeHtml('aria-controls="social-image-hotspot-story-bottom"')
@@ -375,6 +376,7 @@ class NewsCacheVersionTest extends TestCase
             ->assertSeeHtml('x-on:click.stop="open = ! open"')
             ->assertDontSeeHtml('x-on:mouseenter="open = true"')
             ->assertSeeHtml('type="number"')
+            ->assertSeeHtml('inputmode="numeric"')
             ->assertSeeHtml('type="range"')
             ->assertSeeHtml('aria-label="Seitenabstand als Schieberegler"')
             ->assertSeeHtml('min-h-[44px]');

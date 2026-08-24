@@ -202,7 +202,27 @@
                                         <label for="social-image-setting-{{ $format }}-{{ $controlKey }}" class="mb-1 block text-xs font-semibold text-gray-700">
                                             {{ $control['label'] }}
                                         </label>
-                                        @if(($control['input'] ?? 'select') === 'range')
+                                        @if(($control['input'] ?? 'select') === 'number')
+                                            <div class="relative max-w-40">
+                                                <input
+                                                    id="social-image-setting-{{ $format }}-{{ $controlKey }}"
+                                                    type="number"
+                                                    min="{{ $control['min'] }}"
+                                                    max="{{ $control['max'] }}"
+                                                    step="{{ $control['step'] }}"
+                                                    inputmode="numeric"
+                                                    wire:model.live.debounce.500ms="layoutSettings.{{ $format }}.{{ $controlKey }}"
+                                                    wire:loading.attr="disabled"
+                                                    aria-describedby="social-image-setting-{{ $format }}-{{ $controlKey }}-hint"
+                                                    class="block min-h-[44px] w-full rounded-lg border-gray-300 py-2 pl-3 pr-10 text-sm text-gray-800 shadow-sm transition focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:cursor-wait disabled:opacity-60"
+                                                    @if($errors->has("layoutSettings.{$format}.{$controlKey}")) aria-invalid="true" @endif
+                                                >
+                                                <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-gray-400">{{ $control['unit'] }}</span>
+                                            </div>
+                                            <p id="social-image-setting-{{ $format }}-{{ $controlKey }}-hint" class="mt-1 text-[11px] text-gray-500">
+                                                Ganze Pixel von {{ $control['min'] }} bis {{ $control['max'] }}.
+                                            </p>
+                                        @elseif(($control['input'] ?? 'select') === 'range')
                                             <div class="flex items-center gap-2">
                                                 <div class="relative w-24 shrink-0">
                                                     <input

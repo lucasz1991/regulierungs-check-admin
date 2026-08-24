@@ -25,6 +25,7 @@ class NewsSocialImage extends Component
     {
         return 'content.news.manage';
     }
+
     public bool $show = false;
 
     public ?int $postId = null;
@@ -216,7 +217,7 @@ class NewsSocialImage extends Component
         ];
 
         foreach (SocialImageRenderer::LAYOUT_CONTROLS as $key => $control) {
-            if (($control['input'] ?? 'select') === 'range') {
+            if (in_array(($control['input'] ?? 'select'), ['number', 'range'], true)) {
                 $rules["layoutSettings.{$format}.{$key}"] = [
                     'required',
                     'integer',
@@ -243,8 +244,8 @@ class NewsSocialImage extends Component
             'layoutSettings.array' => 'Die Bildeinstellungen haben ein ungültiges Format.',
             'layoutSettings.*.required' => 'Die Einstellungen für ein Bildformat fehlen.',
             'layoutSettings.*.array' => 'Die Einstellungen eines Bildformats sind ungültig.',
-            'layoutSettings.*.*.required' => 'Bitte wähle für jede Bildeinstellung einen Wert aus.',
-            'layoutSettings.*.*.integer' => 'Die gewählte Bildeinstellung ist ungültig.',
+            'layoutSettings.*.*.required' => 'Bitte lege für jede Bildeinstellung einen Wert fest.',
+            'layoutSettings.*.*.integer' => 'Die Bildeinstellung muss eine ganze Zahl sein.',
             'layoutSettings.*.*.string' => 'Die gewählte Text- oder Farbeinstellung ist ungültig.',
             'layoutSettings.*.*.between' => 'Der Pixelwert liegt außerhalb des erlaubten Bereichs.',
             'layoutSettings.*.*.in' => 'Dieser Wert ist für die Bildeinstellung nicht erlaubt.',

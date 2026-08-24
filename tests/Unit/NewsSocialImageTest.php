@@ -64,11 +64,11 @@ class NewsSocialImageTest extends TestCase
         }
     }
 
-    public function test_layout_settings_are_completed_and_limited_to_supported_values(): void
+    public function test_layout_settings_are_completed_and_limited_to_supported_options_and_ranges(): void
     {
         $normalized = NewsSocialImage::normalizeLayoutSettings([
             'story' => [
-                'title_font_size' => '88',
+                'title_font_size' => '73',
                 'title_color' => 'gold',
                 'title_alignment' => 'center',
                 'title_lines' => '4',
@@ -78,7 +78,7 @@ class NewsSocialImageTest extends TestCase
             ],
         ]);
 
-        $this->assertSame(88, $normalized['story']['title_font_size']);
+        $this->assertSame(73, $normalized['story']['title_font_size']);
         $this->assertSame('gold', $normalized['story']['title_color']);
         $this->assertSame('center', $normalized['story']['title_alignment']);
         $this->assertSame('4', $normalized['story']['title_lines']);
@@ -86,8 +86,28 @@ class NewsSocialImageTest extends TestCase
         $this->assertSame(204, $normalized['story']['bottom_spacing']);
         $this->assertArrayNotHasKey('unknown_setting', $normalized['story']);
         $this->assertSame('white', $normalized['square']['title_color']);
-        $this->assertSame(78, $normalized['square']['title_font_size']);
-        $this->assertSame(78, $normalized['landscape']['title_font_size']);
+        $this->assertSame(58, $normalized['square']['title_font_size']);
+        $this->assertSame(58, $normalized['landscape']['title_font_size']);
+    }
+
+    public function test_title_font_size_is_a_free_whole_pixel_number_with_small_as_default(): void
+    {
+        $control = NewsSocialImage::LAYOUT_CONTROLS['title_font_size'];
+
+        $this->assertSame(58, $control['default']);
+        $this->assertSame('number', $control['input']);
+        $this->assertSame(1, $control['step']);
+        $this->assertArrayNotHasKey('options', $control);
+
+        $normalized = NewsSocialImage::normalizeLayoutSettings([
+            'story' => ['title_font_size' => 59],
+            'square' => ['title_font_size' => 58.5],
+            'landscape' => ['title_font_size' => 141],
+        ]);
+
+        $this->assertSame(59, $normalized['story']['title_font_size']);
+        $this->assertSame(58, $normalized['square']['title_font_size']);
+        $this->assertSame(58, $normalized['landscape']['title_font_size']);
     }
 
     public function test_saved_layout_settings_change_only_the_selected_format(): void
@@ -117,7 +137,7 @@ class NewsSocialImageTest extends TestCase
         $settings = NewsSocialImage::defaultLayoutSettings();
 
         foreach (NewsSocialImage::FORMATS as $format => $spec) {
-            $settings[$format]['title_font_size'] = 88;
+            $settings[$format]['title_font_size'] = 73;
             $settings[$format]['title_lines'] = 'auto';
 
             $shortPost = $this->newsPost();
@@ -131,7 +151,7 @@ class NewsSocialImageTest extends TestCase
             $shortLayout = $this->titleLayout($shortPost, $format);
             $longLayout = $this->titleLayout($longPost, $format);
 
-            $expectedSize = (int) round(88 * 2 * $spec['type']);
+            $expectedSize = (int) round(73 * 2 * $spec['type']);
             $this->assertSame($expectedSize, $shortLayout['size'], "Konfigurierte Groesse im Format {$format}");
             $this->assertSame($shortLayout['size'], $longLayout['size'], "Gleiche Groesse fuer kurze und lange News im Format {$format}");
             $this->assertCount($spec['lines'], $longLayout['lines']);

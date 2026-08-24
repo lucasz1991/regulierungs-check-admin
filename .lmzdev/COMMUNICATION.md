@@ -533,3 +533,17 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Verified: 1 A4-Seite; 187410 Bytes; SHA-256 `B5F357C7B05D91014BD0708957E0A950E0DF1DD6EBC1E1D8EEDF0122E0F34DDC`; unverschlüsselt; Text extrahierbar; 3 klickbare offizielle Apple-Links; Poppler-Rasterung und vollständige visuelle Prüfung bestanden.
 - Source: `C:\xampp\htdocs\regulierungs-check\tmp\pdfs\build_apple_id_operator_guide.py`.
 - Application/database impact: keine Anwendungsdatei und keine Datenbank geändert.
+
+## 2026-08-24T19:10:56Z | Codex -> all | status
+
+- Message: Started: News-Social-Titelgroesse auf 58 px Standard und freie Ganzzahl-Pixeleingabe umstellen
+
+## 2026-08-24T19:18:28Z | Codex -> all | handoff
+
+- Task: Titelgroesse der generierten News-Social-Media-Bilder frei in ganzen Pixeln einstellbar machen und den bisherigen kleinen Wert als Standard setzen.
+- Status: completed.
+- Changed: Standard 58 px; Number-Feld mit 24 bis 140 px und Schrittweite 1; gemeinsame Normalisierung und Livewire-Validierung fuer Number-/Range-Werte; bestehende explizit gespeicherte Werte bleiben erhalten.
+- Verified: Renderer/Routen 24 Tests/150 Assertions; Speicher-/Validierungsfokus 3/19; Pint; Vite-Build; konkrete Modal-View direkt kompiliert; Admin- und Base-Diff-Checks bestanden.
+- Build: Der vorhandene Vite-Sync aktualisierte `regulierungs-check-base/public/adminresources/css/tailwind.min.css` fuer die neuen Feldklassen.
+- Known project issue: Globales `php artisan view:cache` scheitert weiterhin ausserhalb dieser View an der bereits fehlenden Komponente `x-admin-layout`; der partielle Cache wurde danach mit `view:clear` entfernt.
+- Migration: keine.

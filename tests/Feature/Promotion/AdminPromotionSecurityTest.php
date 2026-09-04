@@ -113,8 +113,8 @@ class AdminPromotionSecurityTest extends TestCase
     public function test_invitation_page_is_script_free_and_private(): void
     {
         $admin = $this->admin();
-        app(PromotionTeamService::class)->ensure($admin);
-        $issued = app(StaffInvitationService::class)->issue($admin, 'private-invite@example.test');
+        $team = app(PromotionTeamService::class)->ensure($admin);
+        $issued = app(StaffInvitationService::class)->issue($admin, 'private-invite@example.test', $team->id);
 
         $this->get(route('staff-invitations.show', ['token' => $issued['token']]))
             ->assertRedirect(route('staff-invitations.accept'))
@@ -211,21 +211,21 @@ class AdminPromotionSecurityTest extends TestCase
     public function test_invitation_is_hash_only_72_hours_and_acceptance_is_atomic(): void
     {
         $admin = $this->admin();
-        $issued = app(StaffInvitationService::class)->issue($admin, 'staff.new@example.test', 'Promotion');
+        $team = $this->sharedTeam($admin, 'Redaktion', ['content.news.manage' => true]);
+        $issued = app(StaffInvitationService::class)->issue($admin, 'staff.new@example.test', $team->id, 'Redaktion');
         $invitation = $issued['invitation'];
-        $team = Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->sole();
 
         $this->assertSame(hash('sha256', $issued['token']), $invitation->token_hash);
         $this->assertNotSame($issued['token'], $invitation->token_hash);
         $this->assertTrue($invitation->expires_at->between(now()->addHours(71), now()->addHours(73)));
-        $this->assertSame(RbacCatalog::promotionTeamMatrix(), $team->permissionMatrix());
+        $this->assertSame(['content.news.manage' => true], $team->permissionMatrix());
 
         $this->get(route('staff-invitations.show', ['token' => $issued['token']]))->assertRedirect(route('staff-invitations.accept'));
         $this->post(route('staff-invitations.store'), [
             'name' => 'Neue Mitarbeiterin',
             'password' => 'Strong-password-123!',
             'password_confirmation' => 'Strong-password-123!',
-        ])->assertRedirect(route('promotion.console'));
+        ])->assertRedirect(route('admin.webcontent.news'));
 
         $staff = User::query()->where('email', 'staff.new@example.test')->firstOrFail();
         $this->assertSame('staff', $staff->role);
@@ -233,6 +233,7 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertSame($team->id, $staff->current_team_id);
         $this->assertDatabaseHas('team_user', ['team_id' => $team->id, 'user_id' => $staff->id, 'role' => 'team_access']);
         $this->assertNotNull($invitation->fresh()->accepted_at);
+        $this->assertAuthenticatedAs($staff);
 
         auth('web')->logout();
         $this->withSession(['staff_invitation_token' => $issued['token']])->post(route('staff-invitations.store'), [
@@ -241,27 +242,90 @@ class AdminPromotionSecurityTest extends TestCase
         $this->assertSame(1, User::query()->where('email', 'staff.new@example.test')->count());
     }
 
-    public function test_first_employee_invitation_web_action_creates_exact_promotion_team(): void
+    public function test_staff_login_uses_the_first_route_granted_by_the_selected_team_without_verification(): void
+    {
+        $admin = $this->admin();
+        $team = $this->sharedTeam($admin, 'Nachrichten', ['messages.manage' => true]);
+        $staff = User::query()->create([
+            'name' => 'Nicht verifiziert',
+            'email' => 'unverified-messages@example.test',
+            'password' => Hash::make('password'),
+            'role' => 'staff',
+            'status' => true,
+            'email_verified_at' => null,
+            'current_team_id' => $team->id,
+        ]);
+        $team->users()->attach($staff->id, ['role' => 'team_access']);
+
+        $this->post('/login', ['email' => $staff->email, 'password' => 'password'])
+            ->assertRedirect(route('admin.messages'));
+        $this->assertAuthenticatedAs($staff);
+    }
+
+    public function test_employee_access_mail_is_branded_general_and_sent_synchronously(): void
     {
         Mail::fake();
         $admin = $this->admin();
+        $team = $this->sharedTeam($admin, 'Redaktion', ['content.news.manage' => true]);
 
         Livewire::actingAs($admin)
             ->test(\App\Livewire\Admin\Employees::class)
-            ->assertSee('automatisch angelegt oder auf den verbindlichen Rechtestand gebracht')
-            ->assertDontSee('promotion:ensure-team')
-            ->set('email', 'web-invited@example.test')
-            ->set('position', 'Promotion')
+            ->set('email', 'mail-design@example.test')
+            ->set('teamId', $team->id)
+            ->set('position', 'Redakteurin')
             ->call('invite')
             ->assertHasNoErrors();
 
-        $team = Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->sole();
-        $this->assertSame(RbacCatalog::promotionTeamMatrix(), $team->permissionMatrix());
+        Mail::assertSent(\App\Mail\StaffInvitationMail::class, function ($mail) use ($team): bool {
+            $mail->build();
+            $html = $mail->render();
+
+            return $mail->hasSubject('Ihr Mitarbeiterzugang für Regulierungs-CHECK')
+                && $mail->invitation->team_id === $team->id
+                && str_contains($html, 'Passwort festlegen &amp; Zugang aktivieren')
+                && str_contains($html, 'Eine zusätzliche E-Mail-Verifizierung ist nicht notwendig.')
+                && str_contains($html, 'site-images/logo/logo-white.png')
+                && ! str_contains($html, 'Promotion-Team');
+        });
+        Mail::assertNotQueued(\App\Mail\StaffInvitationMail::class);
+    }
+
+    public function test_personal_team_cannot_be_selected_for_staff_onboarding(): void
+    {
+        $admin = $this->admin();
+        $personalTeam = $this->sharedTeam($admin, 'Privates Team', [], true);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(StaffInvitationService::class)->issue(
+            $admin,
+            'personal-team@example.test',
+            $personalTeam->id,
+        );
+    }
+
+    public function test_employee_invitation_web_action_uses_the_selected_team(): void
+    {
+        Mail::fake();
+        $admin = $this->admin();
+        $team = $this->sharedTeam($admin, 'Redaktion', ['content.news.manage' => true]);
+
+        Livewire::actingAs($admin)
+            ->test(\App\Livewire\Admin\Employees::class)
+            ->assertSee('Administratoren wählen das Team direkt aus')
+            ->assertSee('Redaktion')
+            ->assertDontSee('Zum Promotion-Team einladen')
+            ->set('email', 'web-invited@example.test')
+            ->set('position', 'Promotion')
+            ->set('teamId', $team->id)
+            ->call('invite')
+            ->assertHasNoErrors();
+
         $this->assertDatabaseHas('staff_invitations', [
             'email' => 'web-invited@example.test',
             'team_id' => $team->id,
             'role' => 'staff',
         ]);
+        $this->assertDatabaseMissing('teams', ['name' => RbacCatalog::PROMOTION_TEAM_NAME]);
         Mail::assertSent(\App\Mail\StaffInvitationMail::class, 1);
     }
 
@@ -430,20 +494,23 @@ class AdminPromotionSecurityTest extends TestCase
     public function test_only_admin_can_promote_an_existing_account_and_verification_is_not_forged(): void
     {
         $admin = $this->admin();
+        $team = $this->sharedTeam($admin, 'Redaktion', ['content.news.manage' => true]);
+        $oldTeam = $this->sharedTeam($admin, 'Benutzer');
         $existing = User::create(['name' => 'Existing', 'email' => 'existing@example.test', 'password' => Hash::make('password'), 'role' => 'guest', 'status' => true, 'email_verified_at' => null]);
+        $oldTeam->users()->attach($existing->id, ['role' => 'team_access']);
 
         Livewire::actingAs($admin)->test(\App\Livewire\Admin\Employees::class)
             ->set('existingEmail', $existing->email)
-            ->call('promoteExisting')
+            ->set('existingTeamId', $team->id)
+            ->call('assignExisting')
             ->assertHasNoErrors();
 
         $existing->refresh();
-        $team = Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->sole();
         $this->assertSame('staff', $existing->role);
         $this->assertSame($team->id, $existing->current_team_id);
-        $this->assertSame(RbacCatalog::promotionTeamMatrix(), $team->permissionMatrix());
         $this->assertNull($existing->email_verified_at);
         $this->assertDatabaseHas('team_user', ['team_id' => $team->id, 'user_id' => $existing->id]);
+        $this->assertDatabaseMissing('team_user', ['team_id' => $oldTeam->id, 'user_id' => $existing->id]);
     }
 
     public function test_new_admin_surfaces_render_for_full_admin(): void
@@ -473,17 +540,16 @@ class AdminPromotionSecurityTest extends TestCase
             ->assertSee('Teilnehmer aufrufen');
     }
 
-    public function test_first_invitation_creates_and_hardens_promotion_team_without_command(): void
+    public function test_invitation_keeps_the_selected_team_and_never_creates_a_promotion_team(): void
     {
         $admin = $this->admin();
+        $team = $this->sharedTeam($admin, 'Inhalte', ['content.web.manage' => true]);
 
-        $first = app(StaffInvitationService::class)->issue($admin, 'first-staff@example.test');
-        $team = Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->sole();
-        $team->forceFill(['rbac_permissions' => ['promotion.wins.record' => true]])->save();
-        $second = app(StaffInvitationService::class)->issue($admin, 'second-staff@example.test');
+        $first = app(StaffInvitationService::class)->issue($admin, 'first-staff@example.test', $team->id);
+        $second = app(StaffInvitationService::class)->issue($admin, 'second-staff@example.test', $team->id);
 
-        $this->assertSame(1, Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->count());
-        $this->assertSame(RbacCatalog::promotionTeamMatrix(), $team->fresh()->permissionMatrix());
+        $this->assertSame(0, Team::query()->whereRaw('LOWER(name) = ?', ['promotion'])->count());
+        $this->assertSame(['content.web.manage' => true], $team->fresh()->permissionMatrix());
         $this->assertSame(0, $team->users()->count());
         $this->assertSame($team->id, $first['invitation']->team_id);
         $this->assertSame($team->id, $second['invitation']->team_id);
@@ -966,6 +1032,20 @@ class AdminPromotionSecurityTest extends TestCase
             ->set('prizeIsActive', $prize->is_active)
             ->set('prizeSortOrder', $prize->sort_order)
             ->call('savePrize');
+    }
+
+    /** @param array<string, bool> $permissions */
+    private function sharedTeam(User $owner, string $name, array $permissions = [], bool $personal = false): Team
+    {
+        $team = new Team;
+        $team->forceFill([
+            'user_id' => $owner->id,
+            'name' => $name,
+            'personal_team' => $personal,
+            'rbac_permissions' => $permissions,
+        ])->save();
+
+        return $team;
     }
 
     private function admin(): User

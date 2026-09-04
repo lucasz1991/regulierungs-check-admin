@@ -5,10 +5,10 @@ namespace App\Livewire\Admin;
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Mail\StaffInvitationMail;
 use App\Models\StaffInvitation;
+use App\Models\Team;
 use App\Models\User;
-use App\Support\Rbac\PromotionTeamService;
 use App\Support\Rbac\StaffInvitationService;
-use Illuminate\Support\Facades\DB;
+use App\Support\Rbac\StaffTeamService;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -27,13 +27,24 @@ class Employees extends Component
 
     public string $position = '';
 
+    public ?int $teamId = null;
+
     public string $existingEmail = '';
+
+    public ?int $existingTeamId = null;
 
     protected $paginationTheme = 'tailwind';
 
     public function mount(): void
     {
         $this->authorize('staff.manage');
+        $firstTeamId = Team::query()
+            ->where('personal_team', false)
+            ->orderBy('name')
+            ->value('id');
+
+        $this->teamId = $firstTeamId ? (int) $firstTeamId : null;
+        $this->existingTeamId = $this->teamId;
     }
 
     public function invite(StaffInvitationService $invitations): void
@@ -43,9 +54,15 @@ class Employees extends Component
         $validated = $this->validate([
             'email' => ['required', 'email:rfc', 'max:255'],
             'position' => ['nullable', 'string', 'max:100'],
+            'teamId' => ['required', 'integer'],
         ]);
 
-        $issued = $invitations->issue(auth()->user(), $validated['email'], $validated['position'] ?: null);
+        $issued = $invitations->issue(
+            auth()->user(),
+            $validated['email'],
+            (int) $validated['teamId'],
+            $validated['position'] ?: null,
+        );
         $invitation = $issued['invitation'];
 
         try {
@@ -56,7 +73,7 @@ class Employees extends Component
         } catch (\Throwable $exception) {
             $invitation->forceFill(['expires_at' => now()])->save();
             report($exception);
-            $this->addError('email', 'Die Einladung konnte nicht versendet werden und wurde deaktiviert.');
+            $this->addError('email', 'Der Einrichtungslink konnte nicht versendet werden und wurde deaktiviert.');
 
             return;
         }
@@ -65,10 +82,10 @@ class Employees extends Component
             ->causedBy(auth()->user())
             ->performedOn($invitation)
             ->withProperties(['email' => $invitation->email, 'team_id' => $invitation->team_id])
-            ->log('Mitarbeitereinladung versendet');
+            ->log('Mitarbeiter-Einrichtungslink versendet');
 
         $this->reset('email', 'position');
-        session()->flash('status', 'Die 72-Stunden-Einladung wurde versendet.');
+        session()->flash('status', 'Der Einrichtungslink wurde direkt per E-Mail versendet und ist 72 Stunden gültig.');
     }
 
     public function revoke(int $invitationId): void
@@ -76,55 +93,40 @@ class Employees extends Component
         $this->authorize('staff.manage');
 
         $invitation = StaffInvitation::query()->findOrFail($invitationId);
-        abort_if($invitation->accepted_at !== null, 422, 'Angenommene Einladungen koennen nicht widerrufen werden.');
+        abort_if($invitation->accepted_at !== null, 422, 'Bereits eingerichtete Zugänge können nicht widerrufen werden.');
 
         $invitation->forceFill(['expires_at' => now()])->save();
 
         activity('staff')
             ->causedBy(auth()->user())
             ->performedOn($invitation)
-            ->log('Mitarbeitereinladung widerrufen');
+            ->log('Mitarbeiter-Einrichtungslink widerrufen');
     }
 
-    public function promoteExisting(PromotionTeamService $teams): void
+    public function assignExisting(StaffTeamService $teams): void
     {
         $this->authorize('staff.manage');
         $validated = $this->validate([
-            'existingEmail' => ['required', 'email:rfc', 'max:255', 'exists:users,email'],
+            'existingEmail' => ['required', 'email:rfc', 'max:255'],
+            'existingTeamId' => ['required', 'integer'],
         ]);
-        $email = mb_strtolower(trim($validated['existingEmail']));
         $admin = auth()->user();
         abort_unless($admin instanceof User, 403);
 
-        $user = DB::transaction(function () use ($email, $teams, $admin): User {
-            $promotionTeam = $teams->ensure($admin);
-            $user = User::query()
-                ->whereRaw('LOWER(email) = ?', [$email])
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            abort_if($user->isAdmin(), 422, 'Volladmin-Konten werden nicht in Mitarbeiterkonten umgewandelt.');
-
-            $user->forceFill([
-                'role' => 'staff',
-                'status' => true,
-                'current_team_id' => $promotionTeam->id,
-            ])->save();
-            $user->teams()->syncWithoutDetaching([
-                $promotionTeam->id => ['role' => 'team_access'],
-            ]);
-
-            return $user->setRelation('currentTeam', $promotionTeam);
-        }, 3);
+        $user = $teams->assignExisting(
+            $admin,
+            $validated['existingEmail'],
+            (int) $validated['existingTeamId'],
+        );
 
         activity('staff')
             ->causedBy(auth()->user())
             ->performedOn($user)
             ->withProperties(['team_id' => $user->currentTeam->id])
-            ->log('Bestehendes Konto zum Promotion-Mitarbeiter hochgestuft');
+            ->log('Bestehendes Konto als Mitarbeiter einem Team zugeordnet');
 
         $this->reset('existingEmail');
-        session()->flash('status', 'Das bestehende Konto wurde dem Promotion-Team zugeordnet. Eine unverifizierte E-Mail-Adresse bleibt bis zur Bestätigung gesperrt.');
+        session()->flash('status', 'Das bestehende Konto wurde als Mitarbeiter dem Team '.$user->currentTeam->name.' zugeordnet. Eine E-Mail-Verifizierung ist im Admin-Bereich nicht erforderlich.');
     }
 
     public function render()
@@ -142,6 +144,10 @@ class Employees extends Component
                 ->latest()
                 ->limit(30)
                 ->get(),
+            'teams' => Team::query()
+                ->where('personal_team', false)
+                ->orderBy('name')
+                ->get(['id', 'name', 'rbac_permissions']),
         ])->layout('layouts.master');
     }
 }

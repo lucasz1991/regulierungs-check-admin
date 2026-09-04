@@ -117,3 +117,10 @@ Record durable decisions with date, context, decision, and consequences.
 - Die im Admin angezeigte Rücksprungadresse wird unverändert in Apple eingetragen; für Produktion ist dies `https://www.regulierungs-check.de/auth/apple/callback`.
 - Die `.p8` wird nur im Speichervorgang gelesen und nicht abgelegt. Der Betreiber verwahrt das einmal herunterladbare Original sicher für die Erneuerung des 150 Tage gültigen Client-Secrets.
 - Die Dokumentation benötigt keine neue ENV-Konfiguration und ändert weder Anwendungscode noch Datenbankdaten.
+
+## 2026-09-04 | Mitarbeiterzugänge werden direkt und teamneutral eingerichtet
+
+- Ein Mitarbeiterzugang ist nicht an Promotion gebunden. Der Volladmin wählt ein vorhandenes gemeinsames Team; persönliche Teams sind serverseitig ausgeschlossen.
+- Einrichtungs-E-Mails werden synchron aus dem Admin-Webrequest versendet. Bei einem Versandfehler wird der neue Link sofort ungültig, damit kein scheinbar versendeter Zugang offen bleibt.
+- Der einmalige Link ersetzt für neue Mitarbeiter die gesonderte E-Mail-Verifikation: Linkannahme, Kontoanlage, Team-Pivot, `current_team_id` und Verbrauch der Einladung erfolgen atomar.
+- Mitarbeiter bleiben immer `staff`; die Teamwahl darf keinen globalen Adminzugang erzeugen. Das erste tatsächlich gewährte Modul bestimmt das Login-Ziel.

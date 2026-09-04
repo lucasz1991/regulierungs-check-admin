@@ -34,3 +34,4 @@
 | Promotion-Einstellungen bei Service-, Schema- oder Integritätsfehlern ohne HTTP 500 fail-closed halten | Codex / settings_500_fix | completed | 2026-08-17T05:49:00Z |
 | Zwei Glücksrad-V2-Erklärungs-PDFs für Volladmins und Promotion-Mitarbeiter erstellen | Codex-root | completed | 2026-08-19T12:23:39Z |
 | Einseitige Betreiber-Anleitung für Apple-ID Login und Registrierung erstellen | Codex-root | completed | 2026-08-21T20:13:55Z |
+| Mitarbeiter-Onboarding mit frei waehlbarem Team, direkter Passwortsetzung und synchroner Admin-Mail | Codex | completed | 2026-09-04T08:44:22Z |

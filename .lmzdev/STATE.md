@@ -104,3 +104,11 @@
 - Die Anleitung ordnet Services ID, Team ID, Key ID, Rücksprungadresse und `.p8` exakt den aktuellen Adminfeldern zu.
 - Die Produktions-Rücksprungadresse, der einmalige `.p8`-Download, die 150-Tage-Erneuerung und der Test mit verborgener Apple-E-Mail sind hervorgehoben.
 - Die PDF wurde mit pypdf und Poppler geprüft, vollständig gerendert und visuell auf Lesbarkeit, Überlagerungen und Umbrüche kontrolliert.
+
+## 2026-09-04 | Allgemeines Mitarbeiter-Onboarding
+
+- Volladmins wählen beim Anlegen eines Mitarbeiters jedes gemeinsame, nicht persönliche Team; Promotion ist keine feste Vorgabe mehr.
+- Der Admin versendet den einmaligen 72-Stunden-Einrichtungslink synchron und direkt per E-Mail. Message, Queue, Job, Worker und Cron werden nicht verwendet.
+- Nach dem Setzen des Passworts wird ein neues Mitarbeiterkonto atomar dem gewählten Team zugeordnet, als aktiv gespeichert und direkt am ersten freigegebenen Adminmodul angemeldet. Eine weitere E-Mail-Verifikation ist nicht nötig.
+- Bestehende Nicht-Admin-Konten können einem ausgewählten Team direkt zugewiesen werden; ihr Verifikationsstatus wird dabei nicht künstlich verändert und blockiert den Adminzugang nicht.
+- E-Mail, Passwortsetzseite und Mitarbeiterverwaltung verwenden das Regulierungs-CHECK-Design. Das fokussierte Gate bestand mit 42 Tests und 263 Assertions; Pint, Vite-Produktionsbuild und Diff-Checks bestanden.

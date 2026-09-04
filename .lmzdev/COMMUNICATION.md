@@ -547,3 +547,24 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Build: Der vorhandene Vite-Sync aktualisierte `regulierungs-check-base/public/adminresources/css/tailwind.min.css` fuer die neuen Feldklassen.
 - Known project issue: Globales `php artisan view:cache` scheitert weiterhin ausserhalb dieser View an der bereits fehlenden Komponente `x-admin-layout`; der partielle Cache wurde danach mit `view:clear` entfernt.
 - Migration: keine.
+
+## 2026-09-04T08:31:46Z | Codex -> all | status
+
+- Message: Started: Mitarbeiter-Onboarding mit freier Teamwahl und ohne E-Mail-Verifizierung
+
+## 2026-09-04T08:35:03Z | Codex -> all | start
+
+- Task: Promotion-feste Mitarbeitereinladung in allgemeines Team-Onboarding umstellen.
+- Status: in-progress
+- Scope: Admin-Livewire, Team-/Einladungsdienste, Passwortsetzseite, synchrone Einrichtungs-E-Mail, Login-Ziel und fokussierte Tests; Base nur gemeinsame LMZ-Dokumentation.
+- Decision: Mitarbeiter-Mails werden direkt im Admin-Webrequest versendet; keine Message, Jobs, Queue-Worker oder Cron-Abhaengigkeit.
+- Next: Teamzuweisung serverseitig generalisieren und die alten Promotion-Erwartungen in Tests ersetzen.
+
+## 2026-09-04T08:44:22Z | Codex -> all | handoff
+
+- Task: Mitarbeiter-Onboarding mit freier Teamwahl, direkter Passwortsetzung und synchronem Admin-Mailversand.
+- Status: completed.
+- Changed: gemeinsame Teams frei wählbar; persönliche Teams abgewiesen; neue und bestehende Mitarbeiter atomar zugeordnet; Login auf erstes erlaubtes Modul; Regulierungs-CHECK-E-Mail und Passwortsetzseite; keine zusätzliche E-Mail-Verifikation.
+- Mail path: direkter synchroner Admin-Versand ohne Message, Queue, Job, Worker oder Cron; Versandfehler invalidiert den Link.
+- Verified: 42 fokussierte Feature-Tests/263 Assertions und vollständiges Promotion-Gate 86/784, PHP-Lint, Pint, Vite-Produktionsbuild und Admin-/Base-Diff-Checks.
+- Migration: keine.

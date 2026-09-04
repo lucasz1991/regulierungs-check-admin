@@ -112,3 +112,10 @@
 - Nach dem Setzen des Passworts wird ein neues Mitarbeiterkonto atomar dem gewählten Team zugeordnet, als aktiv gespeichert und direkt am ersten freigegebenen Adminmodul angemeldet. Eine weitere E-Mail-Verifikation ist nicht nötig.
 - Bestehende Nicht-Admin-Konten können einem ausgewählten Team direkt zugewiesen werden; ihr Verifikationsstatus wird dabei nicht künstlich verändert und blockiert den Adminzugang nicht.
 - E-Mail, Passwortsetzseite und Mitarbeiterverwaltung verwenden das Regulierungs-CHECK-Design. Das fokussierte Gate bestand mit 42 Tests und 263 Assertions; Pint, Vite-Produktionsbuild und Diff-Checks bestanden.
+
+## 2026-09-04 | Stabiler Vite-/Sass-Produktionsbuild
+
+- Der Admin verwendet für SCSS ausschließlich das bereits vorhandene Dart-Sass-Paket `sass`; `sass-embedded` und seine plattformspezifischen Compilerprozesse wurden aus Manifest und Lockfile entfernt.
+- Node.js ist für den Build auf die LTS-Linien 22 oder 24 festgelegt; `.nvmrc` wählt standardmäßig Node 22. Der fehlerauslösende Serverstand Node 23.11.1 ist damit ausdrücklich ausgeschlossen.
+- `@zxing/library` ist als direkter Peer des Mitarbeiter-Scanners festgeschrieben, damit die Lockfile-Bereinigung die Scannerabhängigkeit nicht implizit verliert.
+- Ein isoliertes frisches `npm ci --ignore-scripts --offline` installierte 410 Pakete ohne `sass-embedded`, aber mit `sass` und `@zxing/library`. Der Produktionsbuild, Scannervertrag mit 18 Checks, News-Tailwind-Vertrag, npm-Audit ohne Findings und Diff-Check bestanden.

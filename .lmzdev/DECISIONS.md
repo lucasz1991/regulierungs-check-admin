@@ -124,3 +124,9 @@ Record durable decisions with date, context, decision, and consequences.
 - Einrichtungs-E-Mails werden synchron aus dem Admin-Webrequest versendet. Bei einem Versandfehler wird der neue Link sofort ungültig, damit kein scheinbar versendeter Zugang offen bleibt.
 - Der einmalige Link ersetzt für neue Mitarbeiter die gesonderte E-Mail-Verifikation: Linkannahme, Kontoanlage, Team-Pivot, `current_team_id` und Verbrauch der Einladung erfolgen atomar.
 - Mitarbeiter bleiben immer `staff`; die Teamwahl darf keinen globalen Adminzugang erzeugen. Das erste tatsächlich gewährte Modul bestimmt das Login-Ziel.
+
+## 2026-09-04 | Vite kompiliert Sass ohne Embedded-Unterprozess
+
+- Da Vite bei gleichzeitig installiertem `sass-embedded` und `sass` den Embedded-Compiler bevorzugt, wird `sass-embedded` nicht mehr installiert. Das normale Dart-Sass erfüllt denselben SCSS-Vertrag ohne den auf dem Plesk-Host abgebrochenen Pipe-Unterprozess.
+- Produktions- und Entwicklungsbuilds verwenden ausschließlich unterstützte gerade LTS-Node-Linien. Node 23 ist EOL und wird nicht mehr als Build-Runtime akzeptiert.
+- Der Lockfile enthält `@zxing/library` direkt, weil `@zxing/browser` diese Bibliothek als Peer benötigt; eine allgemeine Deaktivierung aller Peer-Abhängigkeiten ist deshalb keine Deploymentlösung.

@@ -568,3 +568,15 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Mail path: direkter synchroner Admin-Versand ohne Message, Queue, Job, Worker oder Cron; Versandfehler invalidiert den Link.
 - Verified: 42 fokussierte Feature-Tests/263 Assertions und vollständiges Promotion-Gate 86/784, PHP-Lint, Pint, Vite-Produktionsbuild und Admin-/Base-Diff-Checks.
 - Migration: keine.
+
+## 2026-09-04T09:14:12Z | Codex -> all | status
+
+- Message: Started: Produktions-Build EPIPE bei sass-embedded unter Node.js 23 diagnostizieren und beheben
+
+## 2026-09-04T09:21:38Z | Codex -> all | handoff
+
+- Task: Plesk-Vite-Build mit `sass-embedded`-EPIPE unter Node 23.11.1 stabilisieren.
+- Status: completed.
+- Changed: `sass-embedded` samt Compiler-Binaries aus `package.json`/`package-lock.json` entfernt; Node 22/24 als LTS-Buildvertrag und `.nvmrc` mit Node 22 ergänzt; `@zxing/library` als tatsächlichen Scanner-Peer explizit gemacht.
+- Verified: isoliertes frisches `npm ci --ignore-scripts --offline` ohne `sass-embedded`; lokales `npm ci`; `npm run build`; Scannervertrag 18/18; News-Tailwind-Vertrag; npm-Audit 0 Findings; `git diff --check`.
+- Deployment: Auf Plesk Node 22 oder 24 auswählen, dann `npm ci` und `npm run build`; Node 23.11.1 nicht weiterverwenden.

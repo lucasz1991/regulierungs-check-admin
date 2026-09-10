@@ -23,6 +23,7 @@ use App\Livewire\AdminConfig;
 use App\Livewire\AdminDashboard;
 use App\Livewire\AdminMessageBox;
 use App\Livewire\Promotion\PromotionConsole;
+use App\Http\Controllers\Admin\PromotionGiftCodeController;
 use App\Livewire\WebContentManager;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
@@ -89,6 +90,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'account.ac
     // Volladmins muessen Kampagnen vorbereiten und pruefen koennen, waehrend
     // der oeffentliche/staffseitige Promotion-Flow noch deaktiviert ist.
     Route::get('/admin/promotion', PromotionAdministration::class)->middleware('can:promotion.campaigns.manage')->name('admin.promotion');
+    Route::post('/admin/promotion/gift-codes', [PromotionGiftCodeController::class, 'store'])->middleware('can:promotion.campaigns.manage')->name('admin.promotion.gift-codes.store');
     Route::get('/admin/mails', MailManagement::class)->middleware('can:mails.manage')->name('admin.mails');
     Route::get('/admin/contacts', ManageContacts::class)->middleware('can:contacts.manage')->name('admin.contacts');
     Route::get('/admin/reviews/claim-ratings', ClaimRatingList::class)->middleware('can:reviews.manage')->name('admin.reviews.claim-ratings');

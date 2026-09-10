@@ -19,6 +19,7 @@ use App\Services\Promotion\PromotionResultMailer;
 use App\Services\Promotion\PromotionSettingsService;
 use App\Services\Promotion\PromotionTicketService;
 use App\Services\Promotion\PromotionTurnService;
+use App\Services\Promotion\PromotionDigitalDeliveryService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -464,7 +465,7 @@ class PromotionAdministration extends Component
             : 'Gegenbuchung gespeichert; die Korrekturmail ist fehlgeschlagen und kann im Verlauf erneut versendet werden.');
     }
 
-    public function fulfill(int $resultId, PromotionTurnService $turns): void
+    public function fulfill(int $resultId, PromotionTurnService $turns, PromotionDigitalDeliveryService $delivery): void
     {
         $result = PromotionSpinResult::query()->findOrFail($resultId);
         $mode = $result->fulfillment_mode_snapshot instanceof \BackedEnum
@@ -474,8 +475,20 @@ class PromotionAdministration extends Component
             ? 'promotion.fulfillment.external'
             : 'promotion.fulfillment.onsite');
         abort_if($mode === PromotionPrize::FULFILLMENT_EXTERNAL && ! $this->actor()->isAdmin(), 403);
-        $turns->fulfill($result, $this->actor());
-        session()->flash('status', 'Ausgabe einmalig dokumentiert.');
+        if ($mode === PromotionPrize::FULFILLMENT_EXTERNAL) {
+            $delivery->approve($result, $this->actor());
+            session()->flash('status', 'Gewinn freigegeben. Die Code-Auslieferung wurde direkt geprüft.');
+            return;
+        }
+        $turns->fulfill($result, $this->actor()); session()->flash('status', 'Ausgabe einmalig dokumentiert.');
+    }
+
+    public function retryDigitalDelivery(int $resultId, PromotionDigitalDeliveryService $delivery): void
+    {
+        $this->authorize('promotion.fulfillment.external');
+        abort_unless($this->actor()->isAdmin(), 403);
+        $delivery->retry(PromotionSpinResult::query()->findOrFail($resultId), $this->actor());
+        session()->flash('status', 'Der reservierte Code wurde erneut versendet.');
     }
 
     public function resendMail(int $resultId, PromotionResultMailer $mailer): void

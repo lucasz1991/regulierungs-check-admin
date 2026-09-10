@@ -11,6 +11,8 @@ use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Admin\UserStatusService;
 use App\Services\Promotion\PromotionResultMailer;
+use App\Services\Promotion\PromotionTicketService;
+use App\Services\Promotion\PromotionSettingsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
@@ -166,6 +168,21 @@ class UserProfile extends Component
 
         $sent = $mailer->resend($result, $actor);
         $this->dispatch('showAlert', $sent ? 'Ergebnis-E-Mail wurde erneut versendet.' : 'Die Ergebnis-E-Mail konnte nicht versendet werden.', $sent ? 'success' : 'error');
+    }
+
+    public function issuePromotionTestTicket(PromotionTicketService $tickets, PromotionSettingsService $settings): void
+    {
+        $actor = auth()->user(); abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+        $campaignId = $settings->publicCampaignId(); abort_unless($campaignId, 422, 'Keine öffentliche Kampagne aktiv.');
+        $tickets->issueTestTicket(User::query()->findOrFail($this->userId), \App\Models\PromotionCampaign::query()->findOrFail($campaignId), $actor);
+        $this->dispatch('showAlert', 'Test-Ticket wurde ausgestellt. Es löst keine Kontingente, Codes oder Teilnehmernachrichten aus.', 'success');
+    }
+
+    public function resetPromotionTestTicket(int $ticketId, PromotionTicketService $tickets): void
+    {
+        $actor = auth()->user(); abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+        $ticket = PromotionTicket::query()->where('user_id', $this->userId)->findOrFail($ticketId);
+        $tickets->resetTestTicket($ticket, $actor); $this->dispatch('showAlert', 'Test-Drehung zurückgesetzt; ein neues Test-Ticket wurde ausgestellt.', 'success');
     }
 
     public function render()

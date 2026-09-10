@@ -221,6 +221,9 @@
                         <h2 class="mt-1 text-2xl font-black text-slate-950">Promotion-Profil</h2>
                         <p class="mt-1 text-sm text-slate-600">Tickets, Aufrufe, Drehungen, Korrekturen, E-Mails und Ausgaben dieses Kontos.</p>
                     </div>
+                    @if(auth()->user()?->isAdmin())
+                        <button wire:click="issuePromotionTestTicket" class="rounded-xl bg-amber-400 px-4 py-2 text-xs font-black text-slate-950 hover:bg-amber-300">Test-Ticket ausstellen</button>
+                    @endif
                     @if ($socialAccounts->isNotEmpty())
                         <div class="flex flex-wrap gap-2">
                             @foreach ($socialAccounts as $identity)
@@ -237,6 +240,9 @@
                             <div><span class="font-mono text-sm font-black text-teal-800">{{ $ticket->participation?->public_id }}</span><h3 class="mt-1 text-lg font-black text-slate-950">{{ $ticket->campaign?->name }}</h3></div>
                             <span class="w-fit rounded-full px-3 py-1 text-xs font-bold {{ $ticketStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : ($ticketStatus === 'active' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700') }}">{{ ['ready'=>'Bereit','active'=>'Am Rad','completed'=>'Abgeschlossen','cancelled'=>'Storniert'][$ticketStatus] ?? $ticketStatus }}</span>
                         </header>
+                        @if($ticket->isTest() && auth()->user()?->isAdmin() && $ticketStatus !== 'active')
+                            <div class="border-b border-amber-100 bg-amber-50 px-5 py-3"><button wire:click="resetPromotionTestTicket({{ $ticket->id }})" class="text-xs font-black text-amber-900 underline">Test-Drehung löschen & neues Test-Ticket ausstellen</button></div>
+                        @endif
                         <div class="grid gap-5 p-5 lg:grid-cols-2">
                             <div>
                                 <h4 class="text-sm font-black text-slate-800">Aufrufe</h4>

@@ -3,13 +3,16 @@
 namespace App\Services\Promotion;
 
 use App\Enums\PromotionFulfillmentMode;
+use App\Enums\PromotionGiftCodeStatus;
 use App\Enums\PromotionMailStatus;
 use App\Enums\PromotionOutcomeType;
 use App\Enums\PromotionQuotaPolicy;
 use App\Enums\PromotionTicketStatus;
+use App\Enums\PromotionTicketType;
 use App\Enums\PromotionTurnStatus;
 use App\Models\Customer;
 use App\Models\PromotionCampaign;
+use App\Models\PromotionGiftCode;
 use App\Models\PromotionCampaignState;
 use App\Models\PromotionParticipation;
 use App\Models\PromotionPrize;
@@ -38,14 +41,15 @@ final class PromotionTurnService
         $this->assertEnabled();
         $this->assertCanRecord($staff);
         $candidate = $this->ticketFromScanInput($payloadOrParticipationId);
-        $manualEntry = ! str_starts_with(trim($payloadOrParticipationId), PromotionTicketQrSigner::VERSION.':');
+        $manualEntry = ! str_starts_with(trim($payloadOrParticipationId), PromotionTicketQrSigner::VERSION.':')
+            && ! str_starts_with(trim($payloadOrParticipationId), PromotionTicketQrSigner::CURRENT_VERSION.':');
 
         return DB::transaction(function () use ($candidate, $staff, $manualEntry): PromotionTurn {
             $staff = User::query()->lockForUpdate()->findOrFail($staff->getKey());
             $this->assertCanRecord($staff);
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($candidate->campaign_id);
             $ticket = PromotionTicket::query()->lockForUpdate()->findOrFail($candidate->getKey());
-            $participation = PromotionParticipation::query()->lockForUpdate()->findOrFail($ticket->participation_id);
+            $participation = $ticket->participation_id ? PromotionParticipation::query()->lockForUpdate()->findOrFail($ticket->participation_id) : null;
             $participant = User::query()->lockForUpdate()->find($ticket->user_id);
             $state = PromotionCampaignState::query()->whereKey($campaign->getKey())->lockForUpdate()->first();
             if (! $state) {
@@ -55,7 +59,7 @@ final class PromotionTurnService
             $this->assertAuditIntegrity($campaign);
 
             if (! $participant
-                || (int) $participation->user_id !== (int) $participant->getKey()
+                || ($participation && (int) $participation->user_id !== (int) $participant->getKey())
                 || ! $participant->isActive()
                 || ! $participant->hasVerifiedEmail()
                 || $participant->role !== 'guest'
@@ -108,6 +112,7 @@ final class PromotionTurnService
             $this->audit->appendV2($campaign, 'turn.started', $participation, $staff, [
                 'status' => PromotionTurnStatus::Active->value,
                 'manual_entry' => $manualEntry,
+                'is_test' => $ticket->ticket_type === PromotionTicketType::Test,
             ], $ticket, $turn);
 
             return $turn->fresh(['ticket.participation.user', 'campaign', 'startedBy', 'latestResult']);
@@ -215,7 +220,8 @@ final class PromotionTurnService
             $this->assertPrizeSelection($campaign, $prize, $requestedOutcome);
 
             $actualOutcome = $requestedOutcome;
-            if ($requestedOutcome === PromotionOutcomeType::Prize && $prize->awarded_count >= $prize->quota) {
+            $isTest = $ticket->ticket_type === PromotionTicketType::Test;
+            if (! $isTest && $requestedOutcome === PromotionOutcomeType::Prize && $prize->awarded_count >= $prize->quota) {
                 $actualOutcome = PromotionOutcomeType::QuotaReroll;
                 if ($campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue) {
                     $state->forceFill([
@@ -228,7 +234,7 @@ final class PromotionTurnService
             $isFinal = $actualOutcome->isFinal();
             $sequence = ((int) PromotionSpinResult::query()->where('turn_id', $turn->getKey())->max('sequence')) + 1;
             $now = now();
-            if ($actualOutcome === PromotionOutcomeType::Prize) {
+            if (! $isTest && $actualOutcome === PromotionOutcomeType::Prize) {
                 $prize->forceFill(['awarded_count' => $prize->awarded_count + 1])->save();
                 if ($campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue
                     && $prize->awarded_count >= $prize->quota) {
@@ -254,9 +260,13 @@ final class PromotionTurnService
                     ? $prize->getRawOriginal('fulfillment_mode')
                     : null,
                 'is_final' => $isFinal,
+                'is_test' => $isTest,
                 'recorded_by' => $staff->getKey(),
                 'recorded_at' => $now,
-                'mail_status' => $isFinal ? PromotionMailStatus::Pending : PromotionMailStatus::NotRequired,
+                'mail_status' => $isFinal && ! $isTest ? PromotionMailStatus::Pending : PromotionMailStatus::NotRequired,
+                'digital_delivery_status' => $isTest || $actualOutcome !== PromotionOutcomeType::Prize || $prize->fulfillment_mode !== PromotionFulfillmentMode::ExternalAdmin
+                    ? \App\Enums\PromotionDigitalDeliveryStatus::NotApplicable
+                    : \App\Enums\PromotionDigitalDeliveryStatus::AwaitingApproval,
             ]);
 
             if ($isFinal) {
@@ -275,6 +285,7 @@ final class PromotionTurnService
             $this->audit->appendV2($campaign, 'spin.recorded', $ticket->participation, $staff, [
                 'is_final' => $isFinal,
                 'outcome_type' => $actualOutcome->value,
+                'is_test' => $isTest,
             ], $ticket, $turn, $result);
 
             return $result->fresh(['turn', 'ticket.participation.user', 'campaign', 'prize', 'recordedBy']);
@@ -449,6 +460,12 @@ final class PromotionTurnService
             }
 
             $now = now();
+            $reservedCode = PromotionGiftCode::query()->where('spin_result_id', $result->getKey())->lockForUpdate()->first();
+            if ($reservedCode && $reservedCode->status !== PromotionGiftCodeStatus::Sent) {
+                $reservedCode->forceFill(['spin_result_id' => null, 'status' => PromotionGiftCodeStatus::Available, 'reserved_at' => null])->save();
+                $result->forceFill(['digital_delivery_status' => \App\Enums\PromotionDigitalDeliveryStatus::NotApplicable])->save();
+                $this->audit->appendV2($campaign, 'digital.code_released_for_correction', $ticket->participation, $actor, ['code_id' => $reservedCode->getKey()], $ticket, $turn, $result);
+            }
             $result->forceFill(['superseded_at' => $now])->save();
             $this->audit->appendV2($campaign, 'spin.superseded', $ticket->participation, $actor, [
                 'reason_digest' => hash('sha256', $reason),
@@ -524,7 +541,7 @@ final class PromotionTurnService
     private function ticketFromScanInput(string $input): PromotionTicket
     {
         $input = trim($input);
-        if (str_starts_with($input, PromotionTicketQrSigner::VERSION.':')) {
+        if (str_starts_with($input, PromotionTicketQrSigner::VERSION.':') || str_starts_with($input, PromotionTicketQrSigner::CURRENT_VERSION.':')) {
             return $this->signer->parse($input);
         }
 

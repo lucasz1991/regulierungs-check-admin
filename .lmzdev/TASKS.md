@@ -2,6 +2,7 @@
 
 | Task | Owner | Status | Updated (UTC) |
 |---|---|---|---|
+| Amazon-Code-Auslieferung, Profilpflicht und Test-Drehungen | Codex | completed | 2026-09-10T19:24:00Z |
 | Review project state | unassigned | open | - |
 | Google- und Apple-Konfiguration aus Promotion in eigenen Social-Login-Bereich verschieben | Codex | completed | 2026-08-16T09:37:59Z |
 | Promotion-Kern ohne Commands, Jobs, Scheduler, Auditmail oder Zugriffskontext betreiben | Codex / simplify_promotion_core | completed | 2026-08-13T18:39:00Z |

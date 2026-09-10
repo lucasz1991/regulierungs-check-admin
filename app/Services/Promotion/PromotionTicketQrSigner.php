@@ -11,6 +11,7 @@ use DomainException;
 final class PromotionTicketQrSigner
 {
     public const VERSION = 'RC-TICKET-V1';
+    public const CURRENT_VERSION = 'RC-TICKET-V2';
 
     public function __construct(
         private readonly PromotionSettingsService $settings,
@@ -20,25 +21,26 @@ final class PromotionTicketQrSigner
     public function payload(PromotionTicket $ticket): string
     {
         $ticket = PromotionTicket::query()->with(['participation', 'campaign'])->findOrFail($ticket->getKey());
-        if ($ticket->status !== PromotionTicketStatus::Ready || ! $ticket->participation || ! $ticket->campaign) {
+        if ($ticket->status !== PromotionTicketStatus::Ready || ! $ticket->campaign || ! $ticket->public_id) {
             throw new DomainException('Nur ein bereites Ticket kann als QR-Code angezeigt werden.');
         }
         if (! $this->audit->verify($ticket->campaign)) {
             throw new DomainException('Die Ticket- oder Auditdaten sind ungueltig.');
         }
 
-        $publicId = (string) $ticket->participation->public_id;
-
-        return self::VERSION.':'.$publicId.':'.$this->signature($publicId, (int) $ticket->campaign_id);
+        $ticketId = (string) $ticket->public_id;
+        return self::CURRENT_VERSION.':'.$ticketId.':'.$this->signatureV2($ticketId, (int) $ticket->campaign_id);
     }
 
     public function parse(string $payload): PromotionTicket
     {
         $payload = trim($payload);
-        if (! preg_match('/\A'.preg_quote(self::VERSION, '/').':([^:]+):([A-Za-z0-9_-]{43})\z/', $payload, $matches)
-            || ! ParticipationId::isValid($matches[1])) {
-            throw new DomainException('Der Ticket-QR-Code ist ungueltig.');
+        if (preg_match('/\A'.preg_quote(self::CURRENT_VERSION, '/').':([0-9a-f-]{36}):([A-Za-z0-9_-]{43})\z/i', $payload, $matches)) {
+            $ticket = PromotionTicket::query()->where('public_id', $matches[1])->first();
+            if (! $ticket || $ticket->status !== PromotionTicketStatus::Ready || ! hash_equals($this->signatureV2((string) $ticket->public_id, (int) $ticket->campaign_id), $matches[2])) throw new DomainException('Das Ticket wurde bereits verwendet, storniert oder ist ungueltig.');
+            return $ticket->load(['participation', 'campaign']);
         }
+        if (! preg_match('/\A'.preg_quote(self::VERSION, '/').':([^:]+):([A-Za-z0-9_-]{43})\z/', $payload, $matches) || ! ParticipationId::isValid($matches[1])) throw new DomainException('Der Ticket-QR-Code ist ungueltig.');
 
         $participation = PromotionParticipation::query()->where('public_id', $matches[1])->first();
         $ticket = $participation?->ticket()->first();
@@ -58,6 +60,12 @@ final class PromotionTicketQrSigner
     {
         $binary = hash_hmac('sha256', self::VERSION."\n".$campaignId."\n".$publicId, $this->settings->auditKey(), true);
 
+        return rtrim(strtr(base64_encode($binary), '+/', '-_'), '=');
+    }
+
+    private function signatureV2(string $ticketId, int $campaignId): string
+    {
+        $binary = hash_hmac('sha256', self::CURRENT_VERSION."\n".$campaignId."\n".$ticketId, $this->settings->auditKey(), true);
         return rtrim(strtr(base64_encode($binary), '+/', '-_'), '=');
     }
 }

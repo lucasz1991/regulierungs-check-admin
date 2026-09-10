@@ -42,6 +42,8 @@ class PromotionPrize extends Model
 
     public function spinResults() { return $this->hasMany(PromotionSpinResult::class, 'prize_id'); }
 
+    public function giftCodes() { return $this->hasMany(PromotionGiftCode::class, 'prize_id'); }
+
     public function hasQuota(): bool
     {
         $awarded = array_key_exists('awarded_count', $this->attributes)

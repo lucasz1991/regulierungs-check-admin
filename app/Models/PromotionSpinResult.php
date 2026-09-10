@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PromotionFulfillmentMode;
+use App\Enums\PromotionDigitalDeliveryStatus;
 use App\Enums\PromotionMailStatus;
 use App\Enums\PromotionOutcomeType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,12 +22,15 @@ class PromotionSpinResult extends Model
         'outcome_type_snapshot' => PromotionOutcomeType::class,
         'fulfillment_mode_snapshot' => PromotionFulfillmentMode::class,
         'is_final' => 'boolean',
+        'is_test' => 'boolean',
         'recorded_at' => 'immutable_datetime',
         'superseded_at' => 'immutable_datetime',
         'mail_status' => PromotionMailStatus::class,
         'mail_sent_at' => 'immutable_datetime',
         'mail_failed_at' => 'immutable_datetime',
         'mail_last_attempted_at' => 'immutable_datetime',
+        'digital_delivery_status' => PromotionDigitalDeliveryStatus::class,
+        'digital_delivery_approved_at' => 'immutable_datetime',
         'fulfilled_at' => 'immutable_datetime',
     ];
 
@@ -68,5 +72,20 @@ class PromotionSpinResult extends Model
     public function fulfilledBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'fulfilled_by');
+    }
+
+    public function digitalDeliveryApprovedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'digital_delivery_approved_by');
+    }
+
+    public function giftCode(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(PromotionGiftCode::class, 'spin_result_id');
+    }
+
+    public function notificationDeliveries(): HasMany
+    {
+        return $this->hasMany(PromotionNotificationDelivery::class, 'spin_result_id');
     }
 }

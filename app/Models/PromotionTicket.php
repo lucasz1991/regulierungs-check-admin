@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PromotionTicketStatus;
+use App\Enums\PromotionTicketType;
 use App\Enums\PromotionTurnStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,10 +19,12 @@ class PromotionTicket extends Model
 
     protected $casts = [
         'status' => PromotionTicketStatus::class,
+        'ticket_type' => PromotionTicketType::class,
         'issued_at' => 'immutable_datetime',
         'activated_at' => 'immutable_datetime',
         'completed_at' => 'immutable_datetime',
         'cancelled_at' => 'immutable_datetime',
+        'test_reset_at' => 'immutable_datetime',
     ];
 
     public function participation(): BelongsTo
@@ -72,5 +75,10 @@ class PromotionTicket extends Model
             ->where('is_final', true)
             ->whereNull('superseded_at')
             ->latestOfMany();
+    }
+
+    public function isTest(): bool
+    {
+        return $this->ticket_type === PromotionTicketType::Test;
     }
 }

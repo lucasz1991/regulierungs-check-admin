@@ -5,6 +5,7 @@ namespace App\Services\Promotion;
 use App\Enums\PromotionOutcomeType;
 use App\Enums\PromotionQuotaPolicy;
 use App\Enums\PromotionTicketStatus;
+use App\Enums\PromotionTicketType;
 use App\Models\Customer;
 use App\Models\PromotionCampaign;
 use App\Models\PromotionCampaignState;
@@ -61,6 +62,7 @@ final class PromotionTicketService
             ->with(['participation', 'campaign', 'latestTurn.latestResult', 'effectiveResult.prize'])
             ->where('campaign_id', $campaign->getKey())
             ->where('user_id', $user->getKey())
+            ->where('ticket_type', PromotionTicketType::Regular)
             ->first();
     }
 
@@ -126,7 +128,9 @@ final class PromotionTicketService
                 'participation_id' => $participation->getKey(),
                 'campaign_id' => $campaign->getKey(),
                 'user_id' => $user->getKey(),
+                'public_id' => (string) \Illuminate\Support\Str::uuid(),
                 'status' => $legacyCompleted ? PromotionTicketStatus::Completed : PromotionTicketStatus::Ready,
+                'ticket_type' => PromotionTicketType::Regular,
                 'issued_at' => $now,
                 'completed_at' => $legacyCompleted ? $now : null,
             ]);
@@ -238,6 +242,29 @@ final class PromotionTicketService
 
             return $published->fresh(['prizes', 'promotionState']);
         }, 5);
+    }
+
+    public function issueTestTicket(User $participant, PromotionCampaign $campaign, User $admin): PromotionTicket
+    {
+        $this->assertGlobalAdmin($admin);
+        return DB::transaction(function () use ($participant, $campaign, $admin): PromotionTicket {
+            $admin = User::query()->lockForUpdate()->findOrFail($admin->getKey()); $this->assertGlobalAdmin($admin);
+            $participant = User::query()->lockForUpdate()->findOrFail($participant->getKey()); $this->assertParticipant($participant);
+            $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($campaign->getKey()); $this->assertSelectedCampaign($campaign); $this->assertAuditIntegrity($campaign);
+            if (PromotionTicket::query()->where('campaign_id',$campaign->getKey())->where('user_id',$participant->getKey())->where('ticket_type',PromotionTicketType::Test)->whereIn('status',[PromotionTicketStatus::Ready,PromotionTicketStatus::Active])->lockForUpdate()->exists()) throw new DomainException('Für diesen Benutzer ist bereits ein Test-Ticket aktiv.');
+            $ticket = PromotionTicket::create(['public_id'=>(string)\Illuminate\Support\Str::uuid(),'campaign_id'=>$campaign->getKey(),'user_id'=>$participant->getKey(),'ticket_type'=>PromotionTicketType::Test,'status'=>PromotionTicketStatus::Ready,'issued_at'=>now(),'test_issued_by'=>$admin->getKey()]);
+            $this->audit->appendV2($campaign,'test_ticket.issued',null,$admin,['ticket_id'=>$ticket->getKey()],$ticket); return $ticket;
+        },5);
+    }
+
+    public function resetTestTicket(PromotionTicket $ticket, User $admin, string $reason = 'test_reset'): PromotionTicket
+    {
+        $this->assertGlobalAdmin($admin);
+        return DB::transaction(function () use ($ticket,$admin,$reason): PromotionTicket {
+            $admin=User::query()->lockForUpdate()->findOrFail($admin->getKey());$this->assertGlobalAdmin($admin);$ticket=PromotionTicket::query()->lockForUpdate()->findOrFail($ticket->getKey());
+            if(!$ticket->isTest()||$ticket->status===PromotionTicketStatus::Active)throw new DomainException('Nur ein nicht aktives Test-Ticket kann zurückgesetzt werden.');
+            $campaign=PromotionCampaign::query()->lockForUpdate()->findOrFail($ticket->campaign_id);$this->assertAuditIntegrity($campaign);$ticket->forceFill(['status'=>PromotionTicketStatus::Cancelled,'cancelled_at'=>now(),'test_reset_by'=>$admin->getKey(),'test_reset_at'=>now(),'test_reset_reason'=>trim($reason)?:'test_reset'])->save();$this->audit->appendV2($campaign,'test_ticket.reset',null,$admin,['ticket_id'=>$ticket->getKey()],$ticket);return $this->issueTestTicket(User::query()->findOrFail($ticket->user_id),$campaign,$admin);
+        },5);
     }
 
     private function assertParticipant(User $user): void

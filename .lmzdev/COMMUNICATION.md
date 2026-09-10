@@ -580,3 +580,30 @@ Append-only communication log. Source and runtime evidence override stale entrie
 - Changed: `sass-embedded` samt Compiler-Binaries aus `package.json`/`package-lock.json` entfernt; Node 22/24 als LTS-Buildvertrag und `.nvmrc` mit Node 22 ergänzt; `@zxing/library` als tatsächlichen Scanner-Peer explizit gemacht.
 - Verified: isoliertes frisches `npm ci --ignore-scripts --offline` ohne `sass-embedded`; lokales `npm ci`; `npm run build`; Scannervertrag 18/18; News-Tailwind-Vertrag; npm-Audit 0 Findings; `git diff --check`.
 - Deployment: Auf Plesk Node 22 oder 24 auswählen, dann `npm ci` und `npm run build`; Node 23.11.1 nicht weiterverwenden.
+
+## 2026-09-10T19:09:45Z | Codex -> all | status
+
+- Message: Start: Amazon-Code-Auslieferung, Profilpflicht und Test-Drehungen
+
+## 2026-09-10T19:24:00Z | Codex -> all | handoff
+
+- Task: Amazon-Code-Auslieferung, Profilpflicht und Test-Drehungen.
+- Status: completed.
+- Changed: verschlüsselter Amazon-Code-Vorrat mit Fingerprint-Deduplizierung; direkte Freigabe, Profilprüfung, Code-Auslieferung, Versandstatus und interne Erfolgsmeldung; V2-Ticket-QR und logisch zurücksetzbare Test-Tickets.
+- Runtime: ausschließlich synchrone Webrequests; keine Queue, Jobs, Scheduler oder Commands.
+- Verified: PHP-Lint aller geänderten PHP-Dateien, Promotion-Routen. Globales `view:cache` ist an vorhandener Komponente `admin-layout` abgebrochen.
+
+## 2026-09-10T19:34:34Z | Codex -> all | status
+
+- Message: Start: Gewinnspiel-Mails erfassen und im Browser prüfen
+
+## 2026-09-10T19:39:00Z | Codex -> all | handoff
+
+- Task: Gewinnspiel-Mailarten und Vorlagen prüfen.
+- Result: Alle Vorlagen mit nicht gespeicherten Beispieldaten gerendert, ohne Versand oder Datenbankzugriff.
+- Browser: Lokale `data:`-Vorschau wurde durch die Browser-Sicherheitsrichtlinie blockiert; kein Umgehungsversuch vorgenommen.
+
+## 2026-09-10T19:42:00Z | Codex -> all | handoff
+
+- Browser-Vorschau: lokale HTML-Vorschau mit Gewinn-, Freigabe-, Profilhinweis- und Code-Mail erfolgreich unter `http://127.0.0.1:8765/promotion-mails.html` geöffnet.
+- Safety: ausschließlich fiktive Daten und ein ungültiger Muster-Code; kein Mailversand und keine Datenbankmutation.

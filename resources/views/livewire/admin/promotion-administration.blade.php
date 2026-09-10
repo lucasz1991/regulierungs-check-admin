@@ -44,6 +44,17 @@
     </nav>
 
     <section x-show.important="tab === 'overview'" x-cloak class="space-y-5">
+        @if ($selectedCampaign)
+            <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-black text-slate-950">Amazon-Code-Vorrat</h2>
+                <p class="mt-1 text-sm text-slate-600">Codes werden verschlüsselt gespeichert und nach dem Absenden niemals im Admin, in Livewire-Daten oder im Verlauf angezeigt.</p>
+                <form method="POST" action="{{ route('admin.promotion.gift-codes.store') }}" class="mt-4 grid gap-3 md:grid-cols-[minmax(0,18rem)_1fr_auto]">@csrf
+                    <select name="prize_id" required class="rounded-xl border-slate-300 text-sm">@foreach($selectedCampaign->prizes->where('fulfillment_mode.value', 'external_admin') as $digitalPrize)<option value="{{ $digitalPrize->id }}">{{ $digitalPrize->name }}</option>@endforeach</select>
+                    <textarea name="codes" required rows="3" autocomplete="off" placeholder="Je Zeile ein Amazon-Code" class="rounded-xl border-slate-300 text-sm"></textarea>
+                    <button class="rounded-xl bg-teal-700 px-5 py-3 text-sm font-black text-white hover:bg-teal-800">Codes sichern</button>
+                </form>
+            </article>
+        @endif
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Tickets</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $ticketCount }}</p><p class="mt-1 text-xs text-slate-500">{{ $readyTicketCount }} bereit zum Scan</p></article>
             <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><p class="text-xs font-bold uppercase tracking-wide text-slate-400">Drehungen heute</p><p class="mt-2 text-3xl font-black text-slate-950">{{ $todayTurnCount }}</p><p class="mt-1 text-xs text-slate-500">inklusive Zusatz- und Neudrehungen</p></article>

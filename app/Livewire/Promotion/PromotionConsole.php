@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Promotion;
 
+use App\Enums\PromotionTicketType;
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\PromotionPrize;
 use App\Models\PromotionSpinResult;
@@ -342,7 +343,7 @@ class PromotionConsole extends Component
         return mb_substr($local, 0, 1).str_repeat('*', max(3, mb_strlen($local) - 1)).'@'.$domain;
     }
 
-    /** @return array{turn_id: int, participant: array{ticket_id: string, name: string, email: string, instruction: null}} */
+    /** @return array{turn_id: int, participant: array{ticket_id: string, name: string, email: string, instruction: null, is_test: bool}} */
     public function turnPayload(PromotionTurn $turn): array
     {
         $turn->loadMissing(['ticket.participation.user', 'ticket.user']);
@@ -352,10 +353,13 @@ class PromotionConsole extends Component
         return [
             'turn_id' => (int) $turn->id,
             'participant' => [
-                'ticket_id' => (string) ($ticket?->participation?->public_id ?? ''),
+                'ticket_id' => $ticket?->isTest()
+                    ? 'TEST-'.strtoupper(substr((string) $ticket->public_id, 0, 8))
+                    : (string) ($ticket?->participation?->public_id ?? ''),
                 'name' => $this->displayParticipantName($participant),
                 'email' => $this->displayParticipantEmail($participant),
                 'instruction' => null,
+                'is_test' => (bool) $ticket?->isTest(),
             ],
         ];
     }
@@ -435,6 +439,18 @@ class PromotionConsole extends Component
                 ->limit(12)
                 ->get();
         }
+        $readyTestTicketsCount = $campaign
+            ? PromotionTicket::query()
+                ->where('campaign_id', $campaign->getKey())
+                ->where('ticket_type', PromotionTicketType::Test)
+                ->where('status', 'ready')
+                ->count()
+            : 0;
+        $regularTurnsToday = $campaign
+            ? (clone $turnQuery)
+                ->whereHas('ticket', fn ($query) => $query->where('ticket_type', PromotionTicketType::Regular))
+                ->whereDate('started_at', today())
+            : null;
 
         return view('livewire.promotion.promotion-console', [
             'campaign' => $campaign,
@@ -444,8 +460,10 @@ class PromotionConsole extends Component
             'recentTurns' => $recentTurns,
             'resultFields' => $resultFields,
             'scanBlockedByQuota' => $scanBlockedByQuota,
-            'todayTotal' => $campaign ? (clone $turnQuery)->whereDate('started_at', today())->count() : 0,
-            'todayCompleted' => $campaign ? (clone $turnQuery)->whereDate('completed_at', today())->where('status', 'completed')->count() : 0,
+            'todayTotal' => $regularTurnsToday ? (clone $regularTurnsToday)->count() : 0,
+            'todayCompleted' => $regularTurnsToday ? (clone $regularTurnsToday)->whereNotNull('completed_at')->where('status', 'completed')->count() : 0,
+            'todayTests' => $campaign ? (clone $turnQuery)->whereHas('ticket', fn ($query) => $query->where('ticket_type', PromotionTicketType::Test))->whereDate('started_at', today())->count() : 0,
+            'readyTestTicketsCount' => $readyTestTicketsCount,
             'testParticipants' => $testParticipants,
         ])->layout('layouts.promotion');
     }

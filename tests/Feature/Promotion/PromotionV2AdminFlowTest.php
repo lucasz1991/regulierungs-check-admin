@@ -13,6 +13,8 @@ use App\Models\PromotionCampaign;
 use App\Models\PromotionCampaignState;
 use App\Models\PromotionPrize;
 use App\Models\PromotionSpinResult;
+use App\Models\PromotionTicket;
+use App\Models\PromotionTurn;
 use App\Models\Sale;
 use App\Models\SocialAccount;
 use App\Models\SocialAuthProviderSetting;
@@ -203,6 +205,76 @@ class PromotionV2AdminFlowTest extends TestCase
         $turn->forceFill(['completed_at' => now()->subMinutes(11)])->save();
         Livewire::actingAs($staff)->test(PromotionConsole::class)
             ->assertDontSeeHtml('wire:click="prepareCorrection('.$correction->id.')"');
+    }
+
+    public function test_full_admin_can_prepare_complete_and_reset_a_test_run_from_the_console(): void
+    {
+        [$admin, $staff, $campaign, $prize, $noWin] = $this->promotionFixture();
+        $participant = $this->user('Test Teilnehmer', 'testlauf@example.test');
+        $this->fakeMail();
+
+        Livewire::actingAs($staff)
+            ->test(PromotionConsole::class)
+            ->assertDontSee('Testlauf vorbereiten')
+            ->call('openTestTicketModal')
+            ->assertForbidden();
+
+        Livewire::actingAs($admin)
+            ->test(PromotionConsole::class)
+            ->assertSee('Testlauf vorbereiten')
+            ->call('openTestTicketModal')
+            ->assertSet('testTicketModalOpen', true)
+            ->set('testParticipantSearch', 'testlauf@example.test')
+            ->assertSee('Test Teilnehmer')
+            ->set('testParticipantId', $participant->id)
+            ->call('issuePromotionTestTicket')
+            ->assertHasNoErrors()
+            ->assertSet('testTicketModalOpen', false)
+            ->assertSee('Test-Ticket ausgestellt');
+
+        $ticket = PromotionTicket::query()
+            ->where('campaign_id', $campaign->id)
+            ->where('user_id', $participant->id)
+            ->where('ticket_type', 'test')
+            ->latest('id')
+            ->firstOrFail();
+
+        $payload = app(PromotionTicketQrSigner::class)->payload($ticket);
+        Livewire::actingAs($staff)
+            ->test(PromotionConsole::class)
+            ->assertDontSee('Testlauf vorbereiten')
+            ->assertSee('Test-Ticket scannen')
+            ->call('scanTicket', $payload)
+            ->assertReturned(fn (array $response): bool => $response['ok'] && $response['participant']['is_test']);
+        $turnId = (int) PromotionTurn::query()->where('ticket_id', $ticket->id)->value('id');
+
+        Livewire::actingAs($staff)
+            ->test(PromotionConsole::class)
+            ->call('recordResult', $turnId, $noWin->id)
+            ->assertReturned(fn (array $response): bool => $response['ok']
+                && $response['final']
+                && $response['title'] === 'Testlauf abgeschlossen');
+
+        $this->assertDatabaseHas('promotion_spin_results', [
+            'ticket_id' => $ticket->id,
+            'is_test' => true,
+            'mail_status' => 'not_required',
+        ]);
+        $this->assertSame(0, $prize->fresh()->awarded_count);
+        Mail::assertNothingSent();
+
+        Livewire::actingAs($admin)
+            ->test(PromotionConsole::class)
+            ->call('resetPromotionTestTicket', $ticket->id)
+            ->assertSee('neues Test-Ticket ausgestellt');
+
+        $this->assertSame('cancelled', $ticket->fresh()->status->value);
+        $this->assertSame(1, PromotionTicket::query()
+            ->where('campaign_id', $campaign->id)
+            ->where('user_id', $participant->id)
+            ->where('ticket_type', 'test')
+            ->where('status', 'ready')
+            ->count());
     }
 
     public function test_admin_surfaces_show_four_campaign_areas_profile_history_and_no_promotion_audit_ui(): void
@@ -655,16 +727,21 @@ class PromotionV2AdminFlowTest extends TestCase
         });
         Schema::create('promotion_tickets', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('participation_id')->unique();
+            $table->uuid('public_id')->unique();
+            $table->unsignedBigInteger('participation_id')->nullable()->unique();
             $table->unsignedBigInteger('campaign_id');
             $table->unsignedBigInteger('user_id')->nullable();
             $table->string('status', 20);
+            $table->string('ticket_type', 16)->default('regular');
+            $table->unsignedBigInteger('test_issued_by')->nullable();
+            $table->unsignedBigInteger('test_reset_by')->nullable();
+            $table->dateTime('test_reset_at')->nullable();
+            $table->string('test_reset_reason', 255)->nullable();
             $table->dateTime('issued_at');
             $table->dateTime('activated_at')->nullable();
             $table->dateTime('completed_at')->nullable();
             $table->dateTime('cancelled_at')->nullable();
             $table->timestamps();
-            $table->unique(['campaign_id', 'user_id']);
         });
         Schema::create('promotion_turns', function (Blueprint $table): void {
             $table->id();
@@ -699,12 +776,16 @@ class PromotionV2AdminFlowTest extends TestCase
             $table->string('label_snapshot');
             $table->string('fulfillment_mode_snapshot', 32)->nullable();
             $table->boolean('is_final')->default(false);
+            $table->boolean('is_test')->default(false);
             $table->unsignedBigInteger('recorded_by')->nullable();
             $table->dateTime('recorded_at');
             $table->unsignedBigInteger('corrects_result_id')->nullable();
             $table->dateTime('superseded_at')->nullable();
             $table->string('correction_reason', 255)->nullable();
             $table->string('mail_status', 20)->default('not_required');
+            $table->string('digital_delivery_status', 32)->default('not_applicable');
+            $table->unsignedBigInteger('digital_delivery_approved_by')->nullable();
+            $table->dateTime('digital_delivery_approved_at')->nullable();
             $table->dateTime('mail_sent_at')->nullable();
             $table->dateTime('mail_failed_at')->nullable();
             $table->dateTime('mail_last_attempted_at')->nullable();
@@ -713,6 +794,33 @@ class PromotionV2AdminFlowTest extends TestCase
             $table->dateTime('fulfilled_at')->nullable();
             $table->timestamps();
             $table->unique(['turn_id', 'sequence']);
+        });
+        Schema::create('promotion_gift_codes', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('campaign_id');
+            $table->unsignedBigInteger('prize_id');
+            $table->unsignedBigInteger('spin_result_id')->nullable()->unique();
+            $table->text('code_encrypted');
+            $table->char('code_fingerprint', 64)->unique();
+            $table->string('status', 20)->default('available');
+            $table->unsignedBigInteger('uploaded_by')->nullable();
+            $table->dateTime('reserved_at')->nullable();
+            $table->dateTime('sent_at')->nullable();
+            $table->unsignedBigInteger('disabled_by')->nullable();
+            $table->dateTime('disabled_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::create('promotion_notification_deliveries', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('spin_result_id');
+            $table->string('type', 32);
+            $table->string('status', 16)->default('open');
+            $table->dateTime('sent_at')->nullable();
+            $table->dateTime('failed_at')->nullable();
+            $table->dateTime('last_attempted_at')->nullable();
+            $table->char('error_digest', 64)->nullable();
+            $table->timestamps();
+            $table->unique(['spin_result_id', 'type']);
         });
         Schema::create('promotion_audit_heads', function (Blueprint $table): void {
             $table->unsignedBigInteger('campaign_id')->primary();

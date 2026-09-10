@@ -2,6 +2,7 @@
 
 namespace App\Services\Promotion;
 
+use App\Enums\PromotionTicketType;
 use App\Models\PromotionAuditHead;
 use App\Models\PromotionCampaign;
 use App\Models\PromotionCampaignState;
@@ -352,11 +353,23 @@ final class PromotionAuditChain
         $hasTickets = $tickets->isNotEmpty();
         foreach ($tickets as $ticket) {
             $event = $latestTicketEvents[(int) $ticket->getKey()] ?? null;
+
+            if (! $event || ! is_array(data_get($event->payload, 'ticket_state'))
+                || $this->canonicalize(data_get($event->payload, 'ticket_state')) !== $this->canonicalize($this->ticketState($ticket, $key))) {
+                return false;
+            }
+
+            if ($ticket->ticket_type === PromotionTicketType::Test) {
+                if ($ticket->participation_id !== null || $event->participation_id !== null) {
+                    return false;
+                }
+
+                continue;
+            }
+
             $participation = $participations->get((int) $ticket->participation_id);
             $participationEvent = $latestParticipationEvents[(int) $ticket->participation_id] ?? null;
-            if (! $event || ! is_array(data_get($event->payload, 'ticket_state'))
-                || $this->canonicalize(data_get($event->payload, 'ticket_state')) !== $this->canonicalize($this->ticketState($ticket, $key))
-                || ! $participation
+            if (! $participation
                 || ! $participationEvent
                 || ! is_array(data_get($participationEvent->payload, 'participation_state'))
                 || (int) $event->participation_id !== (int) $ticket->participation_id

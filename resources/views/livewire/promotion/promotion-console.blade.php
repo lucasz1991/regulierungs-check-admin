@@ -44,15 +44,40 @@
                 </p>
             </div>
 
-            <button
-                type="button"
-                x-on:click="show()"
-                @disabled(! $newScansAllowed || $activeTurn || $stickerRequired || $scanBlockedByQuota)
-                class="console-scan-glow group inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-[#ffd166] px-7 py-4 text-base font-black text-[#082f35] transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#ffdc82] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
-            >
-                <i class="fas fa-qrcode text-2xl transition duration-300 group-hover:scale-110" aria-hidden="true"></i>
-                Nächsten Teilnehmer scannen
-            </button>
+            <div class="grid gap-3">
+                <button
+                    type="button"
+                    x-on:click="show()"
+                    @disabled(! $newScansAllowed || $activeTurn || $stickerRequired || $scanBlockedByQuota)
+                    class="console-scan-glow group inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-[#ffd166] px-7 py-4 text-base font-black text-[#082f35] transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#ffdc82] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
+                >
+                    <i class="fas fa-qrcode text-2xl transition duration-300 group-hover:scale-110" aria-hidden="true"></i>
+                    Nächsten Teilnehmer scannen
+                </button>
+                @if ($readyTestTicketsCount > 0)
+                    <button
+                        type="button"
+                        x-on:click="show()"
+                        @disabled(! $newScansAllowed || $activeTurn)
+                        class="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-300/15 px-5 py-3 text-sm font-black text-amber-100 transition hover:bg-amber-300/25 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <i class="fal fa-flask" aria-hidden="true"></i>
+                        Test-Ticket scannen
+                        <span class="rounded-full bg-amber-300 px-2 py-0.5 text-[11px] text-[#082f35]">{{ $readyTestTicketsCount }}</span>
+                    </button>
+                @endif
+                @if (auth()->user()?->isAdmin())
+                    <button
+                        type="button"
+                        wire:click="openTestTicketModal"
+                        @disabled(! $newScansAllowed)
+                        class="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        <i class="fal fa-flask" aria-hidden="true"></i>
+                        Testlauf vorbereiten
+                    </button>
+                @endif
+            </div>
         </div>
     </section>
 
@@ -124,11 +149,13 @@
                                 ? $result->fulfillment_mode_snapshot->value
                                 : $result?->fulfillment_mode_snapshot;
                             $turnStatus = $turn->status->value;
+                            $isTest = (bool) $ticket?->isTest();
                         @endphp
                         <article wire:key="promotion-turn-{{ $turn->id }}" class="grid gap-3 px-5 py-4 transition-colors duration-200 hover:bg-[#f4faf8] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-mono text-xs font-bold text-teal-800">{{ $ticket?->participation?->public_id ?? 'Nicht verfügbar' }}</span>
+                                    <span class="font-mono text-xs font-bold {{ $isTest ? 'text-amber-800' : 'text-teal-800' }}">{{ $isTest ? 'TEST-'.strtoupper(substr((string) $ticket?->public_id, 0, 8)) : ($ticket?->participation?->public_id ?? 'Nicht verfügbar') }}</span>
+                                    @if ($isTest)<span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-black text-amber-900">Testlauf</span>@endif
                                     <span class="rounded-full px-2 py-0.5 text-[11px] font-bold {{ $turnStatus === 'active' ? 'bg-amber-100 text-amber-900' : ($turnStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600') }}">
                                         {{ $statusLabels[$turnStatus] ?? $turnStatus }}
                                     </span>
@@ -147,18 +174,20 @@
                                 @if ($outcome)
                                     <span class="mt-1 inline-block text-[11px] font-semibold uppercase tracking-wide text-slate-400">{{ $outcomeLabels[$outcome] ?? $outcome }}</span>
                                 @endif
-                                @if ($result?->fulfilled_at)
+                                @if ($isTest && $turnStatus !== 'active' && auth()->user()?->isAdmin())
+                                    <button type="button" wire:click="resetPromotionTestTicket({{ $ticket->id }})" wire:confirm="Diesen Testlauf zurücksetzen und sofort ein neues Test-Ticket ausstellen?" class="mt-2 block text-xs font-black text-amber-800 hover:text-amber-950 sm:ml-auto">Zurücksetzen und neu testen</button>
+                                @elseif ($result?->fulfilled_at)
                                     <span class="mt-2 block text-xs font-bold text-emerald-700">Ausgabe dokumentiert</span>
-                                @elseif ($result?->is_final && ! $result->superseded_at && $outcome === 'prize' && $fulfillmentMode === \App\Models\PromotionPrize::FULFILLMENT_ONSITE)
+                                @elseif (! $isTest && $result?->is_final && ! $result->superseded_at && $outcome === 'prize' && $fulfillmentMode === \App\Models\PromotionPrize::FULFILLMENT_ONSITE)
                                     @can('promotion.fulfillment.onsite')
                                         <button type="button" wire:click="fulfill({{ $result->id }})" wire:confirm="Gewinn jetzt verbindlich als ausgehändigt markieren?" class="mt-2 block text-xs font-bold text-teal-700 hover:text-teal-900 sm:ml-auto">Als ausgehändigt markieren</button>
                                     @endcan
-                                @elseif ($result?->is_final && ! $result->superseded_at && $outcome === 'prize' && $fulfillmentMode === \App\Models\PromotionPrize::FULFILLMENT_EXTERNAL && auth()->user()?->isAdmin())
+                                @elseif (! $isTest && $result?->is_final && ! $result->superseded_at && $outcome === 'prize' && $fulfillmentMode === \App\Models\PromotionPrize::FULFILLMENT_EXTERNAL && auth()->user()?->isAdmin())
                                     @can('promotion.fulfillment.external')
                                         <button type="button" wire:click="fulfill({{ $result->id }})" wire:confirm="Externe Ausgabe jetzt verbindlich dokumentieren?" class="mt-2 block text-xs font-bold text-teal-700 hover:text-teal-900 sm:ml-auto">Externe Ausgabe dokumentieren</button>
                                     @endcan
                                 @endif
-                                @if ($result?->is_final && ! $result->superseded_at && ! $result->fulfilled_at && (int) $result->recorded_by === (int) auth()->id() && $turn->completed_at?->gte(now()->subMinutes(10)))
+                                @if (! $isTest && $result?->is_final && ! $result->superseded_at && ! $result->fulfilled_at && (int) $result->recorded_by === (int) auth()->id() && $turn->completed_at?->gte(now()->subMinutes(10)))
                                     <button type="button" wire:click="prepareCorrection({{ $result->id }})" class="mt-2 block text-xs font-bold text-amber-700 hover:text-amber-900 sm:ml-auto">Ergebnis korrigieren</button>
                                 @endif
                             </div>
@@ -185,12 +214,13 @@
                             <p class="mt-1 text-xs font-semibold text-slate-600">aufgerufen</p>
                         </div>
                     </div>
+                    <p class="mt-3 flex items-center justify-between rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900"><span>Testläufe heute</span><strong>{{ $todayTests }}</strong></p>
                 </section>
 
                 @if ($activeTurn)
                     <section class="rounded-3xl border border-amber-300 bg-amber-50 p-5 shadow-sm">
-                        <span class="text-xs font-black uppercase tracking-[0.16em] text-amber-800">Drehplatz belegt</span>
-                        <p class="mt-2 font-mono text-sm font-bold text-amber-950">{{ $activeTurn->ticket?->participation?->public_id }}</p>
+                        <span class="text-xs font-black uppercase tracking-[0.16em] text-amber-800">{{ $activeTurn->ticket?->isTest() ? 'Testlauf aktiv' : 'Drehplatz belegt' }}</span>
+                        <p class="mt-2 font-mono text-sm font-bold text-amber-950">{{ $activeTurn->ticket?->isTest() ? 'TEST-'.strtoupper(substr((string) $activeTurn->ticket?->public_id, 0, 8)) : $activeTurn->ticket?->participation?->public_id }}</p>
                         <p class="mt-1 text-sm text-amber-900">{{ $this->displayParticipantName($activeTurn->ticket?->user ?? $activeTurn->ticket?->participation?->user) }}</p>
                         <button
                             type="button"
@@ -272,13 +302,17 @@
                             autocomplete="off"
                             spellcheck="false"
                             class="font-mono uppercase"
-                            placeholder="RC-STR26-…"
+                            placeholder="RC-STR26-… oder TEST-UUID"
                         />
                         <button type="submit" :disabled="busy" class="self-end rounded-xl bg-white px-5 py-3 text-sm font-black text-[#082f35] hover:bg-teal-50 disabled:opacity-50">Ticket prüfen</button>
                     </form>
                 </div>
 
                 <div x-show.important="phase === 'result'" class="mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-6 sm:px-6">
+                    <div x-show.important="participant?.is_test" class="mb-4 rounded-2xl border border-amber-300/40 bg-amber-300/15 px-5 py-4 text-sm leading-6 text-amber-100">
+                        <strong class="block font-black">Testlauf</strong>
+                        Das Ergebnis wird protokolliert, verändert aber keine Kontingente, Gutscheincodes oder Teilnehmernachrichten.
+                    </div>
                     <div class="grid gap-4 rounded-3xl border border-teal-300/25 bg-teal-300/10 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-300 text-[#082f35]">
                             <i class="fas fa-check text-2xl" aria-hidden="true"></i>
@@ -344,6 +378,57 @@
             </div>
         </div>
     </template>
+
+    @if (auth()->user()?->isAdmin())
+        <x-dialog-modal id="promotion-test-ticket-modal" wire:model.live="testTicketModalOpen" maxWidth="2xl">
+            <x-slot name="title">
+                <p class="text-xs font-black uppercase tracking-[0.16em] text-amber-700">Sicherer Probelauf</p>
+                <h2 class="mt-2 text-xl font-black text-slate-900">Test-Ticket für einen Teilnehmer ausstellen</h2>
+            </x-slot>
+
+            <x-slot name="content">
+                <div class="rounded-2xl border border-teal-100 bg-teal-50 p-4 text-sm leading-6 text-teal-950">
+                    <strong class="block font-black">So funktioniert der Test</strong>
+                    Teilnehmer auswählen, Ticket ausstellen und anschließend die Seite <strong>/gluecksrad</strong> auf dessen Gerät öffnen. Dort erscheint ein eindeutig markierter Test-QR. Dieser wird mit dem normalen Scanner erfasst und vollständig durchgespielt.
+                </div>
+
+                <div class="mt-5">
+                    <label for="test-participant-search" class="block text-sm font-black text-slate-800">Teilnehmer suchen</label>
+                    <p id="test-participant-search-hint" class="mt-1 text-xs leading-5 text-slate-500">Nur aktive Teilnehmerkonten mit bestätigter E-Mail und vollständiger Benutzerzuordnung werden angeboten.</p>
+                    <div class="relative mt-2">
+                        <i class="fal fa-search pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
+                        <input id="test-participant-search" type="search" wire:model.live.debounce.300ms="testParticipantSearch" aria-describedby="test-participant-search-hint" placeholder="Name oder E-Mail-Adresse" class="w-full rounded-xl border-slate-300 py-3 pl-11 pr-4 focus:border-teal-600 focus:ring-teal-600">
+                    </div>
+                </div>
+
+                <fieldset class="mt-5">
+                    <legend class="text-sm font-black text-slate-800">Teilnehmer auswählen</legend>
+                    <div class="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1">
+                        @forelse ($testParticipants as $participant)
+                            <label wire:key="test-participant-{{ $participant->id }}" class="flex cursor-pointer items-center gap-3 rounded-2xl border p-4 transition {{ (int) $testParticipantId === (int) $participant->id ? 'border-teal-500 bg-teal-50' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-slate-50' }}">
+                                <input type="radio" wire:model.live="testParticipantId" value="{{ $participant->id }}" class="border-slate-300 text-teal-700 focus:ring-teal-600">
+                                <span class="min-w-0"><strong class="block truncate text-sm text-slate-950">{{ $participant->name }}</strong><span class="block truncate text-xs text-slate-500">{{ $participant->email }}</span></span>
+                            </label>
+                        @empty
+                            <div class="rounded-2xl border border-dashed border-slate-300 px-5 py-8 text-center text-sm text-slate-500">Keine passenden, testfähigen Teilnehmer gefunden.</div>
+                        @endforelse
+                    </div>
+                    <x-input-error for="testParticipantId" class="mt-2" />
+                </fieldset>
+
+                <div class="mt-5 grid gap-3 rounded-2xl bg-amber-50 p-4 text-xs leading-5 text-amber-950 sm:grid-cols-3">
+                    <span><strong class="block">Kein Verbrauch</strong>Kontingente bleiben gleich.</span>
+                    <span><strong class="block">Kein Code</strong>Amazon-Codes bleiben unberührt.</span>
+                    <span><strong class="block">Keine Nachricht</strong>Es wird nichts versendet.</span>
+                </div>
+            </x-slot>
+
+            <x-slot name="footer">
+                <button type="button" wire:click="closeTestTicketModal" wire:loading.attr="disabled" class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">Abbrechen</button>
+                <button type="button" wire:click="issuePromotionTestTicket" wire:loading.attr="disabled" wire:target="issuePromotionTestTicket" class="ml-3 rounded-xl bg-amber-400 px-5 py-3 text-sm font-black text-slate-950 hover:bg-amber-300 disabled:opacity-50">Test-Ticket ausstellen</button>
+            </x-slot>
+        </x-dialog-modal>
+    @endif
 
     <x-dialog-modal id="promotion-result-correction-modal" wire:model.live="correctionModalOpen" maxWidth="md">
         <x-slot name="title">

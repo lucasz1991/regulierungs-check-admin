@@ -268,6 +268,21 @@ final class PromotionTicketService
             $admin = User::query()->lockForUpdate()->findOrFail($admin->getKey()); $this->assertGlobalAdmin($admin);
             $participant = User::query()->lockForUpdate()->findOrFail($participant->getKey()); $this->assertParticipant($participant);
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($campaign->getKey()); $this->assertSelectedCampaign($campaign); $this->assertAuditIntegrity($campaign);
+            $runtimeState = PromotionCampaignState::query()->whereKey($campaign->getKey())->lockForUpdate()->first();
+            if (! $runtimeState) {
+                PromotionCampaignState::query()->create([
+                    'campaign_id' => $campaign->getKey(),
+                    'active_turn_id' => null,
+                    'sticker_required' => false,
+                    'sticker_acknowledged_at' => null,
+                    'sticker_acknowledged_by' => null,
+                ]);
+                $this->audit->appendV2($campaign, 'campaign.runtime_initialized', null, $admin, [
+                    'active_turn_id' => null,
+                    'sticker_required' => false,
+                ]);
+                $this->assertAuditIntegrity($campaign);
+            }
             if (PromotionTicket::query()->where('campaign_id',$campaign->getKey())->where('user_id',$participant->getKey())->where('ticket_type',PromotionTicketType::Test)->whereIn('status',[PromotionTicketStatus::Ready,PromotionTicketStatus::Active])->lockForUpdate()->exists()) throw new DomainException('Für diesen Benutzer ist bereits ein Test-Ticket aktiv.');
             $ticket = PromotionTicket::create(['public_id'=>(string)\Illuminate\Support\Str::uuid(),'campaign_id'=>$campaign->getKey(),'user_id'=>$participant->getKey(),'ticket_type'=>PromotionTicketType::Test,'status'=>PromotionTicketStatus::Ready,'issued_at'=>now(),'test_issued_by'=>$admin->getKey()]);
             $this->audit->appendV2($campaign,'test_ticket.issued',null,$admin,['ticket_id'=>$ticket->getKey()],$ticket); return $ticket;

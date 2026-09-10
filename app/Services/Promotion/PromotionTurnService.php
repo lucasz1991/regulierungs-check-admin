@@ -88,10 +88,11 @@ final class PromotionTurnService
                 ->where('outcome_type', PromotionOutcomeType::Prize->value)
                 ->whereColumn('awarded_count', '>=', 'quota')
                 ->exists();
-            if ($campaign->quota_exhaustion_policy === PromotionQuotaPolicy::Block && $exhaustedExists) {
+            $isTest = $ticket->ticket_type === PromotionTicketType::Test;
+            if (! $isTest && $campaign->quota_exhaustion_policy === PromotionQuotaPolicy::Block && $exhaustedExists) {
                 throw new DomainException('Neue Drehungen sind gesperrt, weil mindestens ein Gewinnkontingent erschoepft ist.');
             }
-            if ($campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue && $state->sticker_required) {
+            if (! $isTest && $campaign->quota_exhaustion_policy === PromotionQuotaPolicy::StickerContinue && $state->sticker_required) {
                 throw new DomainException('Vor dem naechsten Scan muss das Abkleben der erschoepften Radfelder bestaetigt werden.');
             }
 
@@ -543,6 +544,19 @@ final class PromotionTurnService
         $input = trim($input);
         if (str_starts_with($input, PromotionTicketQrSigner::VERSION.':') || str_starts_with($input, PromotionTicketQrSigner::CURRENT_VERSION.':')) {
             return $this->signer->parse($input);
+        }
+
+        $testTicketId = preg_replace('/\ATEST-/i', '', $input);
+        if (is_string($testTicketId) && preg_match('/\A[0-9a-f-]{36}\z/i', $testTicketId)) {
+            $testTicket = PromotionTicket::query()
+                ->where('public_id', $testTicketId)
+                ->where('ticket_type', PromotionTicketType::Test)
+                ->first();
+            if (! $testTicket) {
+                throw new DomainException('Zu dieser Test-Ticket-ID wurde kein Ticket gefunden.');
+            }
+
+            return $testTicket;
         }
 
         $publicId = mb_strtoupper($input);

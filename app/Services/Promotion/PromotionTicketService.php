@@ -66,6 +66,23 @@ final class PromotionTicketService
             ->first();
     }
 
+    public function pendingTestTicketFor(User $user, ?PromotionCampaign $campaign = null): ?PromotionTicket
+    {
+        $campaign ??= $this->publicCampaign();
+        if (! $campaign) {
+            return null;
+        }
+
+        return PromotionTicket::query()
+            ->with(['campaign', 'latestTurn.latestResult', 'effectiveResult.prize'])
+            ->where('campaign_id', $campaign->getKey())
+            ->where('user_id', $user->getKey())
+            ->where('ticket_type', PromotionTicketType::Test)
+            ->whereIn('status', [PromotionTicketStatus::Ready, PromotionTicketStatus::Active])
+            ->latest('issued_at')
+            ->first();
+    }
+
     public function ensureTicket(User $user, ?PromotionCampaign $campaign = null): PromotionTicket
     {
         $campaign ??= $this->publicCampaign();

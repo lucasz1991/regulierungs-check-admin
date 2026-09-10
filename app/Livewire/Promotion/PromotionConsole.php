@@ -5,6 +5,7 @@ namespace App\Livewire\Promotion;
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\PromotionPrize;
 use App\Models\PromotionSpinResult;
+use App\Models\PromotionTicket;
 use App\Models\PromotionTurn;
 use App\Models\User;
 use App\Services\Promotion\PromotionResultMailer;
@@ -30,6 +31,12 @@ class PromotionConsole extends Component
     public ?int $correctionPrizeId = null;
 
     public string $correctionReason = 'staff_correction';
+
+    public bool $testTicketModalOpen = false;
+
+    public string $testParticipantSearch = '';
+
+    public ?int $testParticipantId = null;
 
     protected function requiredRbacPermission(): string
     {
@@ -99,6 +106,16 @@ class PromotionConsole extends Component
                     ? 'Dieses Feld ist bereits ausgeschöpft. Der Dreh wurde protokolliert; bitte erneut drehen.'
                     : 'Der Zusatzdreh wurde protokolliert. Der Teilnehmer darf sofort noch einmal drehen.',
                 'instruction' => $quotaReroll ? 'Bitte erneut drehen' : 'Zusatzdreh: Du darfst noch einmal drehen',
+            ];
+        }
+
+        if ($result->is_test) {
+            return [
+                'ok' => true,
+                'final' => true,
+                'title' => 'Testlauf abgeschlossen',
+                'message' => $result->label_snapshot.' wurde als Testergebnis gespeichert. Kontingente, Gutscheincodes und Teilnehmernachrichten bleiben unverändert.',
+                'scan_next' => $tickets->publicCampaign() !== null,
             ];
         }
 
@@ -188,6 +205,75 @@ class PromotionConsole extends Component
         $this->correctionReason = 'staff_correction';
         $this->correctionModalOpen = false;
         $this->resetValidation();
+    }
+
+    public function openTestTicketModal(): void
+    {
+        $this->assertGlobalAdmin();
+        $this->reset('testParticipantSearch', 'testParticipantId');
+        $this->resetValidation();
+        $this->testTicketModalOpen = true;
+    }
+
+    public function closeTestTicketModal(): void
+    {
+        $this->assertGlobalAdmin();
+        $this->testTicketModalOpen = false;
+        $this->reset('testParticipantSearch', 'testParticipantId');
+        $this->resetValidation();
+    }
+
+    public function issuePromotionTestTicket(PromotionTicketService $tickets): void
+    {
+        $this->assertGlobalAdmin();
+        $validated = $this->validate([
+            'testParticipantId' => ['required', 'integer', 'exists:users,id'],
+        ], [
+            'testParticipantId.required' => 'Bitte wählen Sie den Teilnehmer für den Testlauf aus.',
+            'testParticipantId.integer' => 'Der ausgewählte Teilnehmer ist ungültig.',
+            'testParticipantId.exists' => 'Der ausgewählte Teilnehmer ist nicht mehr verfügbar.',
+        ]);
+
+        $campaign = $tickets->publicCampaign();
+        if (! $campaign) {
+            $this->addError('testParticipantId', 'Für einen Testlauf muss eine öffentliche Kampagne aktiv sein.');
+
+            return;
+        }
+
+        try {
+            $ticket = $tickets->issueTestTicket(
+                User::query()->findOrFail((int) $validated['testParticipantId']),
+                $campaign,
+                $this->actor(),
+            );
+        } catch (\DomainException $exception) {
+            $this->addError('testParticipantId', $exception->getMessage());
+
+            return;
+        }
+
+        $this->testTicketModalOpen = false;
+        $this->reset('testParticipantSearch', 'testParticipantId');
+        session()->flash('status', 'Test-Ticket ausgestellt. Der Teilnehmer sieht es jetzt auf seiner Glücksrad-Seite und kann den QR-Code zum Scannen vorzeigen.');
+        $this->dispatch('showAlert', 'Test-Ticket ist bereit. Es verändert keine Kontingente und löst keine E-Mails aus.', 'success');
+    }
+
+    public function resetPromotionTestTicket(int $ticketId, PromotionTicketService $tickets): void
+    {
+        $this->assertGlobalAdmin();
+        $ticket = PromotionTicket::query()->findOrFail($ticketId);
+
+        try {
+            $tickets->resetTestTicket($ticket, $this->actor(), 'console_test_reset');
+        } catch (\DomainException $exception) {
+            session()->flash('status', $exception->getMessage());
+
+            return;
+        }
+
+        session()->flash('status', 'Der vorige Testlauf bleibt im Verlauf erhalten. Für denselben Teilnehmer wurde ein neues Test-Ticket ausgestellt.');
+        $this->dispatch('showAlert', 'Neues Test-Ticket wurde ausgestellt.', 'success');
     }
 
     public function correctResult(PromotionTurnService $turns, PromotionResultMailer $mailer): void
@@ -330,6 +416,25 @@ class PromotionConsole extends Component
             static fn (PromotionPrize $field): bool => $field->outcome_type->value === 'prize'
                 && (int) $field->awarded_count >= (int) $field->quota,
         );
+        $testParticipants = collect();
+        if ($actor->isAdmin() && $this->testTicketModalOpen) {
+            $search = trim($this->testParticipantSearch);
+            $testParticipants = User::query()
+                ->select(['id', 'name', 'email'])
+                ->where('role', 'guest')
+                ->where('status', true)
+                ->whereNotNull('email_verified_at')
+                ->whereHas('customer')
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($participantQuery) use ($search): void {
+                        $participantQuery->where('name', 'like', '%'.$search.'%')
+                            ->orWhere('email', 'like', '%'.$search.'%');
+                    });
+                })
+                ->orderBy('name')
+                ->limit(12)
+                ->get();
+        }
 
         return view('livewire.promotion.promotion-console', [
             'campaign' => $campaign,
@@ -341,6 +446,7 @@ class PromotionConsole extends Component
             'scanBlockedByQuota' => $scanBlockedByQuota,
             'todayTotal' => $campaign ? (clone $turnQuery)->whereDate('started_at', today())->count() : 0,
             'todayCompleted' => $campaign ? (clone $turnQuery)->whereDate('completed_at', today())->where('status', 'completed')->count() : 0,
+            'testParticipants' => $testParticipants,
         ])->layout('layouts.promotion');
     }
 
@@ -350,6 +456,12 @@ class PromotionConsole extends Component
         abort_unless($actor instanceof User && $actor->isActive(), 403);
 
         return $actor;
+    }
+
+    private function assertGlobalAdmin(): void
+    {
+        $actor = $this->actor();
+        abort_unless($actor->isAdmin(), 403);
     }
 
     /** @return array{ok: false, message: string} */

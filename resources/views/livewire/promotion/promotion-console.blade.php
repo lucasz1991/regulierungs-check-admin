@@ -20,12 +20,12 @@
 @endphp
 
 <div
-    class="space-y-6"
+    class="console-enter space-y-6"
     x-data="promotionScanner($wire)"
     x-init="init()"
     wire:poll.2s.visible
 >
-    <section class="relative overflow-hidden rounded-[2rem] bg-[#082f35] px-5 py-7 text-white shadow-2xl shadow-teal-950/20 sm:px-8 sm:py-9">
+    <section class="console-panel relative overflow-hidden rounded-[2rem] bg-[#082f35] px-5 py-7 text-white sm:px-8 sm:py-9">
         <div aria-hidden="true" class="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[44px] border-teal-300/10"></div>
         <div aria-hidden="true" class="absolute -bottom-20 right-28 h-44 w-44 rounded-full bg-amber-300/10 blur-3xl"></div>
 
@@ -48,12 +48,9 @@
                 type="button"
                 x-on:click="show()"
                 @disabled(! $newScansAllowed || $activeTurn || $stickerRequired || $scanBlockedByQuota)
-                class="group inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-[#ffd166] px-7 py-4 text-base font-black text-[#082f35] shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-[#ffdc82] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
+                class="console-scan-glow group inline-flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-[#ffd166] px-7 py-4 text-base font-black text-[#082f35] transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#ffdc82] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
             >
-                <svg aria-hidden="true" class="h-7 w-7 transition group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2" />
-                    <path d="M7 8h2v2H7zM15 8h2v2h-2zM7 14h2v2H7zM12 12h2v2h-2zM15 15h2v2h-2z" />
-                </svg>
+                <i class="fas fa-qrcode text-2xl transition duration-300 group-hover:scale-110" aria-hidden="true"></i>
                 Nächsten Teilnehmer scannen
             </button>
         </div>
@@ -104,7 +101,7 @@
         </section>
     @else
         <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
-            <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <section class="console-panel overflow-hidden rounded-3xl border border-white/80 bg-white/95">
                 <header class="flex flex-col gap-3 border-b border-slate-100 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                     <div>
                         <h2 class="text-lg font-black text-slate-950">Letzte Teilnehmer</h2>
@@ -128,10 +125,10 @@
                                 : $result?->fulfillment_mode_snapshot;
                             $turnStatus = $turn->status->value;
                         @endphp
-                        <article wire:key="promotion-turn-{{ $turn->id }}" class="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
+                        <article wire:key="promotion-turn-{{ $turn->id }}" class="grid gap-3 px-5 py-4 transition-colors duration-200 hover:bg-[#f4faf8] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:px-6">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-mono text-xs font-bold text-teal-800">{{ $ticket?->participation?->public_id ?? '–' }}</span>
+                                    <span class="font-mono text-xs font-bold text-teal-800">{{ $ticket?->participation?->public_id ?? 'Nicht verfügbar' }}</span>
                                     <span class="rounded-full px-2 py-0.5 text-[11px] font-bold {{ $turnStatus === 'active' ? 'bg-amber-100 text-amber-900' : ($turnStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600') }}">
                                         {{ $statusLabels[$turnStatus] ?? $turnStatus }}
                                     </span>
@@ -142,7 +139,7 @@
                             <div class="sm:text-right">
                                 <p class="text-sm font-bold text-slate-900">{{ $result?->label_snapshot ?? ($turnStatus === 'active' ? 'Drehung läuft' : 'Kein finales Ergebnis') }}</p>
                                 <p class="mt-1 text-xs text-slate-500">
-                                    {{ $turn->started_at?->format('d.m.Y H:i:s') ?? '–' }}
+                                    {{ $turn->started_at?->format('d.m.Y H:i:s') ?? 'Nicht verfügbar' }}
                                     @if ($turn->startedBy)
                                         · {{ $turn->startedBy->name }}
                                     @endif
@@ -168,9 +165,7 @@
                         </article>
                     @empty
                         <div class="px-6 py-12 text-center">
-                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
-                                <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h8M8 12h5M8 17h3"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>
-                            </div>
+                            <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-xl text-slate-400"><i class="fal fa-clipboard-list" aria-hidden="true"></i></div>
                             <p class="mt-3 text-sm font-semibold text-slate-700">Noch kein Teilnehmer gescannt.</p>
                         </div>
                     @endforelse
@@ -178,7 +173,7 @@
             </section>
 
             <aside class="space-y-4">
-                <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <section class="console-panel rounded-3xl border border-white/80 bg-white/95 p-5">
                     <p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Heute</p>
                     <div class="mt-4 grid grid-cols-2 gap-3">
                         <div class="rounded-2xl bg-teal-50 p-4">
@@ -236,7 +231,7 @@
                     class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-teal-300 disabled:cursor-wait disabled:opacity-50"
                     aria-label="Scanner schließen"
                 >
-                    <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    <i class="fal fa-times text-xl" aria-hidden="true"></i>
                 </button>
             </header>
 
@@ -286,7 +281,7 @@
                 <div x-show.important="phase === 'result'" class="mx-auto flex min-h-full w-full max-w-6xl flex-col px-4 py-6 sm:px-6">
                     <div class="grid gap-4 rounded-3xl border border-teal-300/25 bg-teal-300/10 p-5 sm:grid-cols-[auto_1fr] sm:items-center">
                         <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-300 text-[#082f35]">
-                            <svg aria-hidden="true" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m5 12 4 4L19 6"/></svg>
+                            <i class="fas fa-check text-2xl" aria-hidden="true"></i>
                         </div>
                         <div>
                             <p class="text-xs font-black uppercase tracking-[0.18em] text-teal-200">Teilnehmer ist aktiv</p>

@@ -607,3 +607,11 @@ Append-only communication log. Source and runtime evidence override stale entrie
 
 - Browser-Vorschau: lokale HTML-Vorschau mit Gewinn-, Freigabe-, Profilhinweis- und Code-Mail erfolgreich unter `http://127.0.0.1:8765/promotion-mails.html` geöffnet.
 - Safety: ausschließlich fiktive Daten und ein ungültiger Muster-Code; kein Mailversand und keine Datenbankmutation.
+
+## 2026-09-10T20:11:17Z | codex -> user | status
+
+- Message: Promotion-Oberflächen für Teilnehmer, Mitarbeiter und E-Mails gestalterisch überarbeiten.
+
+## 2026-09-10T20:24:53Z | codex -> user | handoff
+
+- Message: Promotion-Mitarbeiterkonsole, Vollbildscanner und beide Promotion-Mailtemplates optisch verfeinert. Blade-Kompilierung, Scanner-Vertrag 18/18 und Vite-Build erfolgreich. Bestehender Admin-Promotiontest bleibt am bereits nicht mehr bereiten Ticket in PromotionTicketQrSigner blockiert. Browser-Designvorschau unter Root .lmzdev/artifacts/mail-previews/promotion-ui-redesign.html.

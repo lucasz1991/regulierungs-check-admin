@@ -49,7 +49,9 @@ final class PromotionTurnService
             $this->assertCanRecord($staff);
             $campaign = PromotionCampaign::query()->lockForUpdate()->findOrFail($candidate->campaign_id);
             $ticket = PromotionTicket::query()->lockForUpdate()->findOrFail($candidate->getKey());
-            $participation = $ticket->participation_id ? PromotionParticipation::query()->lockForUpdate()->findOrFail($ticket->participation_id) : null;
+            $participation = $ticket->participation_id
+                ? PromotionParticipation::query()->lockForUpdate()->findOrFail($ticket->participation_id)
+                : null;
             $participant = User::query()->lockForUpdate()->find($ticket->user_id);
             $state = PromotionCampaignState::query()->whereKey($campaign->getKey())->lockForUpdate()->first();
             if (! $state) {

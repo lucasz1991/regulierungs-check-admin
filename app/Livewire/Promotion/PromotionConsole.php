@@ -44,7 +44,7 @@ class PromotionConsole extends Component
         return 'promotion.wins.record';
     }
 
-    /** @return array{ok: bool, turn_id?: int, participant?: array<string, string|null>, message?: string} */
+    /** @return array{ok: bool, turn_id?: int, participant?: array<string, mixed>, message?: string} */
     public function scanTicket(
         string $payload,
         PromotionTurnService $turns,
@@ -243,7 +243,7 @@ class PromotionConsole extends Component
         }
 
         try {
-            $ticket = $tickets->issueTestTicket(
+            $tickets->issueTestTicket(
                 User::query()->findOrFail((int) $validated['testParticipantId']),
                 $campaign,
                 $this->actor(),

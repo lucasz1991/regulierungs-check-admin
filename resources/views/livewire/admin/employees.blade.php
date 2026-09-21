@@ -18,6 +18,9 @@
         <div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('status') }}</div>
     @endif
 
+    @error('passwordReset') <p role="alert" class="text-sm text-red-600">{{ $message }}</p> @enderror
+    @error('email') <p role="alert" class="text-sm text-red-600">{{ $message }}</p> @enderror
+
     <div class="grid gap-6 xl:grid-cols-2">
         <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex items-start gap-3">
@@ -98,12 +101,20 @@
         <div class="border-b border-gray-200 px-5 py-4"><h2 class="font-bold text-gray-900">Mitarbeiterkonten</h2><p class="mt-1 text-sm text-gray-500">Das aktuelle Team bestimmt die freigegebenen Adminmodule.</p></div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500"><tr><th class="px-5 py-3">Name</th><th class="px-5 py-3">Rolle</th><th class="px-5 py-3">Aktuelles Team</th><th class="px-5 py-3">Status</th></tr></thead>
+                <thead class="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500"><tr><th class="px-5 py-3">Name</th><th class="px-5 py-3">Rolle</th><th class="px-5 py-3">Aktuelles Team</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Passwort</th></tr></thead>
                 <tbody class="divide-y divide-gray-100">
                     @forelse($employees as $employee)
-                        <tr><td class="px-5 py-3"><strong class="block text-gray-900">{{ $employee->name }}</strong><span class="text-gray-500">{{ $employee->email }}</span></td><td class="px-5 py-3">{{ $employee->role === 'admin' ? 'Administrator' : 'Mitarbeiter' }}</td><td class="px-5 py-3">{{ $employee->currentTeam?->name ?? 'Kein Team' }}</td><td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $employee->status ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">{{ $employee->status ? 'Aktiv' : 'Deaktiviert' }}</span></td></tr>
+                        <tr><td class="px-5 py-3"><strong class="block text-gray-900">{{ $employee->name }}</strong><span class="text-gray-500">{{ $employee->email }}</span></td><td class="px-5 py-3">{{ $employee->role === 'admin' ? 'Administrator' : 'Mitarbeiter' }}</td><td class="px-5 py-3">{{ $employee->currentTeam?->name ?? 'Kein Team' }}</td><td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $employee->status ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">{{ $employee->status ? 'Aktiv' : 'Deaktiviert' }}</span></td>
+                            <td class="px-5 py-3">
+                                @if ($employee->status)
+                                    <button type="button" wire:click="sendPasswordReset({{ $employee->id }})" wire:loading.attr="disabled" wire:target="sendPasswordReset" class="text-sm font-semibold text-teal-700 underline disabled:opacity-50">Reset-Link senden</button>
+                                @else
+                                    <span class="text-gray-500">—</span>
+                                @endif
+                            </td>
+                        </tr>
                     @empty
-                        <tr><td colspan="4" class="px-5 py-8 text-center text-gray-500">Keine Mitarbeiterkonten vorhanden.</td></tr>
+                        <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Keine Mitarbeiterkonten vorhanden.</td></tr>
                     @endforelse
                 </tbody>
             </table>

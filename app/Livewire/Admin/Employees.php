@@ -7,9 +7,11 @@ use App\Mail\StaffInvitationMail;
 use App\Models\StaffInvitation;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Auth\PasswordResetService;
 use App\Support\Rbac\StaffInvitationService;
 use App\Support\Rbac\StaffTeamService;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -127,6 +129,22 @@ class Employees extends Component
 
         $this->reset('existingEmail');
         session()->flash('status', 'Das bestehende Konto wurde als Mitarbeiter dem Team '.$user->currentTeam->name.' zugeordnet. Eine E-Mail-Verifizierung ist im Admin-Bereich nicht erforderlich.');
+    }
+
+    public function sendPasswordReset(int $userId, PasswordResetService $passwords): void
+    {
+        $this->authorize('staff.manage');
+        $this->resetErrorBag();
+        $employee = User::query()->whereIn('role', ['admin', 'staff'])->where('status', true)->findOrFail($userId);
+        $status = $passwords->send($employee->email);
+
+        if ($status !== Password::RESET_LINK_SENT) {
+            $this->addError('passwordReset', 'Bitte warte eine Minute, bevor du erneut einen Reset-Link versendest.');
+
+            return;
+        }
+
+        session()->flash('status', 'Der Passwort-Reset-Link wurde über den Admin-Mailversand an den Mitarbeiter gesendet.');
     }
 
     public function render()

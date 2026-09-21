@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\PromotionGiftCodeController;
 use App\Http\Controllers\Admin\SocialAuthProviderSettingsController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\NewsSocialImageController;
 use App\Http\Controllers\PagebuilderProjectController;
 use App\Http\Controllers\StaffInvitationController;
@@ -23,9 +25,8 @@ use App\Livewire\AdminConfig;
 use App\Livewire\AdminDashboard;
 use App\Livewire\AdminMessageBox;
 use App\Livewire\Promotion\PromotionConsole;
-use App\Http\Controllers\Admin\PromotionGiftCodeController;
 use App\Livewire\WebContentManager;
-use App\Livewire\Welcome;
+use App\Support\Rbac\StaffLandingPage;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -39,7 +40,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', Welcome::class)->name('home');
+Route::get('/', function () {
+    $user = auth()->user();
+    if (! $user) {
+        return redirect()->route('login');
+    }
+    abort_unless($user->isActive() && in_array($user->role, ['admin', 'staff'], true), 403);
+    $destination = app(StaffLandingPage::class)->routeName($user);
+    abort_if($destination === 'home', 403, 'Für deinen Mitarbeiterzugang sind noch keine Bereiche freigegeben.');
+
+    return redirect()->route($destination);
+})->name('home');
+
+Route::middleware('guest')->group(function (): void {
+    Route::post('/forgot-password', [PasswordResetController::class, 'send'])->name('password.email');
+    Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:10,1')->name('password.update');
+});
 
 Route::middleware(['guest', SensitiveBearerPageHeaders::class])->group(function (): void {
     Route::get('/mitarbeiter/einladung/annehmen', [StaffInvitationController::class, 'accept'])->name('staff-invitations.accept');

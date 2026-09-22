@@ -37,3 +37,4 @@
 | Einseitige Betreiber-Anleitung für Apple-ID Login und Registrierung erstellen | Codex-root | completed | 2026-08-21T20:13:55Z |
 | Mitarbeiter-Onboarding mit frei waehlbarem Team, direkter Passwortsetzung und synchroner Admin-Mail | Codex | completed | 2026-09-04T08:44:22Z |
 | Produktions-Build EPIPE bei sass-embedded unter Node.js 23 beheben | Codex | completed | 2026-09-04T09:21:38Z |
+| Admin-Profile fuer Mitarbeiter und Benutzer mit Promotion-Aktivitaet sowie Mitarbeiter-Modale | Codex | completed | 2026-09-22T05:50:00Z |

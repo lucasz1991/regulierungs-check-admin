@@ -119,3 +119,11 @@
 - Node.js ist für den Build auf die LTS-Linien 22 oder 24 festgelegt; `.nvmrc` wählt standardmäßig Node 22. Der fehlerauslösende Serverstand Node 23.11.1 ist damit ausdrücklich ausgeschlossen.
 - `@zxing/library` ist als direkter Peer des Mitarbeiter-Scanners festgeschrieben, damit die Lockfile-Bereinigung die Scannerabhängigkeit nicht implizit verliert.
 - Ein isoliertes frisches `npm ci --ignore-scripts --offline` installierte 410 Pakete ohne `sass-embedded`, aber mit `sass` und `@zxing/library`. Der Produktionsbuild, Scannervertrag mit 18 Checks, News-Tailwind-Vertrag, npm-Audit ohne Findings und Diff-Check bestanden.
+
+## 2026-09-22 | Admin-Profile und Mitarbeiterverwaltung
+
+- Admin-only: Benutzerprofile wurden für Mitarbeiter über die neue Route `staff.profile` wiederverwendet; die bestehende `users.manage`-Route blieb unverändert.
+- Profile laden persönliche Daten, Rolle, Teamrechte, Promotion-Tickets, Drehungen, Ergebnisse, Legacy-Gewinne und Mitarbeiter-Aktivität aus `promotion_turns`.
+- Mitarbeiterverwaltung: Einladung, bestehendes Konto zuordnen und Teamzugriffe liegen in Modalen; die Aktionen stehen als minimale Icon-Schaltflächen oben rechts.
+- Base-Installation blieb nach dem vom Admin-Build ausgelösten Tailwind-Sync wieder bytegleich zum Git-Stand.
+- Verifiziert: PHP-Lint, gezielte Promotion-/RBAC-/Mitarbeiter-Tests, Blade-Compiler für die geänderten Views, Vite-Produktionsbuild und `git diff --check`.

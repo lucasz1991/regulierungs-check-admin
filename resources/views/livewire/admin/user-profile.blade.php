@@ -25,6 +25,12 @@
     <!-- Benutzerdetails -->
     <div class="text-center mt-2">
         <h2 class="font-semibold text-lg">{{ $user->name }}</h2>
+        <p class="mt-1 text-sm text-gray-500">
+            {{ $user->role === 'admin' ? 'Administrator' : ($user->role === 'staff' ? 'Mitarbeiter' : 'Benutzer') }}
+            @if($user->currentTeam)
+                · {{ $user->currentTeam->name }}
+            @endif
+        </p>
     </div>
 
     <!-- Benutzerstatistiken -->
@@ -58,6 +64,7 @@
 
 
     <!-- Weitere Aktionen -->
+    @if($canManageUserStatus || $canSendUserMail)
     <div class="p-4 border-t mt-2 flex flex-wrap justify-end gap-4">
         
 
@@ -78,6 +85,7 @@
                 class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg"
             >
                 <ul>
+                    @if($canManageUserStatus)
                     <li>
                         @if ($user->status)
                             <button wire:click="deactivateUser()" class="block w-full px-4 py-2 text-left hover:bg-yellow-100">
@@ -89,6 +97,8 @@
                             </button>
                         @endif
                     </li>
+                    @endif
+                    @if($canSendUserMail)
                     <li>
                         <button 
                             wire:click="openMailModal" 
@@ -97,10 +107,12 @@
                             Mail senden
                         </button>
                     </li>
+                    @endif
                 </ul>
             </div>
         </div>
     </div>
+    @endif
 <!-- Tab-Menü -->
 <ul class="flex w-full text-sm font-medium text-center text-gray-500 bg-gray-100 rounded-lg shadow divide-gray-200">
         <!-- Details Tab -->
@@ -166,6 +178,11 @@
                         </div>
                         </p>
                         <p><strong>Registriert am:</strong> {{ $user->created_at->format('d.m.Y') }}</p>
+                        <p><strong>Kontotyp:</strong> {{ $user->role === 'admin' ? 'Administrator' : ($user->role === 'staff' ? 'Mitarbeiter' : 'Benutzer') }}</p>
+                        @if($user->currentTeam)
+                            <p><strong>Team:</strong> {{ $user->currentTeam->name }}</p>
+                            <p><strong>Teamrechte:</strong> {{ $user->currentTeam->permissionMatrix() ? count($user->currentTeam->permissionMatrix()) : 0 }}</p>
+                        @endif
                     </div>
 
                     <div>
@@ -202,15 +219,19 @@
         <div  x-show.important="selectedTab === 'shelfRentals'" x-collapse  x-cloak>
             <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">Buchungen</h2>
-                <livewire:admin.user-profile.shelf-rentals :user-id="$user->id" x-collapse  lazy />
-                <div wire:loading>
-                    <div class="flex justify-center items-center h-20">
-                        <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                        </svg>
+                @if($canManageUserStatus)
+                    <livewire:admin.user-profile.shelf-rentals :user-id="$user->id" x-collapse lazy />
+                    <div wire:loading>
+                        <div class="flex justify-center items-center h-20">
+                            <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <p class="text-sm text-gray-500">Für dieses Mitarbeiterprofil sind keine Regalbuchungen freigegeben.</p>
+                @endif
             </div>
         </div>
         <div x-show.important="selectedTab === 'promotion'" x-collapse x-cloak>
@@ -307,6 +328,26 @@
                         </div>
                     </details>
                 @endif
+
+                @if ($staffPromotionTurns->isNotEmpty())
+                    <details class="rounded-2xl border border-slate-200 bg-white p-5">
+                        <summary class="cursor-pointer font-bold text-slate-800">Mitarbeiter-Aktivität ({{ $staffPromotionTurns->count() }})</summary>
+                        <div class="mt-3 divide-y divide-slate-100">
+                            @foreach ($staffPromotionTurns as $turn)
+                                <div class="grid gap-1 py-3 text-sm sm:grid-cols-[1fr_auto] sm:gap-4">
+                                    <div>
+                                        <strong class="text-slate-900">{{ $turn->campaign?->name ?? 'Promotion' }}</strong>
+                                        <p class="text-xs text-slate-500">
+                                            Teilnehmer: {{ $turn->ticket?->user?->name ?? 'Unbekannt' }}
+                                            @if($turn->ticket?->participation?->public_id) · {{ $turn->ticket->participation->public_id }} @endif
+                                        </p>
+                                    </div>
+                                    <span class="text-xs text-slate-500 sm:text-right">{{ $turn->started_at?->format('d.m.Y H:i') }} · {{ $turn->status?->value ?? $turn->status }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
             </div>
         </div>
         <div  x-show.important="selectedTab === 'logs'" x-collapse  x-cloak>
@@ -325,6 +366,7 @@
 
 
 
+    @if($canSendUserMail)
     <div x-data="{ showModal: @entangle('showMailModal') }" x-init="$watch('showModal', value => { if (!value) $wire.set('mailUserId', {{ $user->id }}); })">
         <!-- Modal für Mail-Verfassen -->
         <x-dialog-modal wire:model="showMailModal">
@@ -372,5 +414,6 @@
             </x-slot>
         </x-dialog-modal>
     </div>
+    @endif
 
 </div>

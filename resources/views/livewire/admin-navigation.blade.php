@@ -31,7 +31,7 @@
                 </li>
                 <!-- Mitarbeiter -->
                 <li>
-                    <a href="{{ route('admin.employees') }}" wire:navigate class="{{ request()->routeIs('admin.employees') ? 'text-blue-600' : 'text-[#333]' }} text-sm flex items-center hover:text-blue-600 transition-all">
+                    <a href="{{ route('admin.employees') }}" wire:navigate class="{{ request()->routeIs('admin.employees', 'staff.profile') ? 'text-blue-600' : 'text-[#333]' }} text-sm flex items-center hover:text-blue-600 transition-all">
                         <span>Mitarbeiter</span>
                     </a>
                 </li>

@@ -6,13 +6,14 @@ use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\Mail;
 use App\Models\PromotionSpinResult;
 use App\Models\PromotionTicket;
+use App\Models\PromotionTurn;
 use App\Models\PromotionWin;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\Admin\UserStatusService;
 use App\Services\Promotion\PromotionResultMailer;
-use App\Services\Promotion\PromotionTicketService;
 use App\Services\Promotion\PromotionSettingsService;
+use App\Services\Promotion\PromotionTicketService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
@@ -52,7 +53,27 @@ class UserProfile extends Component
 
     public function loadUser()
     {
-        $this->user = User::findOrFail($this->userId);
+        $query = User::query();
+        $hasCustomerTable = Schema::hasTable('customers');
+        $hasTeamTables = Schema::hasTable('teams') && Schema::hasTable('team_user');
+
+        if ($hasCustomerTable) {
+            $query->with('customer');
+        }
+
+        if ($hasTeamTables) {
+            $query->with('currentTeam');
+        }
+
+        $this->user = $query->findOrFail($this->userId);
+
+        if (! $hasTeamTables) {
+            $this->user->setRelation('currentTeam', null);
+        }
+
+        if (! $hasCustomerTable) {
+            $this->user->setRelation('customer', null);
+        }
     }
 
     public function activateUser(UserStatusService $statuses)
@@ -172,17 +193,21 @@ class UserProfile extends Component
 
     public function issuePromotionTestTicket(PromotionTicketService $tickets, PromotionSettingsService $settings): void
     {
-        $actor = auth()->user(); abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
-        $campaignId = $settings->publicCampaignId(); abort_unless($campaignId, 422, 'Keine öffentliche Kampagne aktiv.');
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+        $campaignId = $settings->publicCampaignId();
+        abort_unless($campaignId, 422, 'Keine öffentliche Kampagne aktiv.');
         $tickets->issueTestTicket(User::query()->findOrFail($this->userId), \App\Models\PromotionCampaign::query()->findOrFail($campaignId), $actor);
         $this->dispatch('showAlert', 'Test-Ticket wurde ausgestellt. Es löst keine Kontingente, Codes oder Teilnehmernachrichten aus.', 'success');
     }
 
     public function resetPromotionTestTicket(int $ticketId, PromotionTicketService $tickets): void
     {
-        $actor = auth()->user(); abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && $actor->isAdmin() && $actor->isActive(), 403);
         $ticket = PromotionTicket::query()->where('user_id', $this->userId)->findOrFail($ticketId);
-        $tickets->resetTestTicket($ticket, $actor); $this->dispatch('showAlert', 'Test-Drehung zurückgesetzt; ein neues Test-Ticket wurde ausgestellt.', 'success');
+        $tickets->resetTestTicket($ticket, $actor);
+        $this->dispatch('showAlert', 'Test-Drehung zurückgesetzt; ein neues Test-Ticket wurde ausgestellt.', 'success');
     }
 
     public function render()
@@ -202,9 +227,26 @@ class UserProfile extends Component
                 ->get()
             : collect();
 
+        $staffPromotionTurns = Schema::hasTable('promotion_turns')
+            ? PromotionTurn::query()
+                ->where('started_by', $this->userId)
+                ->with([
+                    'campaign:id,name,code',
+                    'ticket:id,user_id,participation_id',
+                    'ticket.user:id,name,email',
+                    'ticket.participation:id,public_id',
+                ])
+                ->latest('started_at')
+                ->limit(50)
+                ->get()
+            : collect();
+
         return view('livewire.admin.user-profile', [
             'user' => $this->user,
             'promotionTickets' => $tickets,
+            'staffPromotionTurns' => $staffPromotionTurns,
+            'canManageUserStatus' => auth()->user()?->hasRbacPermission('users.manage') ?? false,
+            'canSendUserMail' => auth()->user()?->hasRbacPermission('mails.manage') ?? false,
             'legacyPromotionWins' => Schema::hasTable('wins')
                 ? PromotionWin::query()->whereHas('participation', fn ($query) => $query->where('user_id', $this->userId))->with(['campaign', 'prize', 'issuedBy'])->latest()->get()
                 : collect(),

@@ -4,144 +4,42 @@
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#8dd7d1]">Zugangsverwaltung</p>
                 <h1 class="mt-2 text-2xl font-bold sm:text-3xl">Mitarbeiter &amp; Teams</h1>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
-                    Administratoren wählen das Team direkt aus. Neue Mitarbeiter setzen über den zugesandten Link nur noch ihr Passwort und sind danach sofort angemeldet. Eine zusätzliche E-Mail-Verifizierung ist nicht erforderlich.
-                </p>
+                <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-200">Administratoren wählen das Team direkt aus. Mitarbeiterprofile, Teamzuordnung und Passwortversand bleiben an einer Stelle gebündelt; die Aktionen öffnen sich nur bei Bedarf. Eine Funktion wie <span class="font-semibold text-white">Redaktion</span> kann beim Einladen ergänzt werden.</p>
             </div>
-            <a href="{{ route('admin.team-permissions') }}" class="inline-flex min-h-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#ffd166] focus:ring-offset-2 focus:ring-offset-[#082f35]">
-                Teams &amp; Rechte verwalten
-            </a>
+            <div class="flex items-center justify-end gap-2" aria-label="Mitarbeiteraktionen">
+                <button type="button" wire:click="openInviteModal" title="Neuen Mitarbeiter einladen" aria-label="Neuen Mitarbeiter einladen" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#ffd166] focus:ring-offset-2 focus:ring-offset-[#082f35]"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0M17 6v6m3-3h-6"/></svg><span class="sr-only">Neuen Mitarbeiter einladen</span></button>
+                <button type="button" wire:click="openAssignModal" title="Bestehendes Konto zuordnen" aria-label="Bestehendes Konto zuordnen" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#ffd166] focus:ring-offset-2 focus:ring-offset-[#082f35]"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487 18.55 2.8a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931ZM16.862 4.487 19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21h-10.5A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg><span class="sr-only">Bestehendes Konto zuordnen</span></button>
+                @can('roles.manage')
+                    <button type="button" wire:click="openAccessModal" title="Teamzugriffe verwalten" aria-label="Teamzugriffe verwalten" class="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white transition hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#ffd166] focus:ring-offset-2 focus:ring-offset-[#082f35]"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94a1.5 1.5 0 0 1 2.812 0l.274.676a1.5 1.5 0 0 0 1.665.894l.718-.14a1.5 1.5 0 0 1 1.406 2.437l-.445.578a1.5 1.5 0 0 0 0 1.83l.445.578a1.5 1.5 0 0 1-1.406 2.437l-.718-.14a1.5 1.5 0 0 0-1.665.894l-.274.676a1.5 1.5 0 0 1-2.812 0l-.274-.676a1.5 1.5 0 0 0-1.665-.894l-.718.14a1.5 1.5 0 0 1-1.406-2.437l.445-.578a1.5 1.5 0 0 0 0-1.83l-.445-.578A1.5 1.5 0 0 1 6.937 5.37l.718.14a1.5 1.5 0 0 0 1.665-.894l.274-.676ZM12 13.25a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z"/></svg><span class="sr-only">Teamzugriffe verwalten</span></button>
+                @endcan
+            </div>
         </div>
     </header>
 
-    @if(session('status'))
-        <div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('status') }}</div>
-    @endif
-
+    @if(session('status'))<div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('status') }}</div>@endif
     @error('passwordReset') <p role="alert" class="text-sm text-red-600">{{ $message }}</p> @enderror
     @error('email') <p role="alert" class="text-sm text-red-600">{{ $message }}</p> @enderror
 
-    <div class="grid gap-6 xl:grid-cols-2">
-        <section class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-            <div class="flex items-start gap-3">
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></svg>
-                </span>
-                <div>
-                    <h2 class="font-bold text-gray-900">Neuen Mitarbeiterzugang versenden</h2>
-                    <p class="mt-1 text-sm leading-5 text-gray-500">Die E-Mail wird direkt aus dem Admin-Bereich versendet. Es werden keine Jobs, Queue-Worker oder Cron-Aufgaben benötigt.</p>
-                </div>
-            </div>
-
-            <form wire:submit="invite" class="mt-5 space-y-4">
-                <div>
-                    <label for="invite-email" class="mb-1.5 block text-sm font-semibold text-gray-700">E-Mail-Adresse</label>
-                    <input id="invite-email" wire:model="email" type="email" autocomplete="email" required class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600">
-                    @error('email') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
-                </div>
-
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div>
-                        <label for="invite-team" class="mb-1.5 block text-sm font-semibold text-gray-700">Team</label>
-                        <select id="invite-team" wire:model="teamId" required class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600">
-                            <option value="">Team auswählen</option>
-                            @foreach($teams as $team)
-                                <option value="{{ $team->id }}">{{ $team->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('teamId') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label for="invite-position" class="mb-1.5 block text-sm font-semibold text-gray-700">Funktion <span class="font-normal text-gray-400">(optional)</span></label>
-                        <input id="invite-position" wire:model="position" autocomplete="organization-title" class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600" placeholder="z. B. Redaktion">
-                        @error('position') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror
-                    </div>
-                </div>
-
-                <button type="submit" wire:loading.attr="disabled" @disabled($teams->isEmpty()) class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-teal-700 px-4 py-2.5 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-                    <span wire:loading.remove wire:target="invite">Einrichtungslink senden</span>
-                    <span wire:loading wire:target="invite">E-Mail wird versendet …</span>
-                </button>
-            </form>
-        </section>
-
-        <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm sm:p-6">
-            <div class="flex items-start gap-3">
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487 18.55 2.8a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931ZM16.862 4.487 19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21h-10.5A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>
-                </span>
-                <div>
-                    <h2 class="font-bold text-amber-950">Bestehendes Konto zuordnen</h2>
-                    <p class="mt-1 text-sm leading-5 text-amber-900">Das Konto wird zum aktiven Mitarbeiterkonto und erhält genau das ausgewählte Team. Eine vorhandene E-Mail-Verifizierung wird nicht vorausgesetzt.</p>
-                </div>
-            </div>
-
-            <form wire:submit="assignExisting" class="mt-5 space-y-4">
-                <div>
-                    <label for="existing-email" class="mb-1.5 block text-sm font-semibold text-amber-950">E-Mail des bestehenden Kontos</label>
-                    <input id="existing-email" wire:model="existingEmail" type="email" autocomplete="email" required class="min-h-11 w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-amber-700 focus:ring-amber-700">
-                    @error('existingEmail') <p class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label for="existing-team" class="mb-1.5 block text-sm font-semibold text-amber-950">Team</label>
-                    <select id="existing-team" wire:model="existingTeamId" required class="min-h-11 w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-amber-700 focus:ring-amber-700">
-                        <option value="">Team auswählen</option>
-                        @foreach($teams as $team)
-                            <option value="{{ $team->id }}">{{ $team->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('existingTeamId') <p class="mt-1.5 text-sm text-red-700">{{ $message }}</p> @enderror
-                </div>
-                <button type="submit" wire:confirm="Das bestehende Konto wirklich als Mitarbeiter dem ausgewählten Team zuordnen?" wire:loading.attr="disabled" @disabled($teams->isEmpty()) class="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-amber-800 px-4 py-2.5 font-semibold text-white transition hover:bg-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-700 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">Team zuweisen</button>
-            </form>
-        </section>
-    </div>
-
     <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4"><h2 class="font-bold text-gray-900">Mitarbeiterkonten</h2><p class="mt-1 text-sm text-gray-500">Das aktuelle Team bestimmt die freigegebenen Adminmodule.</p></div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200 text-sm">
-                <thead class="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500"><tr><th class="px-5 py-3">Name</th><th class="px-5 py-3">Rolle</th><th class="px-5 py-3">Aktuelles Team</th><th class="px-5 py-3">Status</th><th class="px-5 py-3">Passwort</th></tr></thead>
-                <tbody class="divide-y divide-gray-100">
-                    @forelse($employees as $employee)
-                        <tr><td class="px-5 py-3"><strong class="block text-gray-900">{{ $employee->name }}</strong><span class="text-gray-500">{{ $employee->email }}</span></td><td class="px-5 py-3">{{ $employee->role === 'admin' ? 'Administrator' : 'Mitarbeiter' }}</td><td class="px-5 py-3">{{ $employee->currentTeam?->name ?? 'Kein Team' }}</td><td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $employee->status ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">{{ $employee->status ? 'Aktiv' : 'Deaktiviert' }}</span></td>
-                            <td class="px-5 py-3">
-                                @if ($employee->status)
-                                    <button type="button" wire:click="sendPasswordReset({{ $employee->id }})" wire:loading.attr="disabled" wire:target="sendPasswordReset" class="text-sm font-semibold text-teal-700 underline disabled:opacity-50">Reset-Link senden</button>
-                                @else
-                                    <span class="text-gray-500">—</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Keine Mitarbeiterkonten vorhanden.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div class="border-t border-gray-100 px-5 py-3">{{ $employees->links('vendor.pagination.tailwind') }}</div>
-    </section>
-
-    <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <div class="border-b border-gray-200 px-5 py-4"><h2 class="font-bold text-gray-900">Zugangsverlauf</h2><p class="mt-1 text-sm text-gray-500">Versendete Einrichtungslinks und deren Status.</p></div>
-        <div class="divide-y divide-gray-100">
-            @forelse($invitations as $invitation)
-                <div class="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div><strong class="text-sm text-gray-900">{{ $invitation->email }}</strong><p class="text-xs text-gray-500">Team {{ $invitation->team->name }} · versendet von {{ $invitation->inviter->name }} · gültig bis {{ $invitation->expires_at->format('d.m.Y H:i') }}</p></div>
-                    <div class="flex items-center gap-3">
-                        @if($invitation->accepted_at)
-                            <span class="text-xs font-semibold text-emerald-700">Eingerichtet</span>
-                        @elseif($invitation->expires_at->isFuture())
-                            <span class="text-xs font-semibold text-amber-700">Offen</span>
-                            <button type="button" wire:click="revoke({{ $invitation->id }})" wire:confirm="Einrichtungslink wirklich widerrufen?" class="text-xs font-semibold text-red-700 hover:text-red-800">Widerrufen</button>
-                        @else
-                            <span class="text-xs font-semibold text-gray-500">Abgelaufen</span>
-                        @endif
-                    </div>
-                </div>
+        <div class="flex flex-col gap-1 border-b border-gray-200 px-5 py-4 sm:flex-row sm:items-end sm:justify-between"><div><h2 class="font-bold text-gray-900">Mitarbeiterkonten</h2><p class="mt-1 text-sm text-gray-500">Das aktuelle Team bestimmt die freigegebenen Adminmodule.</p></div><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">{{ $employees->total() }} Konten</span></div>
+        <div class="overflow-x-auto"><table class="min-w-full divide-y divide-gray-200 text-sm"><thead class="bg-gray-50 text-left text-xs uppercase tracking-wider text-gray-500"><tr><th class="px-5 py-3">Name</th><th class="px-5 py-3">Rolle</th><th class="px-5 py-3">Aktuelles Team</th><th class="px-5 py-3">Status</th><th class="px-5 py-3 text-right">Aktionen</th></tr></thead><tbody class="divide-y divide-gray-100">
+            @forelse($employees as $employee)
+                <tr class="transition hover:bg-gray-50"><td class="px-5 py-3"><a href="{{ route('staff.profile', ['userId' => $employee->id]) }}" wire:navigate class="group block"><strong class="block text-gray-900 group-hover:text-teal-700">{{ $employee->name }}</strong><span class="text-gray-500">{{ $employee->email }}</span></a></td><td class="px-5 py-3">{{ $employee->role === 'admin' ? 'Administrator' : 'Mitarbeiter' }}</td><td class="px-5 py-3">{{ $employee->currentTeam?->name ?? 'Kein Team' }}</td><td class="px-5 py-3"><span class="rounded-full px-2 py-1 text-xs font-semibold {{ $employee->status ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700' }}">{{ $employee->status ? 'Aktiv' : 'Deaktiviert' }}</span></td><td class="px-5 py-3"><div class="flex justify-end gap-1"><a href="{{ route('staff.profile', ['userId' => $employee->id]) }}" wire:navigate title="Profil öffnen" aria-label="Profil von {{ $employee->name }} öffnen" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-teal-50 hover:text-teal-700"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Z"/></svg><span class="sr-only">Profil öffnen</span></a>@if($employee->status)<button type="button" wire:click="sendPasswordReset({{ $employee->id }})" wire:loading.attr="disabled" wire:target="sendPasswordReset" title="Passwort-Reset senden" aria-label="Passwort-Reset an {{ $employee->name }} senden" class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 hover:bg-amber-50 hover:text-amber-700 disabled:opacity-50"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3.75 3.75 0 1 1-6.84 2.1L3 13.26V18h4.75v-2.25H10V13.5h2.25l1.92-1.92a3.75 3.75 0 0 1 1.58-6.33ZM16.5 7.5h.008v.008H16.5V7.5Z"/></svg><span class="sr-only">Passwort-Reset senden</span></button>@endif</div></td></tr>
             @empty
-                <p class="px-5 py-8 text-center text-sm text-gray-500">Noch keine Einrichtungslinks versendet.</p>
+                <tr><td colspan="5" class="px-5 py-8 text-center text-gray-500">Keine Mitarbeiterkonten vorhanden.</td></tr>
             @endforelse
-        </div>
+        </tbody></table></div><div class="border-t border-gray-100 px-5 py-3">{{ $employees->links('vendor.pagination.tailwind') }}</div>
     </section>
+
+    <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"><div class="border-b border-gray-200 px-5 py-4"><h2 class="font-bold text-gray-900">Zugangsverlauf</h2><p class="mt-1 text-sm text-gray-500">Versendete Einrichtungslinks und deren Status.</p></div><div class="divide-y divide-gray-100">
+        @forelse($invitations as $invitation)<div class="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between"><div><strong class="text-sm text-gray-900">{{ $invitation->email }}</strong><p class="text-xs text-gray-500">Team {{ $invitation->team->name }} · versendet von {{ $invitation->inviter->name }} · gültig bis {{ $invitation->expires_at->format('d.m.Y H:i') }}</p></div><div class="flex items-center gap-3">@if($invitation->accepted_at)<span class="text-xs font-semibold text-emerald-700">Eingerichtet</span>@elseif($invitation->expires_at->isFuture())<span class="text-xs font-semibold text-amber-700">Offen</span><button type="button" wire:click="revoke({{ $invitation->id }})" wire:confirm="Einrichtungslink wirklich widerrufen?" class="text-xs font-semibold text-red-700 hover:text-red-800">Widerrufen</button>@else<span class="text-xs font-semibold text-gray-500">Abgelaufen</span>@endif</div></div>@empty<p class="px-5 py-8 text-center text-sm text-gray-500">Noch keine Einrichtungslinks versendet.</p>@endforelse
+    </div></section>
+
+    @if($showInviteModal)<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" wire:click.self="closeInviteModal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title"><div class="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-wider text-teal-700">Mitarbeiter</p><h2 id="invite-modal-title" class="mt-1 text-xl font-bold text-gray-900">Neuen Zugang einladen</h2></div><button type="button" wire:click="closeInviteModal" aria-label="Dialog schließen" class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">&times;</button></div><form wire:submit="invite" class="mt-6 space-y-4"><div><label for="invite-email" class="mb-1.5 block text-sm font-semibold text-gray-700">E-Mail-Adresse</label><input id="invite-email" wire:model="email" type="email" autocomplete="email" required class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900 shadow-sm focus:border-teal-600 focus:ring-teal-600">@error('email') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror</div><div class="grid gap-4 sm:grid-cols-2"><div><label for="invite-team" class="mb-1.5 block text-sm font-semibold text-gray-700">Team</label><select id="invite-team" wire:model="teamId" required class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900"><option value="">Team auswählen</option>@foreach($teams as $team)<option value="{{ $team->id }}">{{ $team->name }}</option>@endforeach</select>@error('teamId') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror</div><div><label for="invite-position" class="mb-1.5 block text-sm font-semibold text-gray-700">Funktion <span class="font-normal text-gray-400">(optional)</span></label><input id="invite-position" wire:model="position" autocomplete="organization-title" class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900" placeholder="z. B. Redaktion">@error('position') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror</div></div><div class="flex justify-end gap-2 border-t border-gray-100 pt-5"><button type="button" wire:click="closeInviteModal" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100">Abbrechen</button><button type="submit" wire:loading.attr="disabled" @disabled($teams->isEmpty()) class="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60"><span wire:loading.remove wire:target="invite">Einrichtungslink senden</span><span wire:loading wire:target="invite">E-Mail wird versendet …</span></button></div></form></div></div>@endif
+
+    @if($showAssignModal)<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" wire:click.self="closeAssignModal" role="dialog" aria-modal="true" aria-labelledby="assign-modal-title"><div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-wider text-amber-700">Bestehendes Konto</p><h2 id="assign-modal-title" class="mt-1 text-xl font-bold text-gray-900">Konto einem Team zuordnen</h2></div><button type="button" wire:click="closeAssignModal" aria-label="Dialog schließen" class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">&times;</button></div><form wire:submit="assignExisting" class="mt-6 space-y-4"><div><label for="existing-email" class="mb-1.5 block text-sm font-semibold text-gray-700">E-Mail des bestehenden Kontos</label><input id="existing-email" wire:model="existingEmail" type="email" autocomplete="email" required class="min-h-11 w-full rounded-xl border border-gray-300 px-3 py-2 text-gray-900">@error('existingEmail') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror</div><div><label for="existing-team" class="mb-1.5 block text-sm font-semibold text-gray-700">Team</label><select id="existing-team" wire:model="existingTeamId" required class="min-h-11 w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900"><option value="">Team auswählen</option>@foreach($teams as $team)<option value="{{ $team->id }}">{{ $team->name }}</option>@endforeach</select>@error('existingTeamId') <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p> @enderror</div><div class="flex justify-end gap-2 border-t border-gray-100 pt-5"><button type="button" wire:click="closeAssignModal" class="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-100">Abbrechen</button><button type="submit" wire:confirm="Das bestehende Konto wirklich als Mitarbeiter dem ausgewählten Team zuordnen?" wire:loading.attr="disabled" @disabled($teams->isEmpty()) class="rounded-xl bg-amber-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-900 disabled:cursor-not-allowed disabled:opacity-60">Team zuweisen</button></div></form></div></div>@endif
+
+    @can('roles.manage')
+        @if($showAccessModal)<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" wire:click.self="closeAccessModal" role="dialog" aria-modal="true" aria-labelledby="access-modal-title"><div class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div class="flex items-start justify-between gap-4"><div><p class="text-xs font-bold uppercase tracking-wider text-teal-700">Zugriffsschutz</p><h2 id="access-modal-title" class="mt-1 text-xl font-bold text-gray-900">Teamzugriffe verwalten</h2><p class="mt-1 text-sm text-gray-500">Die Rechte werden sofort für alle Mitglieder des gewählten Teams wirksam.</p></div><button type="button" wire:click="closeAccessModal" aria-label="Dialog schließen" class="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700">&times;</button></div><div class="mt-6 grid gap-5 lg:grid-cols-[220px_1fr]"><aside class="rounded-xl border border-gray-200 p-2">@forelse($teams as $team)<button type="button" wire:click="selectAccessTeam({{ $team->id }})" class="mb-1 w-full rounded-lg px-3 py-2 text-left text-sm {{ $selectedAccessTeamId === $team->id ? 'bg-teal-50 font-semibold text-teal-800' : 'text-gray-700 hover:bg-gray-50' }}">{{ $team->name }}</button>@empty<p class="p-3 text-sm text-gray-500">Keine Teams vorhanden.</p>@endforelse</aside>@if($selectedAccessTeamId)<div class="space-y-4">@foreach($permissionGroups as $group => $entries)<fieldset><legend class="mb-2 text-sm font-bold text-gray-800">{{ $group }}</legend><div class="grid gap-2 sm:grid-cols-2">@foreach($entries as $permission => $label)@php($promotionPermission = in_array($permission, \App\Support\Rbac\RbacCatalog::promotionTeamPermissions(), true))@php($selectedAccessTeam = $teams->firstWhere('id', $selectedAccessTeamId))@php($locked = in_array($permission, $adminOnlyPermissions, true) || (($selectedAccessTeam?->isPromotionTeam()) && ! $promotionPermission) || ((! $selectedAccessTeam?->isPromotionTeam()) && $promotionPermission))<label class="flex items-start gap-3 rounded-lg border px-3 py-2 {{ $locked ? 'border-gray-100 bg-gray-50 text-gray-400' : 'border-gray-200' }}"><input type="checkbox" wire:click="toggleAccessPermission('{{ $permission }}')" @checked((bool) ($accessPermissions[$permission] ?? false)) @disabled($locked) class="mt-1 rounded border-gray-300 text-teal-700 focus:ring-teal-600"><span><span class="block text-sm font-medium">{{ $label }}</span><code class="text-[11px]">{{ $permission }}</code></span></label>@endforeach</div></fieldset>@endforeach<div class="flex justify-end border-t border-gray-100 pt-4"><button type="button" wire:click="saveAccess" class="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800">Rechte speichern</button></div></div>@endif</div></div></div>@endif
+    @endcan
 </div>

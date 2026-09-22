@@ -619,3 +619,10 @@ Append-only communication log. Source and runtime evidence override stale entrie
 ## 2026-09-10T20:31:55Z | codex -> user | status
 
 - Message: Testlauf fuer Teilnehmer-Drehtickets direkt in der Promotion-Konsole integrieren.
+
+## 2026-09-22T05:50:00Z | Codex -> user | handoff
+
+- Admin-Profilseiten erweitert: Mitarbeiterprofile verwenden dieselbe Detail-/Promotionansicht wie Benutzerprofile; Rolle, Teamrechte und bearbeitete Promotion-Drehungen werden ergänzt.
+- Mitarbeiterverwaltung optimiert: Einladen, bestehendes Konto zuordnen und Teamzugriffe sind Modale. Oben rechts stehen dafür zugängliche Icon-Buttons; Profil und Admin-Mail-Passwortreset sind pro Zeile als Icons erreichbar.
+- Verifikation: gezielte PromotionV2-, UserStatus-, Livewire-RBAC- und Mitarbeiter-UI-Tests bestanden; Blade-Compiler für die beiden Views bestanden; Vite-Build bestanden. Der allgemeine `view:cache` bleibt wegen des vorhandenen fehlenden `admin-layout`-Aliases offen.
+- Base-Installation geprüft und sauber; der durch den Build kurzzeitig synchronisierte Tailwind-Output wurde verworfen.

@@ -130,3 +130,10 @@ Record durable decisions with date, context, decision, and consequences.
 - Da Vite bei gleichzeitig installiertem `sass-embedded` und `sass` den Embedded-Compiler bevorzugt, wird `sass-embedded` nicht mehr installiert. Das normale Dart-Sass erfüllt denselben SCSS-Vertrag ohne den auf dem Plesk-Host abgebrochenen Pipe-Unterprozess.
 - Produktions- und Entwicklungsbuilds verwenden ausschließlich unterstützte gerade LTS-Node-Linien. Node 23 ist EOL und wird nicht mehr als Build-Runtime akzeptiert.
 - Der Lockfile enthält `@zxing/library` direkt, weil `@zxing/browser` diese Bibliothek als Peer benötigt; eine allgemeine Deaktivierung aller Peer-Abhängigkeiten ist deshalb keine Deploymentlösung.
+
+## 2026-09-22 | Profilroute und Mitarbeiter-Modale
+
+- `UserProfile` bleibt der gemeinsame Profil-Renderer. `StaffProfile` überschreibt ausschließlich die RBAC-Anforderung auf `staff.manage` und beschränkt das Ziel auf Admin-/Mitarbeiterkonten.
+- Die bestehende Benutzerprofilroute behält `can:users.manage`, damit die vorhandenen Revocation- und Status-Autorisierungstests unverändert gültig bleiben.
+- Teamrechte werden im Mitarbeiterbereich mit derselben `RbacCatalog`-Normalisierung wie `TeamPermissions` gespeichert; die separate Rechte-Seite bleibt als Fallback erreichbar.
+- Nur die Admin-Checkout-Änderungen wurden bearbeitet. Ein Vite-Sync in die Base-Installation wurde unmittelbar auf den HEAD-Stand zurückgesetzt.

@@ -18,6 +18,7 @@ use App\Livewire\Admin\RatingStructure\Index;
 use App\Livewire\Admin\Reviews\ClaimRatingList;
 use App\Livewire\Admin\Reviews\ShowClaimRating;
 use App\Livewire\Admin\Safety;
+use App\Livewire\Admin\StaffProfile;
 use App\Livewire\Admin\TeamPermissions;
 use App\Livewire\Admin\UserProfile;
 use App\Livewire\Admin\Users;
@@ -100,6 +101,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'account.ac
     Route::get('/exports', Exports::class)->middleware('can:exports.manage')->name('admin.exports');
     Route::get('/users', Users::class)->middleware('can:users.manage')->name('admin.users');
     Route::get('/admin/user/{userId}', UserProfile::class)->middleware('can:users.manage')->name('admin.user-profile');
+    Route::get('/admin/employee/{userId}', StaffProfile::class)->middleware('can:staff.manage')->name('staff.profile');
     Route::get('/admin/safety', Safety::class)->middleware('can:audit.view')->name('admin.safety');
     Route::get('/admin/employees', Employees::class)->middleware('can:staff.manage')->name('admin.employees');
     Route::get('/admin/teams/permissions', TeamPermissions::class)->middleware('can:roles.manage')->name('admin.team-permissions');

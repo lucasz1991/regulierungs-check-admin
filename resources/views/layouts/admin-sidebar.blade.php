@@ -36,7 +36,7 @@
         @canany(['settings.manage', 'staff.manage', 'roles.manage', 'audit.view', 'exports.manage'])
             <x-menu.sidebar-nav label="Administration">
                 @can('settings.manage')<x-menu.sidebar-nav-link :href="route('admin.config')" icon="settings" :active="request()->routeIs('admin.config')">Einstellungen</x-menu.sidebar-nav-link>@endcan
-                @can('staff.manage')<x-menu.sidebar-nav-link :href="route('admin.employees')" icon="users" :active="request()->routeIs('admin.employees')">Mitarbeiter</x-menu.sidebar-nav-link>@endcan
+                @can('staff.manage')<x-menu.sidebar-nav-link :href="route('admin.employees')" icon="users" :active="request()->routeIs('admin.employees', 'staff.profile')">Mitarbeiter</x-menu.sidebar-nav-link>@endcan
                 @can('roles.manage')<x-menu.sidebar-nav-link :href="route('admin.team-permissions')" icon="shield" :active="request()->routeIs('admin.team-permissions')">Teams &amp; Rechte</x-menu.sidebar-nav-link>@endcan
                 @can('audit.view')<x-menu.sidebar-nav-link :href="route('admin.safety')" icon="activity" :active="request()->routeIs('admin.safety')">Aktivitäten</x-menu.sidebar-nav-link>@endcan
                 @can('exports.manage')<x-menu.sidebar-nav-link :href="route('admin.exports')" icon="sliders" :active="request()->routeIs('admin.exports')">Exporte</x-menu.sidebar-nav-link>@endcan

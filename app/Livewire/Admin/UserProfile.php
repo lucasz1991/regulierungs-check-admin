@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\RequiresRbacPermission;
+use App\Models\ClaimRating;
 use App\Models\Mail;
 use App\Models\PromotionSpinResult;
 use App\Models\PromotionTicket;
@@ -14,14 +15,16 @@ use App\Services\Admin\UserStatusService;
 use App\Services\Promotion\PromotionResultMailer;
 use App\Services\Promotion\PromotionSettingsService;
 use App\Services\Promotion\PromotionTicketService;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class UserProfile extends Component
 {
     use RequiresRbacPermission;
+    use WithPagination;
 
     protected function requiredRbacPermission(): string
     {
@@ -212,6 +215,17 @@ class UserProfile extends Component
 
     public function render()
     {
+        $canViewRatings = Gate::allows('reviews.manage');
+        $ratingsReady = Schema::hasTable('claim_ratings');
+        $ratings = $canViewRatings && $ratingsReady
+            ? ClaimRating::query()
+                ->where('user_id', $this->userId)
+                ->select(['id', 'user_id', 'insurance_id', 'insurance_type_id', 'insurance_subtype_id', 'status', 'is_public', 'rating_score', 'created_at'])
+                ->with(['insurance:id,name', 'insuranceType:id,name', 'insuranceSubtype:id,name'])
+                ->latest('created_at')->latest('id')
+                ->paginate(8, ['*'], 'ratingsPage')
+            : null;
+
         $promotionReady = Schema::hasTable('promotion_tickets') && Schema::hasTable('promotion_spin_results');
         $tickets = $promotionReady
             ? PromotionTicket::query()
@@ -243,6 +257,10 @@ class UserProfile extends Component
 
         return view('livewire.admin.user-profile', [
             'user' => $this->user,
+            'isEmployeeProfile' => $this instanceof StaffProfile,
+            'ratings' => $ratings,
+            'canViewRatings' => $canViewRatings,
+            'ratingsReady' => $ratingsReady,
             'promotionTickets' => $tickets,
             'staffPromotionTurns' => $staffPromotionTurns,
             'canManageUserStatus' => auth()->user()?->hasRbacPermission('users.manage') ?? false,
@@ -253,9 +271,6 @@ class UserProfile extends Component
             'socialAccounts' => Schema::hasTable('social_accounts')
                 ? SocialAccount::query()->where('user_id', $this->userId)->orderBy('provider')->get()
                 : collect(),
-            'likedProductsCount' => Schema::hasTable('liked_products')
-                ? DB::table('liked_products')->where('user_id', $this->userId)->count()
-                : 0,
         ])->layout('layouts.master');
     }
 }

@@ -328,7 +328,11 @@ class PromotionV2AdminFlowTest extends TestCase
 
         Livewire::actingAs($admin)->test(UserProfile::class, ['userId' => $participant->id])
             ->assertSee('Promotion-Profil')
-            ->assertSee('84.00 €')
+            ->assertDontSee('84.00 €')
+            ->assertSee('Bewertungen des Benutzers')
+            ->assertDontSee('Buchungen')
+            ->assertDontSee('Follower')
+            ->assertDontSee('Produkte geliked')
             ->assertSee($ticket->participation->public_id)
             ->assertSee('Google verknüpft');
     }

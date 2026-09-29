@@ -1,4 +1,5 @@
 @import "trix/dist/trix.css";
+@import "./admin-profile.css";
 
 @tailwind base;
 @tailwind components;

@@ -1,419 +1,175 @@
-<div x-data="{ selectedTab: 'userDetails' }">
-  <!-- Header-Bild -->
-  <div class="rounded-t-lg h-32 overflow-hidden bg-gray-200 relative">
-        <!-- Status Badge (links oben) -->
-        <div class="absolute top-2 left-2 px-3 py-1 rounded-full text-xs font-semibold text-white" 
-             :class="{ 'bg-green-500': {{ $user->isActive() ? 'true' : 'false' }}, 'bg-red-500': {{ !$user->isActive() ? 'true' : 'false' }} }">
-            {{ $user->isActive() ? 'Aktiv' : 'Inaktiv' }}
+@section('title', $isEmployeeProfile ? 'Mitarbeiterprofil' : 'Benutzerprofil')
+<div class="rc-profile" x-data="{ selectedTab: 'details', selectTab(tab) { this.selectedTab = tab; this.$nextTick(() => this.$refs[tab + 'Tab'].focus()) } }">
+    @php
+        $roleLabel = match($user->role) { 'admin' => 'Administrator', 'staff' => 'Mitarbeiter', default => 'Benutzer' };
+        $customer = $user->customer;
+        $canChangeStatus = $canManageUserStatus && (auth()->user()->isAdmin() || ! $user->isAdmin()) && ! $user->is(auth()->user());
+    @endphp
+
+    <nav class="rc-profile__breadcrumb" aria-label="Profilnavigation">
+        <a href="{{ route($isEmployeeProfile ? 'admin.employees' : 'admin.users') }}" wire:navigate>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m14 6-6 6 6 6"/></svg>
+            {{ $isEmployeeProfile ? 'Mitarbeiter' : 'Benutzer' }}
+        </a>
+        <span aria-hidden="true">/</span>
+        <span>{{ $isEmployeeProfile ? 'Mitarbeiterprofil' : 'Benutzerprofil' }}</span>
+    </nav>
+
+    <header class="rc-profile__header">
+        <div class="rc-profile__identity">
+            <div class="rc-profile__avatar" aria-hidden="true">
+                @if($user->profile_photo_path)
+                    <img src="{{ $user->profile_photo_url }}" alt="">
+                @else
+                    {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr($user->name, 0, 1)) }}
+                @endif
+            </div>
+            <div class="rc-profile__identity-text">
+                <p class="rc-profile__eyebrow">Regulierungs-CHECK · {{ $roleLabel }}</p>
+                <h1>{{ $user->name }}</h1>
+                <p class="rc-profile__email">{{ $user->email }}</p>
+                <div class="rc-profile__meta">
+                    <x-admin.profile.badge :tone="$user->isActive() ? 'success' : 'danger'">{{ $user->isActive() ? 'Konto aktiv' : 'Konto deaktiviert' }}</x-admin.profile.badge>
+                    <span>Registriert am {{ $user->created_at?->format('d.m.Y') ?? '—' }}</span>
+                    @if($user->currentTeam)<span>Team {{ $user->currentTeam->name }}</span>@endif
+                </div>
+            </div>
         </div>
-
-        <!-- Erstellungsdatum Badge (rechts oben) -->
-        <div class="absolute top-2 right-2 px-3 py-1 rounded-full text-xs font-semibold bg-gray-700 text-white">
-            Registriert: {{ $user->created_at->format('d.m.Y') }}
-        </div>
-    </div>
-
-    <!-- Profilbild -->
-    <div class="mx-auto w-32 h-32 relative -mt-16 border-4 border-white rounded-full overflow-hidden">
-        <img 
-            class="object-cover object-center h-32  aspect-square" 
-            src="{{ $user->profile_photo_url ?? 'https://via.placeholder.com/150' }}" 
-            alt="{{ $user->name }}"
-        >
-    </div>
-
-    <!-- Benutzerdetails -->
-    <div class="text-center mt-2">
-        <h2 class="font-semibold text-lg">{{ $user->name }}</h2>
-        <p class="mt-1 text-sm text-gray-500">
-            {{ $user->role === 'admin' ? 'Administrator' : ($user->role === 'staff' ? 'Mitarbeiter' : 'Benutzer') }}
-            @if($user->currentTeam)
-                · {{ $user->currentTeam->name }}
+        <div class="rc-profile__actions">
+            @if($canSendUserMail)
+                <button type="button" wire:click="openMailModal" wire:loading.attr="disabled" wire:target="openMailModal" class="rc-profile__button rc-profile__button--primary">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path stroke-linecap="round" stroke-linejoin="round" d="m3 7 9 6 9-6"/></svg>
+                    E-Mail schreiben
+                </button>
             @endif
-        </p>
+            @if($canChangeStatus)
+                <button type="button" wire:click="{{ $user->status ? 'deactivateUser' : 'activateUser' }}" wire:confirm="{{ $user->status ? 'Dieses Konto wirklich deaktivieren?' : 'Dieses Konto wieder aktivieren?' }}" wire:loading.attr="disabled" class="rc-profile__button">
+                    {{ $user->status ? 'Konto deaktivieren' : 'Konto aktivieren' }}
+                </button>
+            @endif
+        </div>
+    </header>
+
+    <div class="rc-profile__tabs" role="tablist" aria-label="Profilbereiche"
+         @keydown.arrow-right.prevent="selectTab({ details: 'ratings', ratings: 'promotion', promotion: 'details' }[selectedTab])"
+         @keydown.arrow-left.prevent="selectTab({ details: 'promotion', ratings: 'details', promotion: 'ratings' }[selectedTab])"
+         @keydown.home.prevent="selectTab('details')" @keydown.end.prevent="selectTab('promotion')">
+        @foreach(['details' => 'Personendaten', 'ratings' => 'Bewertungen', 'promotion' => 'Promotion'] as $tab => $label)
+            <button type="button" id="profile-tab-{{ $tab }}" x-ref="{{ $tab }}Tab" role="tab" aria-controls="profile-panel-{{ $tab }}"
+                    :aria-selected="selectedTab === '{{ $tab }}'" :tabindex="selectedTab === '{{ $tab }}' ? 0 : -1"
+                    @click="selectedTab = '{{ $tab }}'">{{ $label }}</button>
+        @endforeach
     </div>
 
-    <!-- Benutzerstatistiken -->
-    <ul class="py-4 mt-2 text-gray-700 flex items-center justify-around">
-        <li class="flex flex-col items-center justify-around flex-1">
-            <svg class="w-6 h-6 fill-current text-blue-900" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-            </svg>
-            <div class="text-center">{{ $user->followers()->count() }} Follower</div>
-        </li>
-        <li class="flex flex-col items-center justify-around flex-1">
-            <svg class="w-6 h-6 fill-current text-blue-900" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M7 8a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0 1c2.15 0 4.2.4 6.1 1.09L12 16h-1.25L10 20H4l-.75-4H2L.9 10.09A17.93 17.93 0 0 1 7 9zm8.31.17c1.32.18 2.59.48 3.8.92L18 16h-1.25L16 20h-3.96l.37-2h1.25l1.65-8.83zM13 0a4 4 0 1 1-1.33 7.76 5.96 5.96 0 0 0 0-7.52C12.1.1 12.53 0 13 0z" />
-            </svg>
-            <div class="text-center">{{ $user->followedCustomers()->count() }} gefolgt</div>
-        </li>
-        <li class="flex flex-col items-center justify-around flex-1">
-            <svg class="w-6 h-6 fill-current text-blue-900" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M9 12H1v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6h-8v2H9v-2zm0-1H0V5c0-1.1.9-2 2-2h4V2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1h4a2 2 0 0 1 2 2v6h-9V9H9v2zm3-8V2H8v1h4z" />
-            </svg>
-            <div class="text-center">{{ $likedProductsCount }} Produkte geliked</div>
-        </li>
-        <li class="flex flex-col items-center justify-around flex-1">
-            <svg class="w-6 h-6  text-blue-900" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 10h9.231M6 14h9.231M18 5.086A5.95 5.95 0 0 0 14.615 4c-3.738 0-6.769 3.582-6.769 8s3.031 8 6.769 8A5.94 5.94 0 0 0 18 18.916"/>
-            </svg>
+    <section id="profile-panel-details" role="tabpanel" aria-labelledby="profile-tab-details" tabindex="0" x-show="selectedTab === 'details'" class="rc-profile__panel">
+        <div class="rc-profile__details-grid">
+            <section class="rc-profile__card">
+                <div class="rc-profile__section-heading"><p class="rc-profile__eyebrow">Kontakt &amp; Anschrift</p><h2>Personendaten</h2><p>Die zum Konto hinterlegten Angaben.</p></div>
+                <dl class="rc-profile__fields">
+                    <x-admin.profile.field label="Anzeigename" :value="$user->name" />
+                    <x-admin.profile.field label="E-Mail-Adresse" :value="$user->email" />
+                    <x-admin.profile.field label="Vorname" :value="$customer?->first_name" />
+                    <x-admin.profile.field label="Nachname" :value="$customer?->last_name" />
+                    <x-admin.profile.field label="Telefon" :value="$customer?->phone_number" />
+                    <x-admin.profile.field label="Straße und Hausnummer" :value="$customer?->street" />
+                    <x-admin.profile.field label="Postleitzahl und Ort" :value="trim(($customer?->postal_code ?? '').' '.($customer?->city ?? ''))" />
+                    <x-admin.profile.field label="Bundesland" :value="$customer?->state" />
+                    <x-admin.profile.field label="Land" :value="$customer?->country" />
+                </dl>
+                @if(! $customer)<p class="rc-profile__note">Zu diesem Konto sind noch keine weiteren Personendaten hinterlegt.</p>@endif
+            </section>
 
-            <div class="text-center">{{ number_format($user->customer?->earnings() ?? 0, 2) }} € Einkünfte</div>
-        </li>
-    </ul>
-
-
-    <!-- Weitere Aktionen -->
-    @if($canManageUserStatus || $canSendUserMail)
-    <div class="p-4 border-t mt-2 flex flex-wrap justify-end gap-4">
-        
-
-        <!-- Weitere Optionen mit Dropdown -->
-        <div x-data="{ open: false }" class="relative">
-            <x-button 
-                @click="open = !open" 
-                class=""
-            >
-                Optionen
-            </x-button>
-
-            <!-- Dropdown-Menü -->
-            <div 
-                x-show.important="open"
-                @click.away="open = false" 
-                x-cloak 
-                class="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded shadow-lg"
-            >
-                <ul>
-                    @if($canManageUserStatus)
-                    <li>
-                        @if ($user->status)
-                            <button wire:click="deactivateUser()" class="block w-full px-4 py-2 text-left hover:bg-yellow-100">
-                                Deaktivieren
-                            </button>
-                        @else
-                            <button wire:click="activateUser()" class="block w-full px-4 py-2 text-left hover:bg-green-100">
-                                Aktivieren
-                            </button>
-                        @endif
-                    </li>
+            <aside class="rc-profile__card rc-profile__card--muted">
+                <div class="rc-profile__section-heading"><p class="rc-profile__eyebrow">Kontoinformationen</p><h2>Konto &amp; Anmeldung</h2></div>
+                <dl class="rc-profile__fields rc-profile__fields--single">
+                    <x-admin.profile.field label="Kontotyp" :value="$roleLabel" />
+                    <x-admin.profile.field label="E-Mail-Bestätigung" :value="$user->email_verified_at ? 'Bestätigt am '.$user->email_verified_at->format('d.m.Y H:i') : 'Noch nicht bestätigt'" />
+                    <x-admin.profile.field label="Registriert" :value="$user->created_at?->format('d.m.Y H:i')" />
+                    @if(in_array($user->role, ['admin', 'staff'], true))
+                        <x-admin.profile.field label="Aktuelles Team" :value="$user->currentTeam?->name ?? 'Kein Team zugeordnet'" />
                     @endif
-                    @if($canSendUserMail)
-                    <li>
-                        <button 
-                            wire:click="openMailModal" 
-                            class="block w-full px-4 py-2 text-gray-700 hover:bg-blue-100 text-left"
-                        >
-                            Mail senden
-                        </button>
-                    </li>
-                    @endif
-                </ul>
-            </div>
-        </div>
-    </div>
-    @endif
-<!-- Tab-Menü -->
-<ul class="flex w-full text-sm font-medium text-center text-gray-500 bg-gray-100 rounded-lg shadow divide-gray-200">
-        <!-- Details Tab -->
-        <li class="w-full">
-            <button 
-                @click="selectedTab = 'userDetails'" 
-                :class="{ 'text-blue-600 bg-gray-100 border-b-2 border-blue-600': selectedTab === 'userDetails' }" 
-                class="w-full p-4 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
-            >
-                Details
-            </button>
-        </li>
-        
-        <!-- Buchungen Tab -->
-        <li class="w-full border-l border-gray-200">
-            <button 
-                @click="selectedTab = 'shelfRentals'" 
-                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'shelfRentals' }" 
-                class="w-full p-4 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
-            >
-                Buchungen
-            </button>
-        </li>
-
-        <li class="w-full border-l border-gray-200">
-            <button
-                @click="selectedTab = 'promotion'"
-                :class="{ 'text-teal-700 bg-white border-b-2 border-teal-700': selectedTab === 'promotion' }"
-                class="w-full p-4 transition-all duration-200 bg-gray-100 hover:bg-teal-50 hover:text-teal-700 focus:outline-none"
-            >
-                Promotion
-            </button>
-        </li>
-
-    </ul>
-
-    <!-- Benutzer- und Kundendetails -->
-    <div>
-        <div  x-show.important="selectedTab === 'userDetails'" x-collapse  x-cloak>
-            <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Benutzerprofil</h2>
-
-                <!-- Benutzerinformationen -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-700">Benutzerdetails</h3>
-                        <p><strong>Benutzername:</strong> {{ $user->name }}</p>
-                        <p>
-                        
-                        <div class="col-span-4  flex items-center space-x-2" >
-                            <span><strong>E-Mail:</strong> {{ $user->email }}</span>
-                            @if($user->email_verified_at)
-                                <span 
-                                    class="h-2 w-2 rounded-full bg-green-300" 
-                                    title="Verifiziert am: {{ $user->email_verified_at->format('d.m.Y H:i') }}">
-                                </span>
-                            @else
-                                <span 
-                                    class="h-2 w-2 rounded-full bg-red-300" 
-                                    title="E-Mail nicht verifiziert">
-                                </span>
-                            @endif
-                        </div>
-                        </p>
-                        <p><strong>Registriert am:</strong> {{ $user->created_at->format('d.m.Y') }}</p>
-                        <p><strong>Kontotyp:</strong> {{ $user->role === 'admin' ? 'Administrator' : ($user->role === 'staff' ? 'Mitarbeiter' : 'Benutzer') }}</p>
-                        @if($user->currentTeam)
-                            <p><strong>Team:</strong> {{ $user->currentTeam->name }}</p>
-                            <p><strong>Teamrechte:</strong> {{ $user->currentTeam->permissionMatrix() ? count($user->currentTeam->permissionMatrix()) : 0 }}</p>
-                        @endif
+                </dl>
+                @if($socialAccounts->isNotEmpty())
+                    <div class="rc-profile__connections">
+                        <h3>Verknüpfte Anmeldungen</h3>
+                        @foreach($socialAccounts as $identity)
+                            <x-admin.profile.badge>{{ ucfirst($identity->provider) }} verknüpft</x-admin.profile.badge>
+                        @endforeach
                     </div>
-
-                    <div>
-                    </div>
-                </div>
-
-                <!-- Kundendetails -->
-                @if($user->customer)
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800 mb-4">Kundendetails</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-700">Persönliche Informationen</h3>
-                                <p><strong>Vorname:</strong> {{ $user->customer->first_name }}</p>
-                                <p><strong>Nachname:</strong> {{ $user->customer->last_name }}</p>
-                                <p><strong>Telefonnummer:</strong> {{ $user->customer->phone_number }}</p>
-                            </div>
-
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-700">Adresse</h3>
-                                <p><strong>Straße:</strong> {{ $user->customer->street }}</p>
-                                <p><strong>Stadt:</strong> {{ $user->customer->city }}</p>
-                                <p><strong>Bundesland:</strong> {{ $user->customer->state }}</p>
-                                <p><strong>Postleitzahl:</strong> {{ $user->customer->postal_code }}</p>
-                                <p><strong>Land:</strong> {{ $user->customer->country }}</p>
-                            </div>
-                        </div>
-                    </div>
-                @else
-                    <p class="text-gray-500">Keine Kundendetails verfügbar.</p>
                 @endif
-            </div>
+            </aside>
         </div>
-        <div  x-show.important="selectedTab === 'shelfRentals'" x-collapse  x-cloak>
-            <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Buchungen</h2>
-                @if($canManageUserStatus)
-                    <livewire:admin.user-profile.shelf-rentals :user-id="$user->id" x-collapse lazy />
-                    <div wire:loading>
-                        <div class="flex justify-center items-center h-20">
-                            <svg class="animate-spin h-5 w-5 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500">Für dieses Mitarbeiterprofil sind keine Regalbuchungen freigegeben.</p>
-                @endif
-            </div>
-        </div>
-        <div x-show.important="selectedTab === 'promotion'" x-collapse x-cloak>
-            <div class="mt-4 space-y-5 rounded-2xl bg-slate-100 p-4 shadow sm:p-6">
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <p class="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">Glücksrad</p>
-                        <h2 class="mt-1 text-2xl font-black text-slate-950">Promotion-Profil</h2>
-                        <p class="mt-1 text-sm text-slate-600">Tickets, Aufrufe, Drehungen, Korrekturen, E-Mails und Ausgaben dieses Kontos.</p>
-                    </div>
-                    @if(auth()->user()?->isAdmin())
-                        <button wire:click="issuePromotionTestTicket" class="rounded-xl bg-amber-400 px-4 py-2 text-xs font-black text-slate-950 hover:bg-amber-300">Test-Ticket ausstellen</button>
-                    @endif
-                    @if ($socialAccounts->isNotEmpty())
-                        <div class="flex flex-wrap gap-2">
-                            @foreach ($socialAccounts as $identity)
-                                <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-700 shadow-sm">{{ ucfirst($identity->provider) }} verknüpft</span>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
+    </section>
 
-                @forelse ($promotionTickets as $ticket)
-                    @php($ticketStatus = $ticket->status->value)
-                    <article class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <header class="grid gap-3 border-b border-slate-100 p-5 sm:grid-cols-[1fr_auto] sm:items-center">
-                            <div><span class="font-mono text-sm font-black text-teal-800">{{ $ticket->participation?->public_id }}</span><h3 class="mt-1 text-lg font-black text-slate-950">{{ $ticket->campaign?->name }}</h3></div>
-                            <span class="w-fit rounded-full px-3 py-1 text-xs font-bold {{ $ticketStatus === 'completed' ? 'bg-emerald-100 text-emerald-800' : ($ticketStatus === 'active' ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700') }}">{{ ['ready'=>'Bereit','active'=>'Am Rad','completed'=>'Abgeschlossen','cancelled'=>'Storniert'][$ticketStatus] ?? $ticketStatus }}</span>
-                        </header>
-                        @if($ticket->isTest() && auth()->user()?->isAdmin() && $ticketStatus !== 'active')
-                            <div class="border-b border-amber-100 bg-amber-50 px-5 py-3"><button wire:click="resetPromotionTestTicket({{ $ticket->id }})" class="text-xs font-black text-amber-900 underline">Test-Drehung löschen & neues Test-Ticket ausstellen</button></div>
-                        @endif
-                        <div class="grid gap-5 p-5 lg:grid-cols-2">
-                            <div>
-                                <h4 class="text-sm font-black text-slate-800">Aufrufe</h4>
-                                <div class="mt-3 space-y-3">
-                                    @forelse ($ticket->turns as $turn)
-                                        @php($turnStatus = $turn->status->value)
-                                        <div class="rounded-xl bg-slate-50 p-3 text-sm">
-                                            <div class="flex justify-between gap-3"><strong>{{ $turn->started_at?->format('d.m.Y H:i:s') }}</strong><span class="text-xs text-slate-500">{{ $turnStatus }}</span></div>
-                                            <p class="mt-1 text-xs text-slate-500">
-                                                Mitarbeiter: {{ $turn->startedBy?->name ?? 'System' }}
-                                                @if ($turn->release_reason)
-                                                    · Abbruch: {{ $turn->release_reason }}
-                                                @endif
-                                            </p>
-                                        </div>
-                                    @empty
-                                        <p class="text-sm text-slate-500">Noch nicht gescannt.</p>
-                                    @endforelse
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-black text-slate-800">Drehergebnisse &amp; Kommunikation</h4>
-                                <div class="mt-3 space-y-3">
-                                    @forelse ($ticket->results as $result)
-                                        @php($outcome = $result->outcome_type_snapshot->value)
-                                        @php($mail = $result->mail_status->value)
-                                        <div class="rounded-xl border {{ $result->superseded_at ? 'border-slate-200 bg-slate-50 text-slate-500' : 'border-teal-100 bg-teal-50/60' }} p-3 text-sm">
-                                            <div class="flex flex-wrap items-start justify-between gap-2"><strong>{{ $result->label_snapshot }}</strong><span class="text-xs">{{ ['prize'=>'Gewinn','no_win'=>'Niete','retry'=>'Zusatzdreh','quota_reroll'=>'Kontingent-Neudrehung'][$outcome] ?? $outcome }}</span></div>
-                                            <p class="mt-1 text-xs">{{ $result->recorded_at?->format('d.m.Y H:i:s') }} · {{ $result->recordedBy?->name ?? 'System' }}</p>
-                                            <p class="mt-1 text-xs">
-                                                E-Mail: {{ ['pending'=>'offen','sent'=>'versendet','failed'=>'fehlgeschlagen','not_required'=>'nicht erforderlich'][$mail] ?? $mail }}
-                                                · Ausgabe: {{ $result->fulfilled_at?->format('d.m.Y H:i') ?? 'offen' }}
-                                                @if ($result->corrects_result_id)
-                                                    · Korrektur
-                                                @endif
-                                                @if ($result->superseded_at)
-                                                    · ersetzt
-                                                @endif
-                                            </p>
-                                            @if ($mail === 'failed')
-                                                <button wire:click="resendPromotionMail({{ $result->id }})" class="mt-2 text-xs font-bold text-red-700">E-Mail erneut senden</button>
-                                            @endif
-                                        </div>
-                                    @empty
-                                        <p class="text-sm text-slate-500">Noch kein Ergebnis.</p>
-                                    @endforelse
-                                </div>
-                            </div>
+    <section id="profile-panel-ratings" role="tabpanel" aria-labelledby="profile-tab-ratings" tabindex="0" x-show="selectedTab === 'ratings'" x-cloak class="rc-profile__panel">
+        <div class="rc-profile__section-heading"><p class="rc-profile__eyebrow">Erfahrungen mit der Schadenregulierung</p><h2>Bewertungen des Benutzers</h2><p>Versicherung, Bearbeitungsstand und Ergebnis der eingereichten Bewertungen.</p></div>
+        @if(! $canViewRatings)
+            <div class="rc-profile__empty"><h3>Bewertungen nicht freigegeben</h3><p>Zum Anzeigen ist die Berechtigung „Bewertungen verwalten“ erforderlich.</p></div>
+        @elseif(! $ratingsReady)
+            <div class="rc-profile__empty"><h3>Bewertungen derzeit nicht verfügbar</h3><p>Die Bewertungsdaten konnten nicht bereitgestellt werden.</p></div>
+        @elseif($ratings->isEmpty())
+            <div class="rc-profile__empty"><h3>Noch keine Bewertungen</h3><p>Dieses Konto hat bisher keine Bewertung eingereicht.</p></div>
+        @else
+            <div class="rc-profile__review-list" wire:loading.class="opacity-50" wire:target="gotoPage,nextPage,previousPage">
+                @foreach($ratings as $rating)
+                    @php
+                        $ratingStatus = match($rating->status) {
+                            'pending' => 'Ausstehend', 'pending_validation' => 'In Prüfung', 'rating' => 'Wird ausgewertet',
+                            'rated' => 'Ausgewertet', 'approved' => 'Freigegeben', 'published' => 'Veröffentlicht',
+                            'rejected' => 'Abgelehnt', default => 'Status unbekannt'
+                        };
+                        $ratingTone = match($rating->status) { 'rated', 'approved', 'published' => 'success', 'rejected' => 'danger', default => 'neutral' };
+                        $isVisible = $rating->is_public && in_array($rating->status, \App\Models\ClaimRating::publicVisibleStatuses(), true);
+                    @endphp
+                    <article class="rc-profile__review" wire:key="profile-rating-{{ $rating->id }}">
+                        <div class="rc-profile__review-main">
+                            <p class="rc-profile__small">Bewertung #{{ $rating->id }} · {{ $rating->created_at?->format('d.m.Y') ?? 'Datum unbekannt' }}</p>
+                            <h3>{{ $rating->insurance?->name ?? 'Versicherung nicht mehr verfügbar' }}</h3>
+                            <p>{{ collect([$rating->insuranceType?->name, $rating->insuranceSubtype?->name])->filter()->join(' · ') ?: 'Keine Versicherungsart hinterlegt' }}</p>
+                            <div class="rc-profile__meta"><x-admin.profile.badge :tone="$ratingTone">{{ $ratingStatus }}</x-admin.profile.badge><span>{{ $isVisible ? 'Öffentlich sichtbar' : 'Nicht öffentlich sichtbar' }}</span></div>
+                        </div>
+                        <div class="rc-profile__review-result">
+                            <span class="rc-profile__small">Bewertungsergebnis</span>
+                            <strong>{{ $rating->rating_score !== null ? number_format((float) $rating->rating_score * 5, 1, ',', '.').' / 5' : 'Noch offen' }}</strong>
+                            <a href="{{ route('admin.reviews.show', ['ratingId' => $rating->id]) }}" wire:navigate class="rc-profile__text-link">Bewertung öffnen <span aria-hidden="true">↗</span></a>
                         </div>
                     </article>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">Dieses Konto hat noch kein persönliches Glücksrad-Ticket.</div>
-                @endforelse
-
-                @if ($legacyPromotionWins->isNotEmpty())
-                    <details class="rounded-2xl border border-slate-200 bg-white p-5">
-                        <summary class="cursor-pointer font-bold text-slate-800">Legacy-Gewinne ({{ $legacyPromotionWins->count() }})</summary>
-                        <div class="mt-3 divide-y divide-slate-100">
-                            @foreach ($legacyPromotionWins as $legacy)
-                                <div class="grid gap-1 py-3 text-sm sm:grid-cols-3"><span>{{ $legacy->campaign?->name }}</span><strong>{{ $legacy->prize_name_snapshot }}</strong><span class="sm:text-right">{{ $legacy->status }} · {{ $legacy->created_at?->format('d.m.Y H:i') }}</span></div>
-                            @endforeach
-                        </div>
-                    </details>
-                @endif
-
-                @if ($staffPromotionTurns->isNotEmpty())
-                    <details class="rounded-2xl border border-slate-200 bg-white p-5">
-                        <summary class="cursor-pointer font-bold text-slate-800">Mitarbeiter-Aktivität ({{ $staffPromotionTurns->count() }})</summary>
-                        <div class="mt-3 divide-y divide-slate-100">
-                            @foreach ($staffPromotionTurns as $turn)
-                                <div class="grid gap-1 py-3 text-sm sm:grid-cols-[1fr_auto] sm:gap-4">
-                                    <div>
-                                        <strong class="text-slate-900">{{ $turn->campaign?->name ?? 'Promotion' }}</strong>
-                                        <p class="text-xs text-slate-500">
-                                            Teilnehmer: {{ $turn->ticket?->user?->name ?? 'Unbekannt' }}
-                                            @if($turn->ticket?->participation?->public_id) · {{ $turn->ticket->participation->public_id }} @endif
-                                        </p>
-                                    </div>
-                                    <span class="text-xs text-slate-500 sm:text-right">{{ $turn->started_at?->format('d.m.Y H:i') }} · {{ $turn->status?->value ?? $turn->status }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    </details>
-                @endif
+                @endforeach
             </div>
-        </div>
-        <div  x-show.important="selectedTab === 'logs'" x-collapse  x-cloak>
-            <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Aktivitäten</h2>
+            @if($ratings->hasPages())
+                <nav class="rc-profile__pagination" aria-label="Bewertungsseiten">
+                    <span class="rc-profile__small">{{ $ratings->firstItem() }}–{{ $ratings->lastItem() }} von {{ $ratings->total() }} Bewertungen</span>
+                    <div class="rc-profile__actions">
+                        <button type="button" wire:click="previousPage('ratingsPage')" wire:loading.attr="disabled" @disabled($ratings->onFirstPage()) class="rc-profile__button">Zurück</button>
+                        <span class="rc-profile__small" aria-live="polite">Seite {{ $ratings->currentPage() }} von {{ $ratings->lastPage() }}</span>
+                        <button type="button" wire:click="nextPage('ratingsPage')" wire:loading.attr="disabled" @disabled(! $ratings->hasMorePages()) class="rc-profile__button">Weiter</button>
+                    </div>
+                </nav>
+            @endif
+        @endif
+    </section>
 
-            </div>
-        </div>
-        <div  x-show.important="selectedTab === 'payouts'" x-collapse  x-cloak>
-            <div class="w-full bg-gray-100 shadow rounded-lg p-6 mt-4">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">Auszahlungen</h2>
-
-            </div>
-        </div>
-    </div>
-
-
+    <section id="profile-panel-promotion" role="tabpanel" aria-labelledby="profile-tab-promotion" tabindex="0" x-show="selectedTab === 'promotion'" x-cloak class="rc-profile__panel">
+        @include('livewire.admin.user-profile.promotion-history')
+    </section>
 
     @if($canSendUserMail)
-    <div x-data="{ showModal: @entangle('showMailModal') }" x-init="$watch('showModal', value => { if (!value) $wire.set('mailUserId', {{ $user->id }}); })">
-        <!-- Modal für Mail-Verfassen -->
-        <x-dialog-modal wire:model="showMailModal">
-            <x-slot name="title">
-                Mail verfassen
-                <!-- Anzeige der E-Mail des aktuellen Benutzers -->
-                <span class="text-sm text-gray-500 block mt-1">
-                    An: {{ $user->email }}
-                </span>
-            </x-slot>
+        <x-dialog-modal id="profile-mail-modal" wire:model="showMailModal">
+            <x-slot name="title"><span class="rc-profile__dialog-title">E-Mail schreiben</span><span class="rc-profile__dialog-recipient">An {{ $user->name }} · {{ $user->email }}</span></x-slot>
             <x-slot name="content">
-                <!-- Alert Hinweis -->
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-                    <p class="font-bold">Wichtiger Hinweis</p>
-                    <p>Bitte stelle sicher, dass die E-Mail sorgfältig und überlegt verfasst ist. Überprüfe insbesondere den Betreff, die Überschrift und die Nachricht auf Rechtschreibung und Relevanz, da sie direkt an den Benutzer gesendet wird.</p>
-                </div>
-                <div>
-                    <label for="mailSubject" class="block text-sm font-medium text-gray-700">Betreff</label>
-                    <input type="text" id="mailSubject" wire:model="mailSubject" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailSubject" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailHeader" class="block text-sm font-medium text-gray-700">Überschrift</label>
-                    <input type="text" id="mailHeader" wire:model="mailHeader" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailHeader" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailBody" class="block text-sm font-medium text-gray-700">Nachricht</label>
-                    <textarea id="mailBody" rows="6" wire:model="mailBody" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                    <x-input-error for="mailBody" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailLink" class="block text-sm font-medium text-gray-700">Link (optional)</label>
-                    <input type="url" id="mailLink" wire:model="mailLink" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailLink" class="mt-2" />
+                <div class="rc-profile__mail-fields">
+                    <div><label for="mailSubject">Betreff</label><input id="mailSubject" type="text" wire:model="mailSubject"><x-input-error for="mailSubject" /></div>
+                    <div><label for="mailHeader">Überschrift</label><input id="mailHeader" type="text" wire:model="mailHeader"><x-input-error for="mailHeader" /></div>
+                    <div><label for="mailBody">Nachricht</label><textarea id="mailBody" rows="6" wire:model="mailBody"></textarea><x-input-error for="mailBody" /></div>
+                    <div><label for="mailLink">Link <span class="rc-profile__small">(optional)</span></label><input id="mailLink" type="url" wire:model="mailLink"><x-input-error for="mailLink" /></div>
                 </div>
             </x-slot>
             <x-slot name="footer">
-                <x-secondary-button wire:click="resetMailModal" wire:loading.attr="disabled">
-                    Abbrechen
-                </x-secondary-button>
-                <x-button wire:click="sendMail" wire:loading.attr="disabled" class="ml-2">
-                    Senden
-                </x-button>
+                <div class="rc-profile__actions">
+                    <button type="button" wire:click="resetMailModal" class="rc-profile__button">Abbrechen</button>
+                    <button type="button" wire:click="sendMail" wire:loading.attr="disabled" class="rc-profile__button rc-profile__button--primary">E-Mail vorbereiten</button>
+                </div>
             </x-slot>
         </x-dialog-modal>
-    </div>
     @endif
-
 </div>

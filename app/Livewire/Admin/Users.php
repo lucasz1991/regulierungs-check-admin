@@ -7,12 +7,14 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithoutUrlPagination;
 use App\Models\User;
-use App\Models\Mail;
+use App\Livewire\Concerns\ComposesCustomerMail;
+use Illuminate\Support\Collection;
 use App\Services\Admin\UserStatusService;
 
 class Users extends Component
 {
     use RequiresRbacPermission;
+    use ComposesCustomerMail;
     use WithPagination, WithoutUrlPagination; 
 
     protected function requiredRbacPermission(): string
@@ -30,23 +32,22 @@ class Users extends Component
     public $action = null; 
     public $hasUsers;
 
-    public $showMailModal = false; 
-    public $mailUserId = null;
-    public $mailSubject = ''; 
-    public $mailHeader = '';
-    public $mailBody = '';
-    public $mailLink = '';
 
     protected $queryString = ['search', 'sortBy', 'sortDirection'];
 
     public function updatingSearch()
     {
         $this->resetPage();
+        $this->selectedUsers = [];
+        $this->selectAll = false;
     }
 
 
     public function sortByField($field)
     {
+        if (! in_array($field, ['name', 'email', 'created_at', 'status'], true)) {
+            return;
+        }
         if ($this->sortBy === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -113,139 +114,35 @@ class Users extends Component
         return $statuses->setActive($actor, $userIds, $status);
     }
 
-    protected function updateHasUsers()
+    protected function filteredUsers()
     {
-        $this->hasUsers = User::query()
-            ->where('role', 'guest')
-            ->where(function ($query) {
-                $query->where('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('created_at', 'like', '%' . $this->search . '%');
-            })
-            ->exists();
+        return User::query()->where('role', 'guest')->where(function ($query) {
+            $query->where('name', 'like', '%'.$this->search.'%')
+                ->orWhere('email', 'like', '%'.$this->search.'%')
+                ->orWhere('created_at', 'like', '%'.$this->search.'%');
+        })->orderBy(in_array($this->sortBy, ['name','email','created_at','status'], true) ? $this->sortBy : 'name',
+            $this->sortDirection === 'desc' ? 'desc' : 'asc')->orderBy('id');
     }
 
-
-
-    public function openMailModal($userId = null)
+    protected function selectedMailIds(?int $id): array
     {
-        if ($userId) {
-            // Öffne das Modal für einen einzelnen Benutzer
-            $this->mailUserId = $userId;
-        } else {
-            // Prüfe, ob Benutzer für die Massenverarbeitung ausgewählt wurden
-            if (count($this->selectedUsers) === 0) {
-                $this->dispatch('showAlert', 'Bitte wähle mindestens einen Benutzer aus, um eine Mail zu senden.', 'info');
-                return;
-            }
-        }
-    
-        $this->showMailModal = true;
+        return $id ? [$id] : $this->selectedUsers;
     }
 
-    public function resetMailModal()
+    protected function mailAudience(array $ids): Collection
     {
-        $this->showMailModal = false;
-        $this->mailUserId = null;
-        $this->mailSubject = '';
-        $this->mailHeader = '';
-        $this->mailBody = '';
-        $this->mailLink = '';
+        return User::query()->where('role', 'guest')->whereIntegerInRaw('id', $ids)->get(['id', 'email']);
     }
 
-    public function sendMail()
-    {
-        // Validierung mit individuellen Fehlermeldungen
-        $this->validate([
-            'mailSubject' => 'required|string|max:255',
-            'mailHeader' => 'required|string|max:255',
-            'mailBody' => 'required|string',
-        ], [
-            'mailSubject.required' => 'Bitte geben Sie einen Betreff ein.',
-            'mailSubject.max' => 'Der Betreff darf maximal 255 Zeichen lang sein.',
-            'mailHeader.required' => 'Bitte geben Sie eine Überschrift ein.',
-            'mailHeader.max' => 'Die Überschrift darf maximal 255 Zeichen lang sein.',
-            'mailBody.required' => 'Bitte geben Sie eine Nachricht ein.',
-        ]);
-    
-        // Inhalte für die Datenbank vorbereiten
-        $content = [
-            'subject' => $this->mailSubject,
-            'header' => $this->mailHeader,
-            'body' => $this->mailBody,
-            'link' => $this->mailLink, // Link kann optional leer sein
-        ];
-    
-        if ($this->mailUserId) {
-            // Einzelner Benutzer
-            $user = User::find($this->mailUserId);
-    
-            if ($user) {
-                // Mail speichern
-                Mail::create([
-                    'status' => false,
-                    'content' => $content,
-                    'recipients' => [
-                        [
-                            'user_id' => $user->id,
-                            'email' => $user->email,
-                            'status' => false, // Status für den Empfänger
-                        ],
-                    ],
-                ]);
-    
-                $this->dispatch('showAlert', 'E-Mail wurde zur Verarbeitung an ' . $user->email . ' vorbereitet.', 'success');
-            } else {
-                $this->dispatch('showAlert', 'Benutzer nicht gefunden.', 'error');
-            }
-        } else {
-            // Massenverarbeitung
-            $recipients = [];
-    
-            foreach ($this->selectedUsers as $userId) {
-                $user = User::find($userId);
-                if ($user) {
-                    $recipients[] = [
-                        'user_id' => $user->id,
-                        'email' => $user->email,
-                        'status' => false, // Status für jeden Empfänger
-                    ];
-                }
-            }
-    
-            // Mail speichern
-            Mail::create([
-                'status' => false,
-                'content' => $content,
-                'recipients' => $recipients,
-            ]);
-    
-            $this->dispatch('showAlert', 'E-Mail wurde zur Verarbeitung für ' . count($recipients) . ' Benutzer vorbereitet.', 'success');
-        }
-    
-        // Modal zurücksetzen
-        $this->resetMailModal();
-    }
-    
     public function toggleSelectAll()
     {
-        $this->selectAll = !$this->selectAll;
-    
-        if ($this->selectAll) {
-            // Alle Benutzer laden und IDs zur `selectedUsers`-Liste hinzufügen
-            $this->selectedUsers = User::query()
-                ->where('role', 'guest')
-                ->where(function ($query) {
-                    $query->where('name', 'like', '%' . $this->search . '%')
-                          ->orWhere('email', 'like', '%' . $this->search . '%')
-                          ->orWhere('created_at', 'like', '%' . $this->search . '%');
-                })
-                ->pluck('id')
-                ->toArray();
-        } else {
-            // Auswahl aufheben
-            $this->selectedUsers = [];
-        }
+        $this->selectedUsers = $this->filteredUsers()->pluck('id')->all();
+    }
+
+    public function selectPage(): void
+    {
+        $ids = $this->filteredUsers()->forPage($this->getPage(), 10)->pluck('id')->all();
+        $this->selectedUsers = array_values(array_unique(array_merge($this->selectedUsers, $ids)));
     }
 
     public function toggleUserSelection($userId)
@@ -259,19 +156,8 @@ class Users extends Component
 
     public function render()
     {
-        $usersList = User::query()
-        ->where('role', 'guest')
-        ->where(function($query) {
-            $query->where('name', 'like', '%' . $this->search . '%')
-                  ->orWhere('email', 'like', '%' . $this->search . '%')
-                  ->orWhere('created_at', 'like', '%' . $this->search . '%');
-        })
-        ->orderBy($this->sortBy, $this->sortDirection)
-        ->paginate(10)
-        ->withQueryString()
-        ->setPath(url('/admin/users'));
-
-        $this->updateHasUsers();
+        $usersList = $this->filteredUsers()->paginate(10)->withQueryString()->setPath(url('/admin/users'));
+        $this->hasUsers = $usersList->total() > 0;
 
         return view('livewire.admin.users', [
             'users' => $usersList,

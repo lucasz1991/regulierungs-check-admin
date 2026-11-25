@@ -20,6 +20,9 @@
                 + Anonyme Bewertung erfassen
             </x-button>
             <livewire:admin.reviews.anonymous-review-form />
+            @can('mails.manage')
+                <x-secondary-button wire:click="openMailModal">Auswahl anschreiben</x-secondary-button>
+            @endcan
         </div>
     </div>
 
@@ -186,5 +189,6 @@
     <div class="mt-4">
         {{ $ratings->links() }}
     </div>
+    @include('livewire.admin.customer-mail-form')
 </div>
 

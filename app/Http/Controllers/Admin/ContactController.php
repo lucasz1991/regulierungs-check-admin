@@ -3,181 +3,113 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-use Symfony\Component\Panther\Client;
-use Symfony\Component\Panther\DomCrawler\Crawler;
-use Symfony\Component\Panther\ProcessManager;
+use App\Models\Contact;
 use DOMDocument;
-
-
+use DOMElement;
+use DOMXPath;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 
 class ContactController extends Controller
 {
+    public const MAX_ROWS = 2000;
 
-
-    public function analyzehtml($file)
+    public function csv(string $path): array
     {
-        if (!$file) {
-            return;
+        $stream = fopen($path, 'rb');
+        try {
+            $line = fgets($stream);
+            if (! $line) {
+                throw ValidationException::withMessages(['file' => 'Die Datei ist leer.']);
+            }
+            $separators = [';', ',', "\t"];
+            usort($separators, fn ($a, $b) => count(str_getcsv($line, $b, '"', '')) <=> count(str_getcsv($line, $a, '"', '')));
+            rewind($stream);
+            $rows = [];
+            while (($row = fgetcsv($stream, 0, $separators[0], '"', '')) !== false) {
+                if (! array_filter($row, fn ($v) => trim((string) $v) !== '')) {
+                    continue;
+                }
+                $rows[] = array_map(function ($v) {
+                    $v = ltrim(trim((string) $v), "\xEF\xBB\xBF");
+
+                    return mb_check_encoding($v, 'UTF-8') ? $v : mb_convert_encoding($v, 'UTF-8', 'Windows-1252');
+                }, $row);
+                if (count($rows) > self::MAX_ROWS + 1) {
+                    throw ValidationException::withMessages(['file' => 'Bitte die Datei in Abschnitte mit höchstens 2.000 Kontakten teilen.']);
+                }
+            }
+            $headers = array_shift($rows) ?? [];
+
+            return [$headers, $rows];
+        } finally {
+            fclose($stream);
+        }
+    }
+
+    public function columnMap(array $headers): array
+    {
+        $aliases = ['e-mail-adresse' => 'email', 'mail' => 'email', 'e-mail' => 'email', 'telefonnummer' => 'phone', 'stadt' => 'city', 'adresse' => 'address', 'kategorie' => 'category', 'unternehmen' => 'company'];
+        foreach (Contact::FIELDS as $key => $label) {
+            $aliases[$key] = $key;
+            $aliases[mb_strtolower($label)] = $key;
         }
 
-        // Datei-Inhalt lesen
-        $htmlContent = file_get_contents($file->getRealPath());
+        return array_map(fn ($h) => $aliases[mb_strtolower(trim($h))] ?? '', $headers);
+    }
 
-        // HTML mit DOMDocument parsen
-        $dom = new DOMDocument();
-        @$dom->loadHTML($htmlContent, LIBXML_NOWARNING | LIBXML_NOERROR); // Fehler unterdrücken
+    private function document(string $html): DOMXPath
+    {
+        $doc = new DOMDocument;
+        @$doc->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR);
 
-        // Alle <article class="mod mod-Treffer"> Nodes sammeln
-        $xpath = new \DOMXPath($dom);
-        $nodes = $xpath->query('//article[contains(@class, "mod-Treffer")]');
+        return new DOMXPath($doc);
+    }
 
-        $articles = [];
-
+    public function html(string $html): array
+    {
+        $xpath = $this->document($html);
+        $nodes = $xpath->query('//article[contains(@class,"mod-Treffer")]');
+        if (! $nodes->length) {
+            $nodes = $xpath->query('//body[.//h1]');
+        }
+        if ($nodes->length > self::MAX_ROWS) {
+            throw ValidationException::withMessages(['file' => 'Maximal 2.000 Kontakte je Datei.']);
+        }
+        $rows = [];
         foreach ($nodes as $node) {
-            $articles[] = [
-                'text' => trim($node->textContent), // gesamter Text
-                'html' => $dom->saveHTML($node), // HTML des Elements
-                'link' => $this->extractLink($node), // Falls Links enthalten sind
-            ];
+            $rows[] = $this->htmlRow($xpath, $node);
         }
-        return $articles;
+
+        return $rows;
     }
 
-    private function extractLink($node)
+    private function htmlRow(DOMXPath $xpath, DOMElement $node): array
     {
-        $links = $node->getElementsByTagName('a');
-        if ($links->length > 0) {
-            return $links->item(0)->getAttribute('href'); // Erster Link im Artikel
-        }
-        return null;
+        $value = fn ($query) => trim((string) $xpath->evaluate('string(('.$query.')[1])', $node));
+        $detail = $value('.//a[contains(@href,"/gsbiz/")]/@href');
+        $mailto = $value('.//a[starts-with(@href,"mailto:")]/@href | .//*[@id="email_versenden"]/@data-link');
+
+        return [
+            'name' => $value('.//h1 | .//h2 | .//h3 | .//*[@itemprop="name"]'),
+            'address' => $value('.//address'), 'category' => $value('.//*[contains(@class,"branchen")]'),
+            'phone' => $value('.//*[@data-role="telefonnummer"]') ?: preg_replace('/^tel:/i', '', $value('.//a[starts-with(@href,"tel:")]/@href')),
+            'email' => rawurldecode(explode('?', preg_replace('/^mailto:/i', '', $mailto))[0]),
+            'website' => $value('.//a[contains(@data-wipe-realview,"webadresse")]/@href'),
+            '_detail' => str_starts_with($detail, '/gsbiz/') ? 'https://www.gelbeseiten.de'.$detail : $detail,
+        ];
     }
 
-    public function analyzeArticles($articles)
+    public function detail(string $url): array
     {
-        include_once 'simple_html_dom.php';
-        $tempContacts = [];
-    
-        foreach ($articles as $article) {
-            $url = $article['link'];
-            $html = str_get_html($this->getHtml($url));
-    
-            $tempContacts[] = [
-                'Branche'    => $html->find('div.mod-TeilnehmerKopf__branchen', 0) ? 
-                                $html->find('div.mod-TeilnehmerKopf__branchen', 0)->plaintext : 'Keine Branche',
-    
-                'Name'       => $html->find('h1.mod-TeilnehmerKopf__name', 0) ? 
-                                $html->find('h1.mod-TeilnehmerKopf__name', 0)->plaintext : 'Kein Name',
-    
-                'Anschrift'  => $html->find('address.mod-TeilnehmerKopf__adresse', 0) ? 
-                                $html->find('address.mod-TeilnehmerKopf__adresse', 0)->plaintext : 'Keine Adresse',
-    
-                'Tel_Nummer' => $html->find('span[data-role=telefonnummer]', 0) ? 
-                                $html->find('span[data-role=telefonnummer]', 0)->plaintext : 'Keine Telefonnummer',
-    
-                'mail'       => $html->find('div#email_versenden', 0) ? 
-                                $this->getMailPlain($html->find('div#email_versenden', 0)->getAttribute('data-link')) : 'Keine E-Mail',
-
-    
-                'website'    => $html->find('a[data-wipe-realview=detailseite_aktionsleiste_webadresse]', 0) ? 
-                                $html->find('a[data-wipe-realview=detailseite_aktionsleiste_webadresse]', 0)->getAttribute('href') : 'Keine Website',
-            ];
+        if (! preg_match('~^https://(?:www\.)?gelbeseiten\.de/gsbiz/[a-z0-9/_-]+(?:\?[^\s]*)?$~iD', $url)) {
+            return [];
         }
-        return $tempContacts;
-    }
-
-    private function getMailPlain($stringWithMailto) {
-        $ohnemailto = substr ($stringWithMailto,7);
-        $mail = substr ($ohnemailto,0,stripos($ohnemailto,'?subject'));
-        return $mail;
-    }
-
-    private function getTelPlain($stringWithTel) {
-        $tel = substr ($stringWithTel,4);
-        return $tel;
-    }
-    
-
-    private function getHtml($url) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        if(!empty($post)) {
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, null);
+        $response = Http::withoutRedirecting()->connectTimeout(2)->timeout(4)->get($url);
+        if (! $response->successful()) {
+            return [];
         }
-        $result = curl_exec($ch);
-        curl_close($ch);
-        return $result;
-    }
 
-
-    public function searchContacts2($what ,$where)
-    {
-      include_once 'simple_html_dom.php';
-
-      function getHtml($url, $post = null) {
-          $ch = curl_init();
-          curl_setopt($ch, CURLOPT_URL, $url);
-          curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-          curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-          curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-          curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-          if(!empty($post)) {
-              curl_setopt($ch, CURLOPT_POST, true);
-              curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
-          }
-          $result = curl_exec($ch);
-          curl_close($ch);
-          return $result;
-      }
-
-      function getarticles($domhtml){
-          $array = array();
-          $domarticles = $domhtml->find('article');
-          foreach($domarticles as $element){
-            $mailhtml = null !== $element->find('a[class=contains-icon-email gs-btn]',0) ? $element->find('a[class=contains-icon-email gs-btn]',0)->href : '';
-            $ohnemailto = substr ($mailhtml,7);
-            $mail = substr ($ohnemailto,0,stripos($ohnemailto,'?subject'));
-            $website = null !== $element->find('a[class=contains-icon-homepage gs-btn]',0) ? $element->find('a[class=contains-icon-homepage gs-btn]',0)->href : '';
-            $anschriftmittags = null !== $element->find('p[data-wipe-name=Adresse]',0) ? strip_tags ($element->find('p[data-wipe-name=Adresse]',0)->innertext) : '';
-            $anschrift = str_replace("\t","",$anschriftmittags);
-            $namemittags = null !== $element->find('h2[data-wipe-name=Titel]',0) ? strip_tags ($element->find('h2[data-wipe-name=Titel]',0)->innertext) : '';
-            $name = str_replace("&amp;","&",$namemittags);
-            array_push ( $array , Array(
-              'Branche'=> null !== $element->find('p[class=d-inline-block mod-Treffer--besteBranche]',0) ? $element->find('p[class=d-inline-block mod-Treffer--besteBranche]',0)->innertext : '' ,
-              'Name'=> $name,
-              'Anschrift'=> $anschrift,
-              'Tel_Nummer'=> null !== $element->find('p[data-wipe-name=Kontaktdaten]',0) ? $element->find('p[data-wipe-name=Kontaktdaten]',0)->innertext : '',
-              'mail'=> $mail,
-              'website'=> $website,
-            ));
-          }
-          return $array;
-      }
-
-      $postdata = array(
-         'WAS' => $what,
-         'WO' => $where,
-      );
-      $html = str_get_html(getHtml('https://www.gelbeseiten.de/Suche', $postdata ));
-      $articles = getarticles($html);
-      $nextpage = null !== $html->find('a[class=gs_paginierung__sprungmarke gs_paginierung__sprungmarke--vor btn btn-default]',0) ? $html->find('a[class=gs_paginierung__sprungmarke gs_paginierung__sprungmarke--vor btn btn-default]',0)->href : null;
-      for (;isset($nextpage);){
-        $html = str_get_html(getHtml($nextpage));
-        $rawarticles = getarticles($html);
-        foreach ($rawarticles as $rawarticle) {
-            array_push($articles,$rawarticle);
-        }
-        $nextpage = null !== $html->find('a[class=gs_paginierung__sprungmarke gs_paginierung__sprungmarke--vor btn btn-default]',0) ? $html->find('a[class=gs_paginierung__sprungmarke gs_paginierung__sprungmarke--vor btn btn-default]',0)->href : null;
-      }
-        return compact('articles');
-    }
-
-    public function getexcel(){
-      
+        return array_filter($this->html($response->body())[0] ?? [], fn ($v) => $v !== '');
     }
 }

@@ -1,5 +1,4 @@
 <div x-data="{ selectedUsers: @entangle('selectedUsers'), search: @entangle('search'), hasUsers: @entangle('hasUsers') }"  wire:loading.class="cursor-wait">
-    @persist('scrollbar')
     <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6">
         <div class="flex">
             <div class="flex-shrink-0">
@@ -97,9 +96,9 @@
                         </button>
                     </li>
                     <li>
-                        <button wire:click="openMailModal" class="text-left w-full h-full block px-4 py-2 text-gray-700 hover:bg-blue-100">
+                        @can('mails.manage')<button wire:click="openMailModal" class="text-left w-full h-full block px-4 py-2 text-gray-700 hover:bg-blue-100">
                             Mail senden
-                        </button>
+                        </button>@endcan
                     </li>
                 </ul>
             </div>
@@ -108,14 +107,11 @@
     <div class="grid grid-cols-12 bg-gray-100 p-2 font-semibold text-gray-700 border-b border-gray-300">
       
             <div class="col-span-5 flex items-center">
-            <x-button 
-                wire:click="toggleSelectAll" 
-                class="btn-xs mr-3"
-            >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-            </svg>
-            </x-button>
+            <div class="mr-3 flex flex-wrap gap-2 text-xs">
+                <button class="underline" wire:click="selectPage">Diese Seite</button>
+                <button class="underline" wire:click="toggleSelectAll">Alle {{ $users->total() }} Treffer</button>
+                @if($selectedUsers)<button class="underline" wire:click="$set('selectedUsers', [])">Auswahl aufheben</button>@endif
+            </div>
             <button wire:click="sortByField('name')" class="text-left flex items-center">
                 Name
                 @if ($sortBy === 'name')
@@ -266,9 +262,9 @@
                                         @endif
                                     </li>
                                     <li>
-                                        <button  wire:click="openMailModal({{ $user->id }})"  class="block w-full px-4 py-2 text-left  hover:bg-blue-100">
+                                        @can('mails.manage')<button  wire:click="openMailModal({{ $user->id }})"  class="block w-full px-4 py-2 text-left  hover:bg-blue-100">
                                             Mail senden
-                                        </button>
+                                        </button>@endcan
                                     </li>
                                 </ul>
                             </div>
@@ -281,59 +277,5 @@
     <div class="mt-4">
     {{ $users->links() }}
     </div>
-    <div x-data="{ showModal: @entangle('showMailModal') }" x-init="$watch('showModal', value => { if (!value) $wire.set('mailUserId', null); })">
-        <!-- Modal für Mail-Verfassen -->
-        <x-dialog-modal wire:model="showMailModal" >
-            <x-slot name="title">
-                Mail verfassen
-                @if ($mailUserId)
-                    <!-- Wenn es eine einzelne Mail ist -->
-                    <span class="text-sm text-gray-500 block mt-1">
-                        An: {{ App\Models\User::find($mailUserId)?->email ?? 'Benutzer nicht gefunden' }}
-                    </span>
-                @else
-                    <!-- Wenn es eine Massenmail ist -->
-                    <span class="text-sm text-gray-500 block mt-1">
-                        An {{ count($selectedUsers) }} Benutzer senden
-                    </span>
-                @endif
-            </x-slot>
-            <x-slot name="content">
-                <!-- Alert Hinweis -->
-                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-                    <p class="font-bold">Wichtiger Hinweis</p>
-                    <p>Bitte stelle sicher, dass die E-Mail sorgfältig und überlegt verfasst ist. Überprüfe insbesondere den Betreff, die Überschrift und die Nachricht auf Rechtschreibung und Relevanz, da sie direkt an die ausgewählten Benutzer gesendet wird.</p>
-                </div>
-                <div>
-                    <label for="mailSubject" class="block text-sm font-medium text-gray-700">Betreff</label>
-                    <input type="text" id="mailSubject" wire:model="mailSubject" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailSubject" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailHeader" class="block text-sm font-medium text-gray-700">Überschrift</label>
-                    <input type="text" id="mailHeader" wire:model="mailHeader" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailHeader" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailBody" class="block text-sm font-medium text-gray-700">Nachricht</label>
-                    <textarea id="mailBody" rows="6" wire:model="mailBody" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                    <x-input-error for="mailBody" class="mt-2" />
-                </div>
-                <div class="mt-4">
-                    <label for="mailLink" class="block text-sm font-medium text-gray-700">Link (optional)</label>
-                    <input type="url" id="mailLink" wire:model="mailLink" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                    <x-input-error for="mailLink" class="mt-2" />
-                </div>
-            </x-slot>
-            <x-slot name="footer">
-                <x-secondary-button wire:click="resetMailModal" wire:loading.attr="disabled">
-                    Abbrechen
-                </x-secondary-button>
-                <x-button wire:click="sendMail" wire:loading.attr="disabled" class="ml-2">
-                    Senden
-                </x-button>
-            </x-slot>
-        </x-dialog-modal>
-    </div>
-    @endpersist
+    @include('livewire.admin.customer-mail-form')
 </div>

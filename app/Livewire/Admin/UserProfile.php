@@ -4,7 +4,8 @@ namespace App\Livewire\Admin;
 
 use App\Livewire\Concerns\RequiresRbacPermission;
 use App\Models\ClaimRating;
-use App\Models\Mail;
+use App\Livewire\Concerns\ComposesCustomerMail;
+use Illuminate\Support\Collection;
 use App\Models\PromotionSpinResult;
 use App\Models\PromotionTicket;
 use App\Models\PromotionTurn;
@@ -24,6 +25,7 @@ use Livewire\WithPagination;
 class UserProfile extends Component
 {
     use RequiresRbacPermission;
+    use ComposesCustomerMail;
     use WithPagination;
 
     protected function requiredRbacPermission(): string
@@ -36,17 +38,6 @@ class UserProfile extends Component
 
     public $user;
 
-    public $showMailModal = false;
-
-    public $mailUserId = null;
-
-    public $mailSubject = '';
-
-    public $mailHeader = '';
-
-    public $mailBody = '';
-
-    public $mailLink = '';
 
     public function mount($userId)
     {
@@ -114,73 +105,14 @@ class UserProfile extends Component
         return $statuses->setActive($actor, [$this->userId], $active);
     }
 
-    public function openMailModal()
+    protected function selectedMailIds(?int $id): array
     {
-        // Prüfen, ob der Benutzer vorhanden ist
-        if (! $this->user) {
-            $this->dispatch('showAlert', 'Benutzer nicht gefunden.', 'error');
-
-            return;
-        }
-
-        $this->mailUserId = $this->user->id;
-        $this->showMailModal = true;
+        return [$this->user->getKey()];
     }
 
-    public function resetMailModal()
+    protected function mailAudience(array $ids): Collection
     {
-        $this->showMailModal = false;
-        $this->mailUserId = null;
-        $this->mailSubject = '';
-        $this->mailHeader = '';
-        $this->mailBody = '';
-        $this->mailLink = '';
-    }
-
-    public function sendMail()
-    {
-        // Validierung mit individuellen Fehlermeldungen
-        $this->validate([
-            'mailSubject' => 'required|string|max:255',
-            'mailHeader' => 'required|string|max:255',
-            'mailBody' => 'required|string',
-        ], [
-            'mailSubject.required' => 'Bitte geben Sie einen Betreff ein.',
-            'mailSubject.max' => 'Der Betreff darf maximal 255 Zeichen lang sein.',
-            'mailHeader.required' => 'Bitte geben Sie eine Überschrift ein.',
-            'mailHeader.max' => 'Die Überschrift darf maximal 255 Zeichen lang sein.',
-            'mailBody.required' => 'Bitte geben Sie eine Nachricht ein.',
-        ]);
-
-        // Inhalte für die Datenbank vorbereiten
-        $content = [
-            'subject' => $this->mailSubject,
-            'header' => $this->mailHeader,
-            'body' => $this->mailBody,
-            'link' => $this->mailLink, // Link kann optional leer sein
-        ];
-
-        // Mail an den gespeicherten Benutzer senden
-        if ($this->user) {
-            Mail::create([
-                'status' => false,
-                'content' => $content,
-                'recipients' => [
-                    [
-                        'user_id' => $this->user->id,
-                        'email' => $this->user->email,
-                        'status' => false, // Status für den Empfänger
-                    ],
-                ],
-            ]);
-
-            $this->dispatch('showAlert', 'E-Mail wurde zur Verarbeitung an '.$this->user->email.' vorbereitet.', 'success');
-        } else {
-            $this->dispatch('showAlert', 'Benutzer nicht gefunden.', 'error');
-        }
-
-        // Modal zurücksetzen
-        $this->resetMailModal();
+        return User::whereKey($this->user->getKey())->whereIntegerInRaw('id', $ids)->get(['id', 'email']);
     }
 
     public function resendPromotionMail(int $resultId, PromotionResultMailer $mailer): void

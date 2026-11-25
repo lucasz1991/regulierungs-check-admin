@@ -6,12 +6,14 @@ use App\Livewire\Concerns\RequiresRbacPermission;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ClaimRating;
-use App\Models\Mail;
+use App\Livewire\Concerns\ComposesCustomerMail;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class ClaimRatingList extends Component
 {
     use RequiresRbacPermission;
+    use ComposesCustomerMail;
     use WithPagination;
 
     protected function requiredRbacPermission(): string
@@ -30,12 +32,6 @@ class ClaimRatingList extends Component
     public $hasActiveRating = false;
 
 
-    public $showMailModal = false;
-    public $mailRatingId = null;
-    public $mailSubject = '';
-    public $mailHeader = '';
-    public $mailBody = '';
-    public $mailLink = '';
 
     protected $listeners = [
         'anonymousReviewSaved' => 'resetPage',
@@ -44,6 +40,8 @@ class ClaimRatingList extends Component
     public function updatingSearch()
     {   
         $this->resetPage();
+        $this->selectedRatings = [];
+        $this->selectAll = false;
     }
 
     public function sortByField($field)
@@ -61,7 +59,7 @@ class ClaimRatingList extends Component
         $this->selectAll = !$this->selectAll;
 
         if ($this->selectAll) {
-            $this->selectedRatings = ClaimRating::pluck('id')->toArray();
+            $this->selectedRatings = $this->filteredRatings()->pluck('id')->toArray();
         } else {
             $this->selectedRatings = [];
         }
@@ -76,77 +74,14 @@ class ClaimRatingList extends Component
         }
     }
 
-    public function openMailModal($ratingId = null)
+    protected function selectedMailIds(?int $id): array
     {
-        if ($ratingId) {
-            $this->mailRatingId = $ratingId;
-        } elseif (count($this->selectedRatings) === 0) {
-            $this->dispatch('showAlert', 'Bitte wähle mindestens eine Bewertung aus.', 'info');
-            return;
-        }
-
-        $this->showMailModal = true;
+        return $id ? [$id] : $this->selectedRatings;
     }
 
-    public function resetMailModal()
+    protected function mailAudience(array $ids): Collection
     {
-        $this->showMailModal = false;
-        $this->mailRatingId = null;
-        $this->mailSubject = '';
-        $this->mailHeader = '';
-        $this->mailBody = '';
-        $this->mailLink = '';
-    }
-
-    public function sendMail()
-    {
-        $this->validate([
-            'mailSubject' => 'required|string|max:255',
-            'mailHeader' => 'required|string|max:255',
-            'mailBody' => 'required|string',
-        ]);
-
-        $content = [
-            'subject' => $this->mailSubject,
-            'header' => $this->mailHeader,
-            'body' => $this->mailBody,
-            'link' => $this->mailLink,
-        ];
-
-        $recipients = [];
-
-        if ($this->mailRatingId) {
-            $rating = ClaimRating::find($this->mailRatingId);
-            if ($rating && $rating->user) {
-                $recipients[] = [
-                    'user_id' => $rating->user->id,
-                    'email' => $rating->user->email,
-                    'status' => false,
-                ];
-            }
-        } else {
-            foreach ($this->selectedRatings as $id) {
-                $rating = ClaimRating::find($id);
-                if ($rating && $rating->user) {
-                    $recipients[] = [
-                        'user_id' => $rating->user->id,
-                        'email' => $rating->user->email,
-                        'status' => false,
-                    ];
-                }
-            }
-        }
-
-        if (count($recipients) > 0) {
-            Mail::create([
-                'status' => false,
-                'content' => $content,
-                'recipients' => $recipients,
-            ]);
-            $this->dispatch('showAlert', 'E-Mail wurde vorbereitet.', 'success');
-        }
-
-        $this->resetMailModal();
+        return ClaimRating::query()->whereIntegerInRaw('id', $ids)->with('user:id,email')->get()->pluck('user')->filter()->values();
     }
 
     public function reanalyse( $ratingId ){
@@ -206,9 +141,9 @@ class ClaimRatingList extends Component
         $this->dispatch('showAlert', 'Bewertung wurde gelöscht.', 'success');
     }
 
-    public function render()
+    private function filteredRatings()
     {
-        $ratings = ClaimRating::with('insurance', 'user')
+        return ClaimRating::query()
             ->where(function ($query) {
                 $query->whereHas('user', function ($q) {
                     $q->where('name', 'like', '%' . $this->search . '%');
@@ -218,7 +153,12 @@ class ClaimRatingList extends Component
                 })
                 ->orWhere('answers->Service-Kommentar', 'like', '%' . $this->search . '%')
                 ->orWhere('attachments->scorings->ai_overall_comment', 'like', '%' . $this->search . '%');
-            })
+            });
+    }
+
+    public function render()
+    {
+        $ratings = $this->filteredRatings()->with('insurance', 'user')
             ->orderBy($this->sortBy, $this->sortDirection)
             ->paginate(10);
 

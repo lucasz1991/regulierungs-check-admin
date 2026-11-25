@@ -25,6 +25,7 @@ class MailManagement extends Component
      */
     public function sortByField($field)
     {
+        if (! in_array($field, ['id','created_at','status'], true)) { return; }
         if ($this->sortBy === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
@@ -38,19 +39,8 @@ class MailManagement extends Component
      */
     public function resendMail($id)
     {
-        $mail = Mail::find($id);
-
-        if ($mail) {
-            // Hier die Logik für den Mailversand einfügen, z. B. Job oder Notification ausführen.
-            // Für jetzt: Status auf "resent" setzen.
-            $mail->update([
-                'status' => true, // Mail als gesendet markieren
-            ]);
-
-            session()->flash('message', 'Mail erfolgreich erneut gesendet.');
-        } else {
-            session()->flash('error', 'Mail nicht gefunden.');
-        }
+        $count = Mail::findOrFail($id)->retryFailed();
+        session()->flash('message', $count.' fehlgeschlagene Empfänger erneut eingeplant.');
     }
 
     /**
@@ -58,7 +48,7 @@ class MailManagement extends Component
      */
     public function render()
     {
-        $mails = Mail::orderBy($this->sortBy, $this->sortDirection)
+        $mails = Mail::orderBy(in_array($this->sortBy, ['id','created_at','status'], true) ? $this->sortBy : 'id', $this->sortDirection === 'asc' ? 'asc' : 'desc')
             ->paginate(10);
 
         return view('livewire.admin.mail-management', [

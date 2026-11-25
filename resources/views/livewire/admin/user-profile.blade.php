@@ -154,22 +154,6 @@
     </section>
 
     @if($canSendUserMail)
-        <x-dialog-modal id="profile-mail-modal" wire:model="showMailModal">
-            <x-slot name="title"><span class="rc-profile__dialog-title">E-Mail schreiben</span><span class="rc-profile__dialog-recipient">An {{ $user->name }} · {{ $user->email }}</span></x-slot>
-            <x-slot name="content">
-                <div class="rc-profile__mail-fields">
-                    <div><label for="mailSubject">Betreff</label><input id="mailSubject" type="text" wire:model="mailSubject"><x-input-error for="mailSubject" /></div>
-                    <div><label for="mailHeader">Überschrift</label><input id="mailHeader" type="text" wire:model="mailHeader"><x-input-error for="mailHeader" /></div>
-                    <div><label for="mailBody">Nachricht</label><textarea id="mailBody" rows="6" wire:model="mailBody"></textarea><x-input-error for="mailBody" /></div>
-                    <div><label for="mailLink">Link <span class="rc-profile__small">(optional)</span></label><input id="mailLink" type="url" wire:model="mailLink"><x-input-error for="mailLink" /></div>
-                </div>
-            </x-slot>
-            <x-slot name="footer">
-                <div class="rc-profile__actions">
-                    <button type="button" wire:click="resetMailModal" class="rc-profile__button">Abbrechen</button>
-                    <button type="button" wire:click="sendMail" wire:loading.attr="disabled" class="rc-profile__button rc-profile__button--primary">E-Mail vorbereiten</button>
-                </div>
-            </x-slot>
-        </x-dialog-modal>
+        @include('livewire.admin.customer-mail-form')
     @endif
 </div>

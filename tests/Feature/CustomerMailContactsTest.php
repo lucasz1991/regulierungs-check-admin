@@ -36,7 +36,9 @@ class CustomerMailContactsTest extends TestCase
             Livewire::test(Users::class)->call('openMailModal', $customer->id)
                 ->assertSet('mailType', 'mail')->assertSee('Interne Systemnachricht')->assertSee('Systemnachricht und E-Mail')->assertSee('Nur E-Mail')
                 ->set('mailType', $type)->set('mailSubject', 'Ein Test')->set('mailHeader', 'Hallo')->set('mailBody', 'Text')
-                ->call('previewMail')->assertHasNoErrors()->call('sendMail')->assertHasNoErrors();
+                ->call('previewMail')->assertHasNoErrors()->assertSee('Versandvorschau')
+                ->assertSee($type === 'message' ? 'Internes Postfach' : '/site-images/mail/globe.png')
+                ->call('sendMail')->assertHasNoErrors();
             $this->assertSame($type, Mail::latest('id')->firstOrFail()->type);
         }
         Queue::assertPushed(ProcessMailJob::class, 3);
@@ -74,7 +76,7 @@ class CustomerMailContactsTest extends TestCase
         $contact = Contact::firstOrFail();
         $blocked = Contact::create(['name' => 'Gesperrt', 'email' => 'blocked@example.test', 'mail_permission' => 'blocked']);
         $page->call('edit', $contact->id)->set('form.mail_permission', 'allowed')->call('save')->assertHasNoErrors()
-            ->set('selected', [$contact->id, $blocked->id])->call('openMailModal')->assertSee('1 erreichbare Empfänger')
+            ->set('selected', [$contact->id, $blocked->id])->call('openMailModal')->assertSee('1 erreichbarer Empfänger')
             ->set('mailType', 'both')->set('mailSubject', 'Test')->set('mailHeader', 'Hallo')->set('mailBody', 'Text')
             ->call('sendMail')->assertHasErrors('mailType')->set('mailType', 'mail')->call('sendMail')->assertHasNoErrors();
         $this->assertSame('test@example.test', Mail::firstOrFail()->recipients[0]['email']);

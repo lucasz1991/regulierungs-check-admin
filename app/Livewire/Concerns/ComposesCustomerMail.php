@@ -101,12 +101,14 @@ trait ComposesCustomerMail
 
     protected function customerMailPreviewHtml(): string
     {
-        $message = (new MailMessage)->subject($this->mailSubject)->greeting($this->mailHeader)->line($this->mailBody);
+        $message = (new MailMessage)->subject($this->mailSubject)->greeting($this->mailHeader)->lines(preg_split('/\R\h*\R/u', trim($this->mailBody)));
         if ($this->mailLink !== '') {
             $message->action('Weiter', $this->mailLink);
         }
 
-        return (string) $message->salutation('Mit freundlichen Grüßen, dein Regulierungs-CHECK Team')->render();
+        return view('livewire.admin.customer-mail-preview', $message->data() + [
+            'signoffLines' => ['Mit freundlichen Grüßen, dein Regulierungs-CHECK Team'],
+        ])->render();
     }
 
     public function sendMail(): void

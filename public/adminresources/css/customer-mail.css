@@ -1,0 +1,77 @@
+.mail-composer {
+    --ink: #163b45;
+    --muted: #506570;
+    --line: #cdd9da;
+    --accent: #146c60;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 3rem);
+    max-height: calc(100dvh - 3rem);
+    overflow: hidden;
+    border-radius: .65rem;
+    background: white;
+    color: var(--ink);
+    text-align: left;
+}
+.mail-composer__header, .mail-composer__actions {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: 1rem 1.5rem;
+}
+.mail-composer__header { justify-content: space-between; border-bottom: 1px solid var(--line); }
+.mail-composer__header h2 { margin: 0; color: var(--ink); font-size: 1.35rem; font-weight: 700; line-height: 1.25; }
+.mail-composer__header p, .mail-composer__hint { margin: .3rem 0 0; color: var(--muted); font-size: .85rem; }
+.mail-composer__close { width: 2.25rem; height: 2.25rem; flex: none; border-radius: .4rem; font-size: 1.5rem; line-height: 1; }
+.mail-composer__close:hover, .mail-composer__actions button:hover { background: #edf4f2; }
+.mail-composer__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; gap: 1rem; padding: 1.15rem 1.5rem; }
+.mail-composer__channels { margin: 0; padding: 0; min-width: 0; border: 0; }
+.mail-composer__channels legend, .mail-composer__fields label, .mail-composer__field, .mail-composer__preview h3 {
+    color: var(--ink); font-size: .92rem; line-height: 1.4; font-weight: 650;
+}
+.mail-composer__channels legend { margin-bottom: .45rem; }
+.mail-composer__options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .45rem; }
+.mail-composer__options label {
+    display: flex; align-items: center; gap: .5rem; min-height: 2.8rem;
+    padding: .55rem .65rem; border: 1px solid var(--line); border-radius: .45rem;
+    cursor: pointer; font-size: .86rem; line-height: 1.3;
+}
+.mail-composer__options label:has(input:checked) { background: #edf7f4; border-color: var(--accent); color: #0d554b; font-weight: 700; }
+.mail-composer__options label:has(input:disabled) { background: #f5f7f7; color: #697a80; cursor: default; }
+.mail-composer__options input { margin: 0; flex: none; accent-color: var(--accent); color: var(--accent); }
+.mail-composer__fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: .85rem; }
+.mail-composer__fields label, .mail-composer__field { display: grid; align-content: start; gap: .35rem; min-width: 0; }
+.mail-composer__fields input, .mail-composer__field input, .mail-composer__field textarea {
+    width: 100%; min-width: 0; padding: .58rem .75rem; border: 1px solid #acbec0; border-radius: .4rem;
+    background: white; color: var(--ink); font: inherit; font-weight: 400; line-height: 1.5;
+}
+.mail-composer__field textarea { resize: vertical; min-height: 5rem; }
+.mail-composer :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mail-composer [aria-invalid=true] { border-color: #a52e31; }
+.mail-composer__error { margin: 0; color: #a52e31; font-size: .82rem; }
+.mail-composer__optional { color: var(--muted); font-weight: 400; }
+.mail-composer__actions { justify-content: flex-end; flex-wrap: wrap; border-top: 1px solid var(--line); }
+.mail-composer__actions button {
+    padding: .55rem .8rem; min-height: 2.6rem; border: 1px solid var(--line); border-radius: .45rem;
+    color: var(--ink); font-size: .9rem; font-weight: 650;
+}
+.mail-composer__actions .mail-composer__cancel { margin-right: auto; border-color: transparent; }
+.mail-composer__actions .mail-composer__send { background: var(--accent); border-color: var(--accent); color: white; }
+.mail-composer__actions .mail-composer__send:hover { background: #0c544b; }
+.mail-composer__actions button:disabled { opacity: .55; cursor: default; }
+.mail-composer__preview { min-width: 0; }
+.mail-composer__preview h3 { margin: 0 0 .5rem; overflow-wrap: anywhere; }
+.mail-composer__preview iframe, .mail-composer__message { width: 100%; border: 1px solid var(--line); border-radius: .45rem; }
+.mail-composer__preview iframe { display: block; height: clamp(16rem, 53vh, 32rem); background: white; }
+.mail-composer__message { padding: 1rem; overflow-wrap: anywhere; }
+.mail-composer__message p { margin-top: .5rem; white-space: pre-line; }
+@media (max-width: 560px) {
+    .mail-composer__header, .mail-composer__body, .mail-composer__actions { padding: .85rem 1rem; }
+    .mail-composer__options { grid-template-columns: 1fr; gap: .3rem; }
+    .mail-composer__options label { min-height: 2.55rem; }
+    .mail-composer__fields { grid-template-columns: 1fr; }
+    .mail-composer__field input, .mail-composer__field textarea, .mail-composer__fields input { font-size: 16px; }
+    .mail-composer__actions { gap: .35rem; }
+    .mail-composer__actions button { padding: .45rem .6rem; }
+}

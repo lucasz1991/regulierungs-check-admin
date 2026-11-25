@@ -107,7 +107,7 @@ trait ComposesCustomerMail
         }
 
         return view('livewire.admin.customer-mail-preview', $message->data() + [
-            'signoffLines' => ['Mit freundlichen Grüßen, dein Regulierungs-CHECK Team'],
+            'signoffLines' => ['Viele Grüße'],
         ])->render();
     }
 

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" style="height:100%;" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml">
+<html lang="de" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -35,13 +35,14 @@
     }
   </style>
 </head>
-<body bgcolor="#ffffff" style="height:100%;margin:0;padding:0;background-color:#ffffff;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
-  <!--[if gte mso 9]>
-    <v:background fill="true"><v:fill type="frame" src="https://www.regulierungs-check.de/site-images/mail/background-curves.png" color="#ffffff" /></v:background>
-  <![endif]-->
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" height="100%" style="width:100%;height:100%;min-height:100vh;border-collapse:collapse;">
-    <tr><td class="mail-background mail-space" align="center" valign="top" background="https://www.regulierungs-check.de/site-images/mail/background-curves.png" style="padding:24px 12px 20px;text-align:center;vertical-align:top;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-curves.png');background-position:center top;background-repeat:no-repeat;background-size:100% 100%;">
-      <!--[if mso]><table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="760" style="width:570pt;border-collapse:collapse;"><tr><td><![endif]-->
+<body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+    <tr><td class="mail-background mail-space" align="center" valign="top" background="https://www.regulierungs-check.de/site-images/mail/background-curves.png" style="padding:24px 12px 0;text-align:center;vertical-align:top;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-curves.png');background-position:center top;background-repeat:no-repeat;background-size:100% 100%;">
+      <!--[if mso]>
+      <v:rect fill="true" stroke="false" style="mso-width-percent:980;">
+        <v:fill type="frame" src="https://www.regulierungs-check.de/site-images/mail/background-curves.png" color="#ffffff" />
+        <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">
+      <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="760" style="width:570pt;border-collapse:collapse;"><tr><td><![endif]-->
       <table class="mail-frame" role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff" style="width:100%;max-width:760px;margin:0 auto;table-layout:fixed;border-collapse:collapse;background-color:#ffffff;color:#143b47;text-align:left;">
         <tr><td class="mail-inner mail-header" align="left" style="padding:29px 36px 22px;border-bottom:1px solid #dce5df;text-align:left;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
           <a href="https://www.regulierungs-check.de/" style="color:#167668;text-decoration:none;"><img src="https://www.regulierungs-check.de/site-images/logo-xs.png" width="206" height="65" alt="Regulierungs-CHECK" style="display:block;width:206px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"></a>
@@ -80,7 +81,7 @@
         <tr><td class="mail-inner" style="padding:0 36px;background-color:transparent;color:#ffffff;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #dce5df;"><tr><td style="padding:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
         </td></tr>
-        <tr><td class="mail-inner" align="left" style="padding:14px 36px 18px;text-align:left;background-color:transparent;color:#143b47;">
+        <tr><td class="mail-inner" align="left" style="padding:14px 36px 12px;text-align:left;background-color:transparent;color:#143b47;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;margin:0 auto;text-align:left;font-family:'Trebuchet MS',Arial,sans-serif;background-color:transparent;color:#143b47;">
             <tr><td align="left" style="padding:0 0 8px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:13px;line-height:20px;">
                 @foreach ($signoffLines as $signoffLine)
@@ -131,7 +132,12 @@
           </table>
         </td></tr>
       </table>
-      <!--[if mso]></td></tr></table><![endif]-->
+      <!--[if mso]>
+      </td></tr></table>
+      <p style="margin:0;mso-hide:all;font-size:0;line-height:0;"><o:p>&nbsp;</o:p></p>
+        </v:textbox>
+      </v:rect>
+      <![endif]-->
     </td></tr>
   </table>
 </body>

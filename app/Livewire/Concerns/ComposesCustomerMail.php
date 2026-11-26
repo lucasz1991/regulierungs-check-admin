@@ -28,6 +28,8 @@ trait ComposesCustomerMail
 
     public string $mailLink = '';
 
+    public string $mailButtonLabel = '';
+
     #[Locked]
     public array $mailIds = [];
 
@@ -59,7 +61,7 @@ trait ComposesCustomerMail
 
     public function resetMailModal(): void
     {
-        $this->reset('showMailModal', 'mailIds', 'mailToken', 'mailPreview', 'mailType', 'mailSubject', 'mailHeader', 'mailBody', 'mailLink');
+        $this->reset('showMailModal', 'mailIds', 'mailToken', 'mailPreview', 'mailType', 'mailSubject', 'mailHeader', 'mailBody', 'mailLink', 'mailButtonLabel');
         $this->resetValidation();
     }
 
@@ -84,12 +86,15 @@ trait ComposesCustomerMail
     {
         Gate::authorize('mails.manage');
         abort_unless($this->mailToken && $this->mailIds, 422);
+        $this->mailLink = trim($this->mailLink);
+        $this->mailButtonLabel = trim($this->mailButtonLabel);
         $this->validate([
             'mailType' => ['required', Rule::in($this->externalMailOnly() ? ['mail'] : ['mail', 'message', 'both'])],
             'mailSubject' => 'required|string|max:255',
             'mailHeader' => 'exclude_if:mailType,message|required|string|max:255',
             'mailBody' => 'required|string|max:50000',
             'mailLink' => 'exclude_if:mailType,message|nullable|url:http,https|max:2048',
+            'mailButtonLabel' => 'exclude_if:mailType,message|exclude_without:mailLink|nullable|string|max:80',
         ]);
     }
 
@@ -103,7 +108,7 @@ trait ComposesCustomerMail
     {
         $message = (new MailMessage)->subject($this->mailSubject)->greeting($this->mailHeader)->lines(preg_split('/\R\h*\R/u', trim($this->mailBody)));
         if ($this->mailLink !== '') {
-            $message->action('Weiter', $this->mailLink);
+            $message->action($this->mailButtonLabel !== '' ? $this->mailButtonLabel : 'Weiter', $this->mailLink);
         }
 
         return view('livewire.admin.customer-mail-preview', $message->data() + [
@@ -122,6 +127,9 @@ trait ComposesCustomerMail
         }
         $content = ['subject' => $this->mailSubject, 'header' => $this->mailType === 'message' ? '' : $this->mailHeader, 'body' => $this->mailBody,
             'link' => $this->mailType === 'message' ? '' : $this->mailLink, 'from_user_id' => auth()->id()];
+        if ($content['link'] !== '' && $this->mailButtonLabel !== '') {
+            $content['button_label'] = $this->mailButtonLabel;
+        }
 
         DB::transaction(function () use ($recipients, $content) {
             foreach ($recipients->chunk(50) as $batch => $items) {

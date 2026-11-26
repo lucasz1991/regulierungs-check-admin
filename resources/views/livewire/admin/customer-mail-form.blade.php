@@ -48,10 +48,16 @@
                         @error('mailBody') <span role="alert" class="mail-composer__error">{{ $message }}</span> @enderror
                     </label>
                     @if($mailType !== 'message')
-                        <label class="mail-composer__field"><span>Link <span class="mail-composer__optional">(optional)</span></span>
-                            <input type="url" placeholder="https://" wire:model="mailLink" maxlength="2048" @if($errors->has('mailLink')) aria-invalid="true" @endif>
-                            @error('mailLink') <span role="alert" class="mail-composer__error">{{ $message }}</span> @enderror
-                        </label>
+                        <div class="mail-composer__fields">
+                            <label><span>Link <span class="mail-composer__optional">(optional)</span></span>
+                                <input type="url" placeholder="https://" wire:model="mailLink" maxlength="2048" @if($errors->has('mailLink')) aria-invalid="true" @endif>
+                                @error('mailLink') <span role="alert" class="mail-composer__error">{{ $message }}</span> @enderror
+                            </label>
+                            <label><span>Buttontext <span class="mail-composer__optional">(optional)</span></span>
+                                <input type="text" placeholder="Weiter" wire:model="mailButtonLabel" maxlength="80" @if($errors->has('mailButtonLabel')) aria-invalid="true" @endif>
+                                @error('mailButtonLabel') <span role="alert" class="mail-composer__error">{{ $message }}</span> @enderror
+                            </label>
+                        </div>
                     @endif
                 @else
                     @if($mailType !== 'mail')

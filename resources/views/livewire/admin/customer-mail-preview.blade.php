@@ -70,7 +70,7 @@
         <tr><td class="mail-inner" align="left" style="padding:32px 36px 34px;text-align:left;background-color:transparent;color:#143b47;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border-spacing:0;margin:0;text-align:left;">
             <tr><td align="left" bgcolor="#f9b029" style="padding:0;text-align:left;background-color:#f9b029;color:#143b47;border:0;border-radius:8px;mso-padding-alt:14px 22px;">
-              <a href="{{ $actionUrl }}" style="display:inline-block;background-color:#f9b029;border-radius:8px;padding:14px 22px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:bold;color:#143b47;text-align:center;text-decoration:none;">{{ $actionText }}&nbsp;&nbsp;&#8594;</a>
+              <a href="{{ $actionUrl }}" style="display:inline-block;word-wrap:break-word;overflow-wrap:anywhere;background-color:#f9b029;border-radius:8px;padding:14px 22px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:bold;color:#143b47;text-align:center;text-decoration:none;">{{ $actionText }}&nbsp;&nbsp;&#8594;</a>
             </td></tr>
           </table>
         </td></tr>

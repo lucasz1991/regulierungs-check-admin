@@ -9,6 +9,7 @@ use App\Livewire\Admin\Users;
 use App\Models\Contact;
 use App\Models\Mail;
 use App\Models\User;
+use DOMDocument;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
@@ -45,6 +46,54 @@ class CustomerMailContactsTest extends TestCase
         Queue::assertPushedOn('kundenmail', ProcessMailJob::class);
     }
 
+    public static function buttonLabels(): array
+    {
+        return [
+            'custom email label' => ['mail', '  Schäden & <Details>  ', 'https://example.test/details', 'Schäden & <Details>'],
+            'default combined label' => ['both', '   ', 'https://example.test/details', 'Weiter'],
+            'label without link' => ['mail', 'Details ansehen', '', null],
+        ];
+    }
+
+    /** @dataProvider buttonLabels */
+    public function test_composer_previews_and_persists_the_optional_button_label(string $channel, string $input, string $link, ?string $expectedLabel): void
+    {
+        $customer = User::create(['name' => 'Alex', 'email' => 'alex@example.test', 'role' => 'guest', 'password' => 'unused', 'status' => true]);
+        $form = Livewire::test(Users::class)->call('openMailModal', $customer->id)
+            ->assertSeeHtml('wire:model="mailButtonLabel"')
+            ->set('mailType', $channel)->set('mailSubject', 'Unterlagen')->set('mailHeader', 'Hallo Alex')->set('mailBody', 'Deine Nachricht.')
+            ->set('mailLink', $link)->set('mailButtonLabel', $input)->call('previewMail')->assertHasNoErrors();
+
+        $document = new DOMDocument;
+        $document->loadHTML('<?xml encoding="UTF-8">'.$form->html(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $preview = $document->getElementsByTagName('iframe')->item(0)->getAttribute('srcdoc');
+        if ($expectedLabel === null) {
+            $this->assertStringNotContainsString($input, $preview);
+            $this->assertStringNotContainsString('Falls der Button', $preview);
+        } else {
+            $this->assertStringContainsString('>'.e($expectedLabel), $preview);
+            $this->assertSame(2, substr_count($preview, 'href="'.$link.'"'));
+        }
+
+        $form->call('sendMail')->assertHasNoErrors()->assertSet('mailButtonLabel', '');
+        $content = Mail::firstOrFail()->content;
+        $this->assertSame($link, $content['link']);
+        $this->assertSame($link !== '' && trim($input) !== '' ? trim($input) : null, $content['button_label'] ?? null);
+        Queue::assertPushed(ProcessMailJob::class, 1);
+    }
+
+    public function test_long_button_label_is_rejected_before_scheduling(): void
+    {
+        $customer = User::create(['name' => 'Alex', 'email' => 'alex@example.test', 'role' => 'guest', 'password' => 'unused', 'status' => true]);
+        $form = Livewire::test(Users::class)->call('openMailModal', $customer->id)
+            ->set('mailSubject', 'Unterlagen')->set('mailHeader', 'Hallo Alex')->set('mailBody', 'Deine Nachricht.')
+            ->set('mailLink', 'https://example.test/details')->set('mailButtonLabel', str_repeat('a', 81));
+        $form->call('previewMail')->assertHasErrors(['mailButtonLabel' => 'max'])->assertSet('mailPreview', false);
+        $form->call('sendMail')->assertHasErrors(['mailButtonLabel' => 'max']);
+        $this->assertSame(0, Mail::count());
+        Queue::assertNothingPushed();
+    }
+
     public function test_bulk_send_uses_all_filtered_results_and_enqueues_each_recipient_once(): void
     {
         $recipientCount = 53;
@@ -55,7 +104,8 @@ class CustomerMailContactsTest extends TestCase
 
         $form = Livewire::test(Users::class)->set('search', 'Kurs')->call('toggleSelectAll')->call('openMailModal')
             ->set('mailType', 'message')->set('mailSubject', 'Termin')->set('mailBody', 'Eine interne Nachricht.')
-            ->set('mailLink', 'ignored-for-internal-messages');
+            ->set('mailLink', 'ignored-for-internal-messages')->set('mailButtonLabel', str_repeat('a', 81))
+            ->assertDontSeeHtml('wire:model="mailButtonLabel"');
         $duplicate = clone $form->instance();
         $form->call('sendMail')->assertHasNoErrors();
         $duplicate->sendMail();
@@ -63,6 +113,7 @@ class CustomerMailContactsTest extends TestCase
         $orders = Mail::orderBy('id')->get();
         $this->assertSame([50, 3], $orders->map(fn ($order) => count($order->recipients))->all());
         $this->assertSame('', $orders->first()->content['link']);
+        $this->assertArrayNotHasKey('button_label', $orders->first()->content);
         $addresses = $orders->flatMap(fn ($order) => array_column($order->recipients, 'email'));
         $this->assertCount($recipientCount, $addresses->unique());
         $this->assertNotContains('other@example.test', $addresses);

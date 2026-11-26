@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:v="urn:schemas-microsoft-com:vml">
+<html lang="de">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,12 +16,17 @@
       .mail-frame { background-color:transparent !important; }
     }
     @media only screen and (max-width:1199px) {
-      .mail-background { background-size:160% 100% !important; }
+      .mail-arc-left, .mail-arc-right { background-size:180px auto !important; }
+      .mail-arc-left { background-position:left -90px top !important; }
+      .mail-arc-right { background-position:right -90px bottom !important; }
     }
     @media only screen and (max-width:600px) {
+      .mail-arc-left, .mail-arc-right { background-size:128px auto !important; }
+      .mail-arc-left { background-position:left -75px top !important; }
+      .mail-arc-right { background-position:right -75px bottom !important; }
       .mail-space { padding:0 8px !important; }
-      .mail-signature { padding-bottom:22px !important; }
-      .mail-header { padding-top:20px !important; padding-bottom:16px !important; }
+      .mail-signature { padding-bottom:28px !important; }
+      .mail-header { padding-top:24px !important; padding-bottom:22px !important; }
       .mail-header img { width:166px !important; }
       .mail-inner { padding-left:20px !important; padding-right:20px !important; }
     }
@@ -37,27 +42,32 @@
   </style>
 </head>
 <body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  <!--[if !mso]><!-->
+  <table class="mail-background" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+    <tr><td class="mail-arc-left" background="https://www.regulierungs-check.de/site-images/mail/background-circles-left.png" style="padding:0;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-circles-left.png');background-position:left top;background-repeat:no-repeat;background-size:300px auto;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
+        <tr><td class="mail-arc-right mail-space" align="center" valign="top" background="https://www.regulierungs-check.de/site-images/mail/background-circles-right.png" style="padding:24px 12px 0;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-circles-right.png');background-position:right bottom;background-repeat:no-repeat;background-size:300px auto;">
+  <!--<![endif]-->
+  <!--[if mso]>
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
-    <tr><td class="mail-background mail-space" align="center" valign="top" background="https://www.regulierungs-check.de/site-images/mail/background-curves.png" style="padding:24px 12px 0;text-align:center;vertical-align:top;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-curves.png');background-position:center top;background-repeat:no-repeat;background-size:100% 100%;">
-      <!--[if mso]>
-      <v:rect fill="true" stroke="false" style="mso-width-percent:980;">
-        <v:fill type="frame" src="https://www.regulierungs-check.de/site-images/mail/background-curves.png" color="#ffffff" />
-        <v:textbox inset="0,0,0,0" style="mso-fit-shape-to-text:true;">
-      <table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="760" style="width:570pt;border-collapse:collapse;"><tr><td><![endif]-->
+    <tr>
+      <td align="left" valign="top" style="padding:0;font-size:0;line-height:0;"><img src="https://www.regulierungs-check.de/site-images/mail/background-circles-left.png" width="65" height="104" alt="" style="display:block;border:0;"></td>
+      <td width="630" align="center" valign="top" style="width:472.5pt;padding:18pt 0 0;">
+  <![endif]-->
       <table class="mail-frame" role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff" style="width:100%;max-width:760px;margin:0 auto;table-layout:fixed;border-collapse:collapse;background-color:#ffffff;color:#143b47;text-align:left;">
-        <tr><td class="mail-inner mail-header" align="left" style="padding:29px 36px 22px;border-bottom:1px solid #dce5df;text-align:left;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
+        <tr><td class="mail-inner mail-header" align="left" style="padding:29px 36px 29px;border-bottom:1px solid #dce5df;text-align:left;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
           <a href="https://www.regulierungs-check.de/" style="color:#167668;text-decoration:none;"><img src="https://www.regulierungs-check.de/site-images/logo-xs.png" width="206" height="65" alt="Regulierungs-CHECK" style="display:block;width:206px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"></a>
         </td></tr>
-        <tr><td class="mail-inner" align="left" style="padding:25px 36px 0;text-align:left;background-color:transparent;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:26px;">
+        <tr><td class="mail-inner" align="left" style="padding:32px 36px 0;text-align:left;background-color:transparent;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;">
           @if (filled($greeting))
-            <p style="margin:0;padding:0 0 17px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:26px;font-weight:bold;color:#143b47;">{{ $greeting }}</p>
+            <p style="margin:0;padding:0 0 22px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;font-weight:bold;color:#143b47;">{{ $greeting }}</p>
           @endif
           @foreach ($introLines as $line)
-            <p style="margin:0;padding:0 0 {{ $loop->last ? 0 : 16 }}px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:26px;color:#344f58;">{{ $line }}</p>
+            <p style="margin:0;padding:0 0 {{ $loop->last ? 0 : 20 }}px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;color:#344f58;">{{ $line }}</p>
           @endforeach
         </td></tr>
         @if (filled($actionText) && filled($actionUrl))
-        <tr><td class="mail-inner" align="left" style="padding:25px 36px 28px;text-align:left;background-color:transparent;color:#143b47;">
+        <tr><td class="mail-inner" align="left" style="padding:32px 36px 34px;text-align:left;background-color:transparent;color:#143b47;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;border-spacing:0;margin:0;text-align:left;">
             <tr><td align="left" bgcolor="#f9b029" style="padding:0;text-align:left;background-color:#f9b029;color:#143b47;border:0;border-radius:8px;mso-padding-alt:14px 22px;">
               <a href="{{ $actionUrl }}" style="display:inline-block;background-color:#f9b029;border-radius:8px;padding:14px 22px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:bold;color:#143b47;text-align:center;text-decoration:none;">{{ $actionText }}&nbsp;&nbsp;&#8594;</a>
@@ -66,25 +76,25 @@
         </td></tr>
         @endif
         @if ($outroLines)
-        <tr><td class="mail-inner" align="left" style="padding:0 36px 18px;text-align:left;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:26px;color:#344f58;">
+        <tr><td class="mail-inner" align="left" style="padding:0 36px 24px;text-align:left;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;color:#344f58;">
           @foreach ($outroLines as $line)
-            <p style="margin:0;padding:0 0 {{ $loop->last ? 0 : 16 }}px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:26px;color:#344f58;">{{ $line }}</p>
+            <p style="margin:0;padding:0 0 {{ $loop->last ? 0 : 20 }}px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;color:#344f58;">{{ $line }}</p>
           @endforeach
         </td></tr>
         @endif
         @if (filled($actionText) && filled($actionUrl))
-        <tr><td class="mail-inner" align="left" style="padding:0 36px 18px;text-align:left;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:12px;line-height:18px;">
+        <tr><td class="mail-inner" align="left" style="padding:0 36px 24px;text-align:left;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:12px;line-height:18px;">
           Falls der Button nicht funktioniert, öffne diesen Link im Browser:<br>
           <a href="{{ $actionUrl }}" style="color:#167668;text-decoration:underline;overflow-wrap:anywhere;word-break:break-all;">{{ $displayableActionUrl }}</a>
         </td></tr>
         @endif
-        <tr><td class="mail-inner" align="left" style="padding:{{ filled($actionText) && filled($actionUrl) ? '0' : '24px' }} 36px 26px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:23px;">Du hast Fragen? Schreib uns einfach.<br><a href="mailto:info@regulierungs-check.de" style="color:#167668;text-decoration:underline;">info@regulierungs-check.de</a></td></tr>
+        <tr><td class="mail-inner" align="left" style="padding:{{ filled($actionText) && filled($actionUrl) ? '0' : '30px' }} 36px 32px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:23px;">Du hast Fragen? Schreib uns einfach.<br><a href="mailto:info@regulierungs-check.de" style="color:#167668;text-decoration:underline;">info@regulierungs-check.de</a></td></tr>
         <tr><td class="mail-inner" style="padding:0 36px;background-color:transparent;color:#ffffff;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #dce5df;"><tr><td style="padding:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
         </td></tr>
-        <tr><td class="mail-inner mail-signature" align="left" style="padding:14px 36px 30px;text-align:left;background-color:transparent;color:#143b47;">
+        <tr><td class="mail-inner mail-signature" align="left" style="padding:20px 36px 38px;text-align:left;background-color:transparent;color:#143b47;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;margin:0 auto;text-align:left;font-family:'Trebuchet MS',Arial,sans-serif;background-color:transparent;color:#143b47;">
-            <tr><td align="left" style="padding:0 0 8px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:13px;line-height:20px;">
+            <tr><td align="left" style="padding:0 0 12px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:13px;line-height:20px;">
                 @foreach ($signoffLines as $signoffLine)
                   {{ $signoffLine }}@unless ($loop->last)<br>@endunless
                 @endforeach
@@ -120,7 +130,7 @@
               </table>
               <!--[if mso]></td></tr></table><![endif]-->
             </td></tr>
-            <tr><td style="padding:8px 0 5px;background-color:transparent;color:#ffffff;">
+            <tr><td style="padding:11px 0 7px;background-color:transparent;color:#ffffff;">
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #e1e9e4;"><tr><td style="padding:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
             </td></tr>
             <tr><td align="left" style="padding:0;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:11px;line-height:16px;">
@@ -133,13 +143,17 @@
           </table>
         </td></tr>
       </table>
-      <!--[if mso]>
-      </td></tr></table>
-      <p style="margin:0;mso-hide:all;font-size:0;line-height:0;"><o:p>&nbsp;</o:p></p>
-        </v:textbox>
-      </v:rect>
-      <![endif]-->
+  <!--[if mso]>
+      </td>
+      <td align="right" valign="bottom" style="padding:0;font-size:0;line-height:0;"><img src="https://www.regulierungs-check.de/site-images/mail/background-circles-right.png" width="65" height="104" alt="" style="display:block;border:0;"></td>
+    </tr>
+  </table>
+  <![endif]-->
+  <!--[if !mso]><!-->
+        </td></tr>
+      </table>
     </td></tr>
   </table>
+  <!--<![endif]-->
 </body>
 </html>

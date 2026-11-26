@@ -20,6 +20,7 @@
     }
     @media only screen and (max-width:600px) {
       .mail-space { padding:0 8px !important; }
+      .mail-signature { padding-bottom:22px !important; }
       .mail-header { padding-top:20px !important; padding-bottom:16px !important; }
       .mail-header img { width:166px !important; }
       .mail-inner { padding-left:20px !important; padding-right:20px !important; }
@@ -81,7 +82,7 @@
         <tr><td class="mail-inner" style="padding:0 36px;background-color:transparent;color:#ffffff;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #dce5df;"><tr><td style="padding:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
         </td></tr>
-        <tr><td class="mail-inner" align="left" style="padding:14px 36px 12px;text-align:left;background-color:transparent;color:#143b47;">
+        <tr><td class="mail-inner mail-signature" align="left" style="padding:14px 36px 30px;text-align:left;background-color:transparent;color:#143b47;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;margin:0 auto;text-align:left;font-family:'Trebuchet MS',Arial,sans-serif;background-color:transparent;color:#143b47;">
             <tr><td align="left" style="padding:0 0 8px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:13px;line-height:20px;">
                 @foreach ($signoffLines as $signoffLine)

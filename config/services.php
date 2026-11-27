@@ -2,6 +2,11 @@
 
 return [
 
+    'newsletter' => [
+        'base_url' => env('NEWSLETTER_BASE_URL'),
+        'api_key' => env('NEWSLETTER_API_KEY'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

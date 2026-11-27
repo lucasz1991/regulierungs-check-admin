@@ -318,7 +318,8 @@ class NewsEditCreateValidationTest extends TestCase
 
     public function test_news_modal_renders_accessible_dialog_semantics(): void
     {
-        Livewire::test(NewsEditCreate::class)
+        $editor = (new \App\Models\User)->forceFill(['id' => 1, 'role' => 'admin', 'status' => true]);
+        Livewire::actingAs($editor)->test(NewsEditCreate::class)
             ->assertSeeHtml('role="dialog"')
             ->assertSeeHtml('aria-modal="true"')
             ->assertSeeHtml('aria-labelledby="news-edit-create-modal-title"')

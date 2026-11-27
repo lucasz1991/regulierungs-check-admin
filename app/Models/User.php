@@ -145,6 +145,10 @@ class User extends Authenticatable implements MustVerifyEmail
                 && $team->grants($permission);
         }
 
+        if ($permission === 'newsletter.view' && $team->grants('newsletter.manage')) {
+            return true;
+        }
+
         return ! str_starts_with($permission, 'promotion.')
             && $team->grants($permission);
     }

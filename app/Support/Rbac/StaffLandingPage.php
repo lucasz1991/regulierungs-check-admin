@@ -12,6 +12,8 @@ final class StaffLandingPage
         'promotion.wins.record' => 'promotion.console',
         'content.web.manage' => 'admin.webcontentmanager',
         'content.news.manage' => 'admin.webcontent.news',
+        'newsletter.manage' => 'admin.newsletter.index',
+        'newsletter.view' => 'admin.newsletter.subscriptions',
         'content.pagebuilder.manage' => 'admin.cms.edit-project',
         'ratings.structure.manage' => 'admin.ratingstructure.index',
         'messages.manage' => 'admin.messages',

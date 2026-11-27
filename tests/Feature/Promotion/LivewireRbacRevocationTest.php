@@ -8,6 +8,7 @@ use App\Livewire\Admin\Employees;
 use App\Livewire\Admin\Exports;
 use App\Livewire\Admin\MailManagement;
 use App\Livewire\Admin\ManageContacts;
+use App\Livewire\Admin\NewsletterSubscribers;
 use App\Livewire\Admin\PromotionAdministration;
 use App\Livewire\Admin\RatingStructure\Index as RatingStructure;
 use App\Livewire\Admin\Reviews\ClaimRatingList;
@@ -60,6 +61,7 @@ class LivewireRbacRevocationTest extends TestCase
             'admin.promotion' => [PromotionAdministration::class, 'promotion.campaigns.manage'],
             'admin.mails' => [MailManagement::class, 'mails.manage'],
             'admin.contacts' => [ManageContacts::class, 'contacts.manage'],
+            'admin.newsletter.subscriptions' => [NewsletterSubscribers::class, 'newsletter.view'],
             'admin.reviews.claim-ratings' => [ClaimRatingList::class, 'reviews.manage'],
             'admin.reviews.show' => [ShowClaimRating::class, 'reviews.manage'],
             'promotion.console' => [PromotionConsole::class, 'promotion.wins.record'],
@@ -132,6 +134,7 @@ class LivewireRbacRevocationTest extends TestCase
             [UserProfile::class, ['userId' => $staff->id]],
             [MailManagement::class, []],
             [ManageContacts::class, []],
+            [NewsletterSubscribers::class, []],
             [ClaimRatingList::class, []],
             [ShowClaimRating::class, ['ratingId' => 1]],
         ];

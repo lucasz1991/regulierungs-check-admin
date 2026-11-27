@@ -156,6 +156,13 @@
                             >
                                 Auf User-Seite ansehen
                             </a>
+                            @can('newsletter.manage')
+                                <form method="post" action="{{ route('admin.newsletter.create') }}">
+                                    @csrf
+                                    <input type="hidden" name="post_id" value="{{ $post->id }}">
+                                    <button type="submit" class="block w-full px-4 py-2 text-left text-teal-800 hover:bg-teal-50">Als Newsletter verwenden</button>
+                                </form>
+                            @endcan
                             <button
                                 type="button"
                                 @click="open = false; Livewire.dispatch('open-news-modal', { postId: {{ $post->id }} })"

@@ -42,6 +42,9 @@
   </style>
 </head>
 <body bgcolor="#ffffff" style="margin:0;padding:0;background-color:#ffffff;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+  @if (filled($newsletter['preheader'] ?? null))
+    <div aria-hidden="true" style="display:none!important;mso-hide:all;visibility:hidden;opacity:0;overflow:hidden;max-height:0;max-width:0;font-size:1px;line-height:1px;color:#fff;">{{ $newsletter['preheader'] }}</div>
+  @endif
   <!--[if !mso]><!-->
   <table class="mail-background" role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;">
     <tr><td class="mail-arc-left" background="https://www.regulierungs-check.de/site-images/mail/background-circles-left.png" style="padding:0;background-image:url('https://www.regulierungs-check.de/site-images/mail/background-circles-left.png');background-position:left top;background-repeat:no-repeat;background-size:300px auto;">
@@ -56,11 +59,27 @@
   <![endif]-->
       <table class="mail-frame" role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#ffffff" style="width:100%;max-width:760px;margin:0 auto;table-layout:fixed;border-collapse:collapse;background-color:#ffffff;color:#143b47;text-align:left;">
         <tr><td class="mail-inner mail-header" align="left" style="padding:29px 36px 29px;border-bottom:1px solid #dce5df;text-align:left;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
+          @isset($newsletter)
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="left" valign="middle">
+          @endisset
           <a href="https://www.regulierungs-check.de/" style="color:#167668;text-decoration:none;"><img src="https://www.regulierungs-check.de/site-images/logo-xs.png" width="206" height="65" alt="Regulierungs-CHECK" style="display:block;width:206px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"></a>
+          @isset($newsletter)
+          </td><td align="right" valign="middle" style="padding-left:12px;color:#24695d;font:600 13px/18px 'Trebuchet MS',Arial,sans-serif;white-space:nowrap;"><span aria-hidden="true" style="color:#77a795;">&bull;&nbsp;</span>{{ $newsletter['kind'] === 'news' ? 'News' : 'Newsletter' }}</td></tr></table>
+          @endisset
         </td></tr>
         <tr><td class="mail-inner" align="left" style="padding:32px 36px 0;text-align:left;background-color:transparent;color:#143b47;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;">
           @if (filled($greeting))
             <p style="margin:0;padding:0 0 22px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;font-weight:bold;color:#143b47;">{{ $greeting }}</p>
+          @endif
+          @if (($newsletter['kind'] ?? null) === 'news')
+            @if (!empty($newsletter['image']['url']))
+              <a href="{{ $actionUrl }}" style="display:block;margin:0 0 18px;color:#167668;text-decoration:none;">
+                <img src="{{ $newsletter['image']['url'] }}" width="558" alt="{{ $newsletter['image']['alt'] ?? '' }}" style="display:block;width:100%;height:auto;border:0;">
+              </a>
+            @endif
+            @if (filled($newsletter['title'] ?? null))
+              <h1 style="margin:0;padding:0 0 12px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:24px;line-height:30px;color:#143b47;">{{ $newsletter['title'] }}</h1>
+            @endif
           @endif
           @foreach ($introLines as $line)
             <p style="margin:0;padding:0 0 {{ $loop->last ? 0 : 20 }}px;font-family:'Trebuchet MS',Arial,sans-serif;font-size:16px;line-height:28px;color:#344f58;">{{ $line }}</p>
@@ -88,7 +107,17 @@
           <a href="{{ $actionUrl }}" style="color:#167668;text-decoration:underline;overflow-wrap:anywhere;word-break:break-all;">{{ $displayableActionUrl }}</a>
         </td></tr>
         @endif
+        @isset($newsletter)
+        <tr><td class="mail-inner" style="padding:{{ filled($actionUrl) ? '0' : '24px' }} 36px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#edf5f1" style="background-color:#edf5f1;border-radius:5px;">
+            <tr><td style="padding:0 0 0 14px;">
+              <a href="{{ $newsletter['settings_url'] }}" style="display:block;padding:10px 0;color:#24695d;font:600 13px/20px 'Trebuchet MS',Arial,sans-serif;text-decoration:underline;">Newsletter-Einstellungen ändern</a>
+            </td><td width="24" align="right" valign="middle" aria-hidden="true" style="padding-right:14px;color:#24695d;font:16px/20px Arial,sans-serif;">&#8250;</td></tr>
+          </table>
+        </td></tr>
+        @else
         <tr><td class="mail-inner" align="left" style="padding:{{ filled($actionText) && filled($actionUrl) ? '0' : '30px' }} 36px 32px;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:14px;line-height:23px;">Du hast Fragen? Schreib uns einfach.<br><a href="mailto:info@regulierungs-check.de" style="color:#167668;text-decoration:underline;">info@regulierungs-check.de</a></td></tr>
+        @endisset
         <tr><td class="mail-inner" style="padding:0 36px;background-color:transparent;color:#ffffff;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;border-top:1px solid #dce5df;"><tr><td style="padding:0;font-size:0;line-height:0;">&nbsp;</td></tr></table>
         </td></tr>
@@ -139,6 +168,9 @@
             </td></tr>
             <tr><td align="left" style="padding:3px 0 0;text-align:left;background-color:transparent;color:#526c75;font-family:'Trebuchet MS',Arial,sans-serif;font-size:11px;line-height:16px;">
               <a href="https://www.regulierungs-check.de/imprint" style="color:#526c75;text-decoration:underline;">Impressum</a>&nbsp;&nbsp;·&nbsp;&nbsp;<a href="https://www.regulierungs-check.de/privacypolicy" style="color:#526c75;text-decoration:underline;">Datenschutz</a>
+              @isset($newsletter)
+                &nbsp;&nbsp;·&nbsp;&nbsp;<a href="{{ $newsletter['unsubscribe_url'] }}" style="color:#526c75;text-decoration:underline;">Newsletter abbestellen</a>
+              @endisset
             </td></tr>
           </table>
         </td></tr>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PromotionGiftCodeController;
+use App\Http\Controllers\Admin\NewsletterController;
 use App\Http\Controllers\Admin\SocialAuthProviderSettingsController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\NewsSocialImageController;
@@ -21,6 +22,7 @@ use App\Livewire\Admin\Safety;
 use App\Livewire\Admin\StaffProfile;
 use App\Livewire\Admin\TeamPermissions;
 use App\Livewire\Admin\UserProfile;
+require __DIR__.'/newsletter-subscriptions.php';
 use App\Livewire\Admin\Users;
 use App\Livewire\AdminConfig;
 use App\Livewire\AdminDashboard;
@@ -82,6 +84,20 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'account.ac
 
     Route::get('/web-content-manager', WebContentManager::class)->middleware('can:content.web.manage')->name('admin.webcontentmanager');
     Route::get('/web-content-manager/news', WebContentManager::class)->middleware('can:content.news.manage')->name('admin.webcontent.news');
+
+    Route::prefix('admin/newsletter')->name('admin.newsletter.')->middleware('can:newsletter.manage')->controller(NewsletterController::class)->group(function (): void {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'create')->name('create');
+        Route::get('/{campaign}', 'show')->whereNumber('campaign')->name('show');
+        Route::post('/{campaign}', 'save')->whereNumber('campaign')->name('save');
+        Route::post('/{campaign}/quelle', 'source')->whereNumber('campaign')->name('source');
+        Route::get('/{campaign}/vorschau', 'preview')->whereNumber('campaign')->name('preview');
+        Route::middleware('can:newsletter.send')->group(function () {
+            Route::post('/{campaign}/test', 'test')->whereNumber('campaign')->middleware('throttle:10,1')->name('test');
+            Route::post('/{campaign}/freigeben', 'schedule')->whereNumber('campaign')->name('schedule');
+            Route::post('/{campaign}/planung', 'changeSchedule')->whereNumber('campaign')->name('planning');
+        });
+    });
 
     Route::middleware('can:content.pagebuilder.manage')->group(function (): void {
         Route::get('/admin/cms/edit-project/{projectId?}', EditProject::class)->name('admin.cms.edit-project');

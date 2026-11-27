@@ -47,6 +47,35 @@ class MediaController extends Controller
         return $url . $path;
     }
 
+    public function newsletterImage(int $postId, int $focusX = 50, int $focusY = 50, ?string $expectedSourcePath = null): array
+    {
+        $origin = rtrim((string) (config('services.newsletter.base_url') ?: $this->apiSettings['base_api_url']), '/');
+        $key = config('services.newsletter.api_key') ?: $this->apiSettings['base_api_key'];
+        if (! $origin || ! $key) {
+            throw new \RuntimeException('Für die Bildvorschau fehlt die Verbindung zur öffentlichen Installation.');
+        }
+        if (app()->isLocal() && ! config('services.newsletter.base_url') && ! in_array(parse_url($origin, PHP_URL_HOST), ['localhost', '127.0.0.1', '[::1]'], true)) {
+            throw new \RuntimeException('Bitte NEWSLETTER_BASE_URL für die Bildvorschau dieser Entwicklungsumgebung festlegen.');
+        }
+        try {
+            $response = Http::acceptJson()->timeout(30)->withoutRedirecting()->withHeaders(['X-API-KEY' => $key])
+                ->post($origin.'/api/admin/newsletter-image', ['post_id' => $postId, 'focus_x' => $focusX, 'focus_y' => $focusY]);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            throw new \RuntimeException('Die Bildvorschau konnte die öffentliche Installation nicht erreichen.', 0, $e);
+        }
+        $image = $response->json('image');
+        if (! $response->successful() || ! is_array($image) || empty($image['url']) || empty($image['width'])
+            || $image['width'] !== 2 * ($image['height'] ?? 0)) {
+            throw new \RuntimeException('Das Beitragsbild ist nicht als Mailbild verfügbar. Bitte die Quelle prüfen oder ohne Bild fortfahren.');
+        }
+
+        if ($expectedSourcePath !== null && ($image['source'] ?? null) !== $expectedSourcePath) {
+            throw new \RuntimeException('Das Hauptbild der News wurde ersetzt. Bitte die News erneut in den Entwurf übernehmen.');
+        }
+
+        return $image;
+    }
+
     protected function missingBaseConfigurationResponse(): JsonResponse
     {
         return response()->json([

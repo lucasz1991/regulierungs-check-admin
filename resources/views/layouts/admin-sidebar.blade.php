@@ -24,10 +24,11 @@
             </x-menu.sidebar-nav>
         @endcanany
 
-        @canany(['content.web.manage', 'content.news.manage', 'content.pagebuilder.manage', 'ratings.structure.manage'])
+        @canany(['content.web.manage', 'content.news.manage', 'newsletter.manage', 'newsletter.view', 'content.pagebuilder.manage', 'ratings.structure.manage'])
             <x-menu.sidebar-nav label="Inhalte">
-                @can('content.news.manage')<x-menu.sidebar-nav-link :href="route('admin.webcontent.news')" icon="file-text" :active="request()->routeIs('admin.webcontent.news')">News</x-menu.sidebar-nav-link>@endcan
                 @can('content.web.manage')<x-menu.sidebar-nav-link :href="route('admin.webcontentmanager')" icon="grid" :active="request()->routeIs('admin.webcontentmanager')">Web-Inhalte</x-menu.sidebar-nav-link>@endcan
+                @can('content.news.manage')<x-menu.sidebar-nav-link :href="route('admin.webcontent.news')" icon="file-text" :active="request()->routeIs('admin.webcontent.news')">News</x-menu.sidebar-nav-link>@endcan
+                @canany(['newsletter.manage','newsletter.view'])<x-menu.sidebar-nav-link :href="route(auth()->user()->can('newsletter.manage') ? 'admin.newsletter.index' : 'admin.newsletter.subscriptions')" icon="mail" :active="request()->routeIs('admin.newsletter.*')">Newsletter</x-menu.sidebar-nav-link>@endcanany
                 @can('content.pagebuilder.manage')<x-menu.sidebar-nav-link :href="route('admin.cms.edit-project')" icon="layout" :active="request()->routeIs('admin.cms.edit-project')">Pagebuilder</x-menu.sidebar-nav-link>@endcan
                 @can('ratings.structure.manage')<x-menu.sidebar-nav-link :href="route('admin.ratingstructure.index')" icon="help-circle" :active="request()->routeIs('admin.ratingstructure.index')">Bewertungsstruktur</x-menu.sidebar-nav-link>@endcan
             </x-menu.sidebar-nav>

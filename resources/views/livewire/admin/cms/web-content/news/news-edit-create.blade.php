@@ -23,6 +23,13 @@
 
             <div class="flex shrink-0 items-center gap-2">
                 @if($postId)
+                    @can('newsletter.manage')
+                        <form action="{{ route('admin.newsletter.create') }}" method="post">
+                            @csrf
+                            <input type="hidden" name="post_id" value="{{ $postId }}">
+                            <button type="submit" @disabled($isDirty) title="Gespeicherte Beitragsfassung verwenden" class="rounded-md border px-3 py-2 text-sm font-semibold text-teal-800 disabled:opacity-50">Als Newsletter verwenden</button>
+                        </form>
+                    @endcan
                     {{-- Social-Media-Bild dieser News; nur sinnvoll, wenn sie schon existiert. --}}
                     <button
                         type="button"

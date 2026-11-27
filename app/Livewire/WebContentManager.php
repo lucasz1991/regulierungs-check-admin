@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 
@@ -10,9 +11,13 @@ class WebContentManager extends Component
 {
     public string $selectedTab = 'webpages';
 
+    #[Locked]
+    public bool $newsArea = false;
+
     public function mount()
     {
         if (request()->routeIs('admin.webcontent.news')) {
+            $this->newsArea = true;
             $this->selectedTab = 'news';
         }
 
@@ -31,6 +36,7 @@ class WebContentManager extends Component
 
     public function updatedSelectedTab(string $tab): void
     {
+        abort_if(($tab === 'news') !== $this->newsArea, 404);
         Gate::authorize($this->permissionForTab($tab));
     }
 
@@ -38,7 +44,7 @@ class WebContentManager extends Component
     {
         Gate::authorize($this->permissionForTab($this->selectedTab));
 
-        return view('livewire.web-content-manager')->layout('layouts.master');
+        return view($this->newsArea ? 'livewire.news-manager' : 'livewire.web-content-manager')->layout('layouts.master');
     }
 
     private function permissionForTab(string $tab): string

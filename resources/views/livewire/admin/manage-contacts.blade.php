@@ -58,6 +58,9 @@
                 @foreach(\App\Models\Contact::PERMISSIONS as $key=>$label)<option value="{{ $key }}">{{ $label }}</option>@endforeach
             </select><x-input-error for="form.mail_permission" /></label>
             </div>
+            @if($showForm && $contactId && \Illuminate\Support\Facades\Gate::any(['newsletter.view','newsletter.manage']) && \Illuminate\Support\Facades\Schema::hasTable('newsletter_subscriptions'))
+                <div class="mt-4"><livewire:admin.newsletter-preference type="contact" :record-id="$contactId" :key="'newsletter-contact-'.$contactId" /></div>
+            @endif
         </x-slot>
         <x-slot name="footer"><x-secondary-button wire:click="$set('showForm', false)">Abbrechen</x-secondary-button><x-button class="ml-2" wire:click="save" wire:loading.attr="disabled">Speichern</x-button></x-slot>
     </x-dialog-modal>

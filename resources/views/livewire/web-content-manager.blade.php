@@ -47,17 +47,6 @@
             </button>
         </li>
         @endcan
-        @can('content.news.manage')
-        <li class="border-l border-gray-200">
-            <button 
-                @click="selectedTab = 'news'" 
-                :class="{ 'text-blue-600 bg-white border-b-2 border-blue-600': selectedTab === 'news' }" 
-                class="w-full px-4 py-2 transition-all duration-200 bg-gray-100 hover:bg-blue-100 hover:text-blue-600 focus:outline-none"
-            >
-                News
-            </button>
-        </li>
-        @endcan
         @can('settings.manage')
         <!-- Ai Assist -->
         <li class="border-l border-gray-200">
@@ -98,11 +87,6 @@
         <!-- Blog Inhalt -->
         <div x-show="selectedTab === 'blog'" x-cloak>
             <livewire:admin.cms.web-content.blog.blog-list lazy />
-        </div>
-        @endcan
-        @can('content.news.manage')
-        <div x-show="selectedTab === 'news'" x-cloak>
-            <livewire:admin.cms.web-content.news.news-list lazy />
         </div>
         @endcan
         @can('settings.manage')

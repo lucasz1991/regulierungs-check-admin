@@ -20,6 +20,9 @@ final class RbacCatalog
             'Inhalte und Kommunikation' => [
                 'content.web.manage' => 'Web-Inhalte verwalten',
                 'content.news.manage' => 'News verwalten',
+                'newsletter.manage' => 'Newsletter und Abonnements verwalten',
+                'newsletter.view' => 'Newsletter-Abonnements ansehen',
+                'newsletter.send' => 'Newsletter testen und zum Versand freigeben',
                 'content.pagebuilder.manage' => 'Pagebuilder verwalten',
                 'ratings.structure.manage' => 'Bewertungsstruktur verwalten',
                 'messages.manage' => 'Nachrichten verwalten',

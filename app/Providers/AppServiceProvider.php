@@ -25,6 +25,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Schema::defaultStringLength(191);
+        \App\Models\User::saved(function (\App\Models\User $model): void {
+            if (($model->wasRecentlyCreated || $model->wasChanged('email')) && Schema::hasTable('newsletter_subscriptions')) {
+                app(\App\Services\NewsletterSubscriptions::class)->forSource('user', $model->getKey());
+            }
+        });
+        \App\Models\Contact::saved(function (\App\Models\Contact $model): void {
+            if (($model->wasRecentlyCreated || $model->wasChanged(['email', 'mail_permission'])) && Schema::hasTable('newsletter_subscriptions')) {
+                app(\App\Services\NewsletterSubscriptions::class)->forSource('contact', $model->getKey());
+            }
+        });
         Livewire::addPersistentMiddleware(\App\Http\Middleware\EnsureActiveUser::class);
 
         Event::listen(CommandStarting::class, function (CommandStarting $event): void {

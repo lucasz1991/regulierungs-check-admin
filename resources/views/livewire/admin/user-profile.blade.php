@@ -1,10 +1,14 @@
 @section('title', $isEmployeeProfile ? 'Mitarbeiterprofil' : 'Benutzerprofil')
-<div class="rc-profile" x-data="{ selectedTab: 'details', selectTab(tab) { this.selectedTab = tab; this.$nextTick(() => this.$refs[tab + 'Tab'].focus()) } }">
     @php
         $roleLabel = match($user->role) { 'admin' => 'Administrator', 'staff' => 'Mitarbeiter', default => 'Benutzer' };
         $customer = $user->customer;
+        $canSeeNewsletter = \Illuminate\Support\Facades\Gate::any(['newsletter.view', 'newsletter.manage'])
+            && \Illuminate\Support\Facades\Gate::allows('users.manage') && \Illuminate\Support\Facades\Schema::hasTable('newsletter_subscriptions');
+        $profileTabs = ['details' => 'Personendaten', 'ratings' => 'Bewertungen', 'promotion' => 'Promotion'];
+        if ($canSeeNewsletter) $profileTabs['newsletter'] = 'Newsletter';
         $canChangeStatus = $canManageUserStatus && (auth()->user()->isAdmin() || ! $user->isAdmin()) && ! $user->is(auth()->user());
     @endphp
+<div class="rc-profile" x-data="{ selectedTab: @js($canSeeNewsletter && request('tab') === 'newsletter' ? 'newsletter' : 'details'), selectTab(tab) { this.selectedTab = tab; this.$nextTick(() => this.$refs[tab + 'Tab'].focus()) } }">
 
     <nav class="rc-profile__breadcrumb" aria-label="Profilnavigation">
         <a href="{{ route($isEmployeeProfile ? 'admin.employees' : 'admin.users') }}" wire:navigate>
@@ -51,10 +55,11 @@
     </header>
 
     <div class="rc-profile__tabs" role="tablist" aria-label="Profilbereiche"
-         @keydown.arrow-right.prevent="selectTab({ details: 'ratings', ratings: 'promotion', promotion: 'details' }[selectedTab])"
-         @keydown.arrow-left.prevent="selectTab({ details: 'promotion', ratings: 'details', promotion: 'ratings' }[selectedTab])"
-         @keydown.home.prevent="selectTab('details')" @keydown.end.prevent="selectTab('promotion')">
-        @foreach(['details' => 'Personendaten', 'ratings' => 'Bewertungen', 'promotion' => 'Promotion'] as $tab => $label)
+         x-data="{ tabs: @js(array_keys($profileTabs)) }"
+         @keydown.arrow-right.prevent="selectTab(tabs[(tabs.indexOf(selectedTab)+1)%tabs.length])"
+         @keydown.arrow-left.prevent="selectTab(tabs[(tabs.indexOf(selectedTab)+tabs.length-1)%tabs.length])"
+         @keydown.home.prevent="selectTab(tabs[0])" @keydown.end.prevent="selectTab(tabs[tabs.length-1])">
+        @foreach($profileTabs as $tab => $label)
             <button type="button" id="profile-tab-{{ $tab }}" x-ref="{{ $tab }}Tab" role="tab" aria-controls="profile-panel-{{ $tab }}"
                     :aria-selected="selectedTab === '{{ $tab }}'" :tabindex="selectedTab === '{{ $tab }}' ? 0 : -1"
                     @click="selectedTab = '{{ $tab }}'">{{ $label }}</button>
@@ -153,6 +158,11 @@
         @include('livewire.admin.user-profile.promotion-history')
     </section>
 
+    @if($canSeeNewsletter)
+    <section id="profile-panel-newsletter" role="tabpanel" aria-labelledby="profile-tab-newsletter" x-show="selectedTab === 'newsletter'" x-cloak class="rc-profile__panel">
+        <livewire:admin.newsletter-preference type="user" :record-id="$user->id" :key="'newsletter-user-'.$user->id" />
+    </section>
+    @endif
     @if($canSendUserMail)
         @include('livewire.admin.customer-mail-form')
     @endif

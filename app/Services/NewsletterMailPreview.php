@@ -28,7 +28,7 @@ class NewsletterMailPreview
         }
 
         return $message->data() + [
-            'signoffLines' => ['Viele Grüße'],
+            'signoffLines' => ['Viele Grüße,', 'Ihr Regulierungs-CHECK Team'],
             'newsletter' => $content['newsletter'],
         ];
     }

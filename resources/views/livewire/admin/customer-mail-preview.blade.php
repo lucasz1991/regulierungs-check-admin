@@ -31,9 +31,10 @@
       .mail-inner { padding-left:20px !important; padding-right:20px !important; }
     }
     @media only screen and (max-width:540px) {
-      .signature-brand, .signature-contacts, .signature-address { display:block !important; width:auto !important; border:0 !important; }
-      .signature-brand { padding:0 0 12px !important; }
-      .signature-contacts { padding:0 0 8px !important; }
+      .signature-row { display:block !important; }
+      .signature-brand { display:block !important; float:right !important; width:44px !important; padding:0 !important; }
+      .signature-contacts, .signature-address { display:block !important; width:auto !important; margin-right:56px !important; border:0 !important; }
+      .signature-contacts { padding:0 0 6px !important; }
       .signature-address { padding:0 !important; }
     }
     @media only screen and (max-width:360px) {
@@ -131,11 +132,11 @@
             <tr><td align="left">
               <!--[if mso]><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="536"><tr><td><![endif]-->
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:536px;border-collapse:collapse;text-align:left;">
-                <tr>
-                  <td class="signature-brand" width="26%" valign="top" align="left" style="width:26%;padding:2px 16px 0 0;text-align:left;vertical-align:top;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
-                    <a href="https://www.regulierungs-check.de/" style="color:#167668;text-decoration:none;"><img src="https://www.regulierungs-check.de/site-images/logo-xs.png" width="124" height="39" alt="Regulierungs-CHECK" style="display:block;width:124px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"></a>
+                <tr class="signature-row">
+                  <td class="signature-brand" width="15%" valign="top" align="left" style="width:15%;padding:2px 16px 0 0;text-align:left;vertical-align:top;background-color:transparent;color:#143b47;font-size:0;line-height:0;">
+                    <a href="https://www.regulierungs-check.de/" style="color:#167668;text-decoration:none;"><img src="https://www.regulierungs-check.de/site-images/logo/logo-icon.png" width="44" height="43" alt="Regulierungs-CHECK" style="display:block;width:44px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;"></a>
                   </td>
-                  <td class="signature-contacts" width="43%" valign="top" align="left" style="width:43%;padding:0 12px 0 14px;border-left:1px solid #cadbd2;text-align:left;vertical-align:top;background-color:transparent;color:#143b47;">
+                  <td class="signature-contacts" width="54%" valign="top" align="left" style="width:54%;padding:0 12px 0 14px;border-left:1px solid #cadbd2;text-align:left;vertical-align:top;background-color:transparent;color:#143b47;">
                     <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;border-collapse:collapse;text-align:left;">
                       <tr>
                         <td width="21" valign="top" style="width:21px;padding:2px 0;line-height:0;"><img src="https://www.regulierungs-check.de/site-images/mail/envelope.png" width="14" height="14" alt="" style="display:block;width:14px;height:14px;border:0;"></td>
